@@ -5,10 +5,13 @@
 #include "txn.h"
 #include "txn_table.h"
 
+//void 
+//SundialRPCClient::run() {
 SundialRPCClient::SundialRPCClient() {
     _servers = new SundialRPCClientStub  * [g_num_nodes];
     // get server names
-    std::istringstream in(ifconfig_string);
+    //std::istringstream in(ifconfig_string);
+    std::ifstream in(ifconfig_file);
     string line;
     uint32_t num_nodes = 0;
     while ( num_nodes < g_num_nodes && getline(in, line) ) {
@@ -23,6 +26,7 @@ SundialRPCClient::SundialRPCClient() {
             num_nodes ++;
         }
     }
+    cout << "sundial client is initialized!" << endl;
     // spawn a reader thread to indefinitely read completion queue
     _thread = new std::thread(AsyncCompleteRpc, this);
     //pthread_create(_thread, NULL, AsyncCompleteRpc, this); 
@@ -49,7 +53,7 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
 void
 SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request, SundialResponse &response) {
     ClientContext context;
-    Status status = _servers[node_id]->stub_->contactRemote(&context, request, &response);
+    Status status = _servers[node_id]->contactRemote(&context, request, &response);
     assert(status.ok());
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response.response_type() ] += response.SpaceUsedLong();

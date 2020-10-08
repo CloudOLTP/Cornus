@@ -5,7 +5,6 @@ CPPF = `pkg-config --cflags protobuf grpc`
 .SUFFIXES: .o .cpp .h 
 
 SRC_DIRS = ./ ./benchmarks/ ./concurrency_control/ ./storage/ ./system/ ./transport/ ./proto/ ./utils/
-PROTOS_PATH = protos
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
@@ -22,7 +21,7 @@ CPPS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp))
 OBJS = $(CPPS:.cpp=.o)
 DEPS = $(CPPS:.cpp=.d)
 
-vpath %.proto $(PROTOS_PATH)
+#vpath %.proto $(PROTOS_PATH)
 
 all : rundb
 

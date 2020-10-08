@@ -23,8 +23,8 @@ void parser(int argc, char ** argv);
 
 int main(int argc, char* argv[])
 {
-    //g_node_id = ;
     parser(argc, argv);
+    cout << "start node " << g_node_id << endl;
 
     g_total_num_threads = g_num_worker_threads;
 
@@ -39,6 +39,7 @@ int main(int argc, char* argv[])
     pthread_t * pthread_rpc = new pthread_t;
     pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
 #endif
+
 #if LOG_ENABLE
     g_total_num_threads ++;
     log_manager = new LogManager();
@@ -79,7 +80,7 @@ int main(int argc, char* argv[])
 #if DISTRIBUTED
     cout << "Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
-    for (int i = 0; i < g_num_nodes; i ++) {
+    for (uint32_t i = 0; i < g_num_nodes; i ++) {
         if (i == g_node_id) continue;
         SundialRequest request;
         SundialResponse response;
@@ -112,7 +113,7 @@ int main(int argc, char* argv[])
     SundialResponse response;
     request.set_request_type( SundialRequest::SYS_REQ );
     // Notify other nodes the completion of the current node.
-    for (int i = 0; i < g_num_nodes; i ++) {
+    for (uint32_t i = 0; i < g_num_nodes; i ++) {
         if (i == g_node_id) continue;
         rpc_client->sendRequest(i, request, response);
     }

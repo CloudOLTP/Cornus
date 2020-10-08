@@ -32,6 +32,10 @@ struct AsyncClientCall {
 class SundialRPCClientStub {
 public:
     SundialRPCClientStub (std::shared_ptr<Channel> channel) : stub_(SundialRPC::NewStub(channel)) {};
+    Status contactRemote(ClientContext* context, SundialRequest &request, SundialResponse* response) {
+	    Status s = stub_->contactRemote(context, request, response);
+	    return s;
+    };
     std::unique_ptr<SundialRPC::Stub> stub_;
 };
 

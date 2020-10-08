@@ -1,16 +1,16 @@
 #pragma once
 
-#define DISTRIBUTED                     true 
-#define NUM_NODES                       2
+#define DISTRIBUTED                     false
+#define NUM_NODES                       1
 
 // number of server threads on each node
-#define NUM_WORKER_THREADS              4 //4096 //2048 //1024
-#define NUM_RPC_SERVER_THREADS          10 //24
+#define NUM_WORKER_THREADS              4096 //2048 //1024
+#define NUM_RPC_SERVER_THREADS          24
 
 // only a limited number of active threads are allowed. This configuration is
 // effective only when LOG_ENABLE == true.
 #define ENABLE_ADMISSION_CONTROL        true
-#define MAX_NUM_ACTIVE_TXNS             4 //16
+#define MAX_NUM_ACTIVE_TXNS             16
 
 // WORKLOAD can be YCSB or TPCC
 #define WORKLOAD                        TPCC

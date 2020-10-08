@@ -15,14 +15,8 @@ SundialRPCServerImpl::~SundialRPCServerImpl(){
 
 void
 SundialRPCServerImpl::run() {
-    /*
-    // Configure the options for your HTTPServer2 instance.
-    auto options = absl::make_unique<HTTPServer2::EventModeOptions>();
-    options->SetVersion("SundialRPC");
-    options->SetServerType("sundial_rpc_server");
-    */
-    
-    std::istringstream in(ifconfig_string);
+    //std::istringstream in(ifconfig_string);
+    std::ifstream in(ifconfig_file);
     string line;
     uint32_t num_nodes = 0;
     while (getline (in, line)) {
@@ -55,21 +49,7 @@ SundialRPCServerImpl::run() {
         //pthread_create(_thread_pool[i], NULL, HandleRpcs, NULL); 
         _thread_pool[i] = new std::thread(HandleRpcs, this);
     }
-    /*
-    options->AddPort( port );
-    // Create the HTTPServer2 instance. Use the process-wide default
-    // EventManager, which is also used by Stubby2 (by default).
-    std::unique_ptr<HTTPServer2> http_server(
-        HTTPServer2::CreateEventDrivenModeServer(
-            EventManager::DefaultEventManager(), std::move(options))
-        .ValueOrDie());
-    // 4. Export service to make it available.
-    Export(http_server.get());
-    // 5. Set up your server to start accepting requests.
-    CHECK_OK(http_server->StartAcceptingRequests());
-    // 6. Keep your program running until your server shuts down.
-    http_server->WaitForTermination();
-    */
+    cout <<"sundial server initialized, lisentening on " << line << endl;
 }
 
 void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
