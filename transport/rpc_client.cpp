@@ -8,7 +8,7 @@
 //void 
 //SundialRPCClient::run() {
 SundialRPCClient::SundialRPCClient() {
-    _servers = new SundialRPCClientStub  * [g_num_nodes];
+    _servers = new SundialRPCClientStub * [g_num_nodes];
     // get server names
     //std::istringstream in(ifconfig_string);
     std::ifstream in(ifconfig_file);
@@ -20,8 +20,7 @@ SundialRPCClient::SundialRPCClient() {
         else {
             string url = line;
             if (num_nodes != g_node_id) {
-                SundialRPCClientStub c(grpc::CreateChannel(url, grpc::InsecureChannelCredentials()));
-                _servers[num_nodes] = &c;
+                _servers[num_nodes] = new SundialRPCClientStub(grpc::CreateChannel(url, grpc::InsecureChannelCredentials()));
             }
             num_nodes ++;
         }
@@ -71,7 +70,7 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     assert(node_id != g_node_id);
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_req_msg_size[ request.request_type() ] += request.SpaceUsedLong();
-    _servers[node_id]->stub_->PrepareAsynccontactRemote(&call->context, request, &cq);
+    call->response_reader = _servers[node_id]->stub_->PrepareAsynccontactRemote(&call->context, request, &cq);
     
     // StartCall initiates the RPC call
     // TODO(zhihan): set timeout

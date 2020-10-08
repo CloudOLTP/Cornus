@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     glob_manager->calibrate_cpu_frequency();
 
 #if DISTRIBUTED
-    rpc_client = new SundialRPCClient;
+    rpc_client = new SundialRPCClient();
     rpc_server = new SundialRPCServerImpl;
 
     pthread_t * pthread_rpc = new pthread_t;
