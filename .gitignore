@@ -1,2 +1,7 @@
-*.d
-*.o
+**.o
+**.d
+**.out
+**.swp
+**.swo
+rundb
+config.h

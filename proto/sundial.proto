@@ -1,3 +1,10 @@
+syntax = "proto3";
+package sundial_rpc;
+
+service SundialRPC {
+    rpc contactRemote(SundialRequest) returns (SundialResponse) {}
+}
+
 message SundialRequest {
     enum RequestType {
         READ_REQ = 0;
@@ -47,8 +54,5 @@ message SundialResponse {
     repeated TupleData      tuple_data    = 3;
 }
 
-service SundialRPC {
-    rpc contactRemote(SundialRequest) returns (SundialResponse) {}
-}
 
 

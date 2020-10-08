@@ -424,7 +424,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
     switch(request->request_type()) {
         case SundialRequest::READ_REQ :
             num_tuples = request->read_requests_size();
-            for (int i = 0; i < num_tuples; i++) {
+            for (uint32_t i = 0; i < num_tuples; i++) {
                 uint64_t key = request->read_requests(i).key();
                 uint64_t index_id = request->read_requests(i).index_id();
                 access_t access_type = (access_t)request->read_requests(i).access_type();
@@ -460,7 +460,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
         case SundialRequest::PREPARE_REQ :
             // copy data to the write set.
             num_tuples = request->tuple_data_size();
-            for (int i = 0; i < num_tuples; i++) {
+            for (uint32_t i = 0; i < num_tuples; i++) {
                 uint64_t key = request->tuple_data(i).key();
                 uint64_t table_id = request->tuple_data(i).table_id();
                 char * data = get_cc_manager()->get_data(key, table_id);

@@ -120,7 +120,8 @@ protected:
     virtual RC        commit_insdel();
     class Access {
       public:
-        virtual  ~Access() {}
+        virtual  ~Access() {};
+        Access() : type(RD), key(0), table_id(0), row(NULL), home_node_id(0) {};
         access_t    type;
         uint64_t    key;
         uint32_t    table_id;

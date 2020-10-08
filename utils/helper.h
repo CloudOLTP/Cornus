@@ -125,7 +125,7 @@ extern double g_cpu_freq;
 
 #define STAT_SUM(type, sum, name) \
     type sum = 0; \
-    for (int ii = 0; ii < g_total_num_threads; ii++) \
+    for (uint32_t ii = 0; ii < g_total_num_threads; ii++) \
         sum += _stats[ii]->name;
 
 // Malloc helper

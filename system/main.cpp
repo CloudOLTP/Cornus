@@ -12,8 +12,8 @@
 #include "log.h"
 #endif
 
-#include "stubby/rpc_server.h"
-#include "stubby/rpc_client.h"
+#include "transport/rpc_server.h"
+#include "transport/rpc_client.h"
 
 void * start_thread(void *);
 void * start_rpc_server(void *);
@@ -23,7 +23,7 @@ void parser(int argc, char ** argv);
 
 int main(int argc, char* argv[])
 {
-    g_node_id = ;
+    //g_node_id = ;
     parser(argc, argv);
 
     g_total_num_threads = g_num_worker_threads;
