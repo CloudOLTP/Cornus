@@ -176,6 +176,7 @@ Manager::add_to_thread_pool(WorkerThread * worker)
         _unused_quota --;
         is_worker_ready = true;
     } else {
+        printf("thread-%lu is added to _ready_workers\n", worker->get_thd_id());
         _ready_workers.push(worker);
     }
     pthread_mutex_unlock( _worker_pool_mutex );

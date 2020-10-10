@@ -45,11 +45,15 @@ void print_usage() {
 }
 
 void parser(int argc, char * argv[]) {
-    if (CONTROLLED_LOCK_VIOLATION) static_assert(LOG_ENABLE);
+    #if CONTROLLED_LOCK_VIOLATION
+    static_assert(LOG_ENABLE);
+    #endif
+    #if (ENABLE_ADMISSION_CONTROL) 
+    static_assert( LOG_ENABLE );
+    #endif
     //if (DISTRIBUTED) assert(NUM_NODES > 1);
     M_ASSERT(INDEX_STRUCT != IDX_BTREE, "btree is not supported yet\n");
     // The current admission control is designed for logging
-    if (ENABLE_ADMISSION_CONTROL) static_assert( LOG_ENABLE );
     for (int i = 1; i < argc; i++) {
         assert(argv[i][0] == '-');
         if (argv[i][1] == 'm')

@@ -200,6 +200,7 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         if (log_record_size > 0) {
             assert(log_record);
             log_semaphore->incr();
+            //printf("[txn-%lu] inc log semaphore while logging\n", _txn_id);
             log_manager->log(this, log_record_size, log_record);
             delete [] log_record;
             // The worker thread will be waken up by the logging thread after
@@ -222,6 +223,7 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         // commit (CLV only).
         uint64_t tt = get_sys_clock();
 
+        //printf("[txn-%lu] starts to wait for logging\n", _txn_id);
         log_semaphore->wait();
 
         _log_ready_time = get_sys_clock();

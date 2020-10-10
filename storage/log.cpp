@@ -105,12 +105,14 @@ LogManager::run()
 bool
 LogManager::check_response() {
     if (!_log_metadata.empty()) {
+        printf("[log] check response - has metadata"); 
         LogMetadata &metadata = _log_metadata.front();
             uint64_t t1 = get_sys_clock();
             // commit this transaction
             for (uint32_t i = 0; i < metadata.num_records; i++) {
                 LogBufferEntry &entry = _log_buffer[(metadata.lsn + i) % _buffer_size];
                 entry.txn->log_semaphore->decr();
+                printf("[log] txn-%lu finishes logging and decr semaphore\n", entry.txn->get_txn_id());
                 entry.txn = NULL;
                 entry.filled = false;
             }
