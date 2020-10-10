@@ -40,8 +40,10 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
     while (s->cq.Next(&got_tag, &ok)) {
         // The tag in this example is the memory location of the call object
         AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
-        GPR_ASSERT(ok);
-        assert(call->status.ok());
+        if (!call->status.ok()) {
+            printf("[REQ] client rec response fail: (%d) %s\n", call->status.error_code(), call->status.error_message().c_str());
+            assert(false);
+        }
         // handle return value
         s->sendRequestDone(call->reply);
         // Once we're complete, deallocate the call object.
@@ -53,7 +55,10 @@ void
 SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request, SundialResponse &response) {
     ClientContext context;
     Status status = _servers[node_id]->contactRemote(&context, request, &response);
-    assert(status.ok());
+    if (!status.ok()) {
+        printf("[REQ] client sendRequest fail: (%d) %s\n", status.error_code(), status.error_message().c_str());
+        assert(false);
+    }
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response.response_type() ] += response.SpaceUsedLong();
 }
@@ -79,12 +84,6 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     call->response_reader->StartCall();
     call->reply = response;
     call->response_reader->Finish(&(call->reply), &(call->status), (void*)call);
-    // dead code for previous rpc
-    /*
-    Closure* call_done = NewCallback(this, &SundialRPCClient::sendRequestDone, rpc, txn, response);
-    _servers[node_id]->contactRemote(rpc, &request, &response, call_done);
-    assert( rpc::status::IsOk(rpc) );
-    */
 }
 
 
@@ -93,7 +92,6 @@ SundialRPCClient::sendRequestDone(SundialResponse& response)
 {
     uint64_t txn_id = response.txn_id();
     TxnManager * txn = txn_table->get_txn(txn_id);
-    //rpc->CheckSuccess();
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response.response_type() ] += response.SpaceUsedLong();
     // mark as returned. 
