@@ -45,7 +45,7 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
             assert(false);
         }
         // handle return value for non-system response
-        assert(call->reply.response_type() != SundialResponse::SYS_RESP);
+        assert(call->reply->response_type() != SundialResponse::SYS_RESP);
         s->sendRequestDone(call->reply);
         // Once we're complete, deallocate the call object.
         delete call;
@@ -83,18 +83,18 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     // std::chrono::time_point<std::chrono::system_clock> _deadline = std::chrono::system_clock::now() + std::chrono::milliseconds(3100);
     // call->context.set_deadline(_deadline);
     call->response_reader->StartCall();
-    call->reply = response;
-    call->response_reader->Finish(&(call->reply), &(call->status), (void*)call);
+    call->reply = &response;
+    call->response_reader->Finish(call->reply, &(call->status), (void*)call);
 }
 
 
 void
-SundialRPCClient::sendRequestDone(SundialResponse& response)
+SundialRPCClient::sendRequestDone(SundialResponse * response)
 {
-    uint64_t txn_id = response.txn_id();
+    uint64_t txn_id = response->txn_id();
     TxnManager * txn = txn_table->get_txn(txn_id);
-    glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
-    glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response.response_type() ] += response.SpaceUsedLong();
+    glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response->response_type() ] ++;
+    glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response->response_type() ] += response->SpaceUsedLong();
     // mark as returned. 
     txn->rpc_semaphore->decr();
 }
