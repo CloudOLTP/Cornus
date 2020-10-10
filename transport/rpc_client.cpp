@@ -44,7 +44,8 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
             printf("[REQ] client rec response fail: (%d) %s\n", call->status.error_code(), call->status.error_message().c_str());
             assert(false);
         }
-        // handle return value
+        // handle return value for non-system response
+        assert(call->reply.response_type() != SundialResponse::SYS_RESP);
         s->sendRequestDone(call->reply);
         // Once we're complete, deallocate the call object.
         delete call;
@@ -70,8 +71,8 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     assert(node_id != g_node_id);
     // call object to store rpc data
     AsyncClientCall* call = new AsyncClientCall;;
-    //printf("[REQ] send to node %ld. type=%s\n", node_id,
-    //       SundialRequest::RequestType_Name(request.request_type()).c_str());
+    printf("[REQ] client send to node %ld. type=%s\n", node_id,
+           SundialRequest::RequestType_Name(request.request_type()).c_str());
     assert(node_id != g_node_id);
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_req_msg_size[ request.request_type() ] += request.SpaceUsedLong();

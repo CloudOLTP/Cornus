@@ -103,6 +103,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     }
     // the transaction handles the RPC call
     txn_man->process_remote_request(request, response);
+    response->set_txn_id(txn_id);
 
     // if the sub-transaction is no longer required, remove from txn_table
     if (response->response_type() == SundialResponse::RESP_ABORT
