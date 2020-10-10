@@ -1,3 +1,8 @@
+# example usage
+# python3 test_exp.py experiments/test.json 0
+# the first argument is the path to your exp settings, note that for any params with a list as 
+# the values meaning multiple exps will be issued under each value
+# the last argument is the index of current node corresponding to the ifconfig.txt
 import os, sys, re, os.path
 import subprocess, datetime, time, signal, json
 from test_distrib import start_nodes, kill_nodes

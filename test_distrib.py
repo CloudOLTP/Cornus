@@ -1,4 +1,8 @@
 # run all nodes in ifconfig.
+# example usage:
+# python3 test_distrib.py NODE_ID=0 DISTRIBUTED=true ....
+# where NODE_ID specifies the index of current server matched in ifconfig.txt
+# and the rest can be configurations you wanna overwrite in config.h
 import os, sys, re, os.path
 
 ifconfig = "ifconfig.txt"
