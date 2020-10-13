@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
     cout << "Complete." << endl;
 
     return 0;
+}
 #else
 int main(int argc, char* argv[])
 {
