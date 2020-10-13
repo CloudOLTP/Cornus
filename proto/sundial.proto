@@ -14,7 +14,7 @@ message SundialRequest {
         SYS_REQ = 4;
         LOG_YES_REQ = 5;
         LOG_ABORT_REQ = 6;
-        LOG_COMMIT_REQ = 7
+        LOG_COMMIT_REQ = 7;
         NUM_REQ_TYPES = 8;
     }
     message ReadRequest {
