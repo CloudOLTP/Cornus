@@ -12,7 +12,10 @@ message SundialRequest {
         COMMIT_REQ = 2;
         ABORT_REQ = 3;
         SYS_REQ = 4;
-        NUM_REQ_TYPES = 5;
+        LOG_YES_REQ = 5;
+        LOG_ABORT_REQ = 6;
+        LOG_COMMIT_REQ = 7
+        NUM_REQ_TYPES = 8;
     }
     message ReadRequest {
         uint64 key = 1;
@@ -30,6 +33,8 @@ message SundialRequest {
     RequestType             request_type  = 2;
     repeated ReadRequest    read_requests = 3;
     repeated TupleData      tuple_data    = 4;
+    uint64                  log_data_size = 5;
+    bytes                   log_data      = 6;
 }
 
 message SundialResponse {
@@ -41,7 +46,10 @@ message SundialResponse {
         PREPARED_ABORT = 4;
         ACK = 5;
         SYS_RESP = 6;
-        NUM_RESP_TYPES = 7;
+        RESP_LOG_YES = 7;
+        RESP_LOG_ABORT = 8;
+        RESP_LOG_COMMIT = 9;
+        NUM_RESP_TYPES = 10;
     }
     message TupleData {
         uint64 key = 1;
