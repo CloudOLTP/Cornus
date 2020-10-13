@@ -1,7 +1,7 @@
-sudo apt-get install build-essential autoconf libtool pkg-config
-sudo apt-get install cmake
-sudo apt-get install libgflags-dev
-sudo apt-get install clang-5.0 libc++-dev
+sudo apt-get -y install build-essential autoconf libtool pkg-config
+sudo apt-get -y install cmake
+sudo apt-get -y install libgflags-dev
+sudo apt-get -y install clang-5.0 libc++-dev
 cd ..
 git clone https://github.com/grpc/grpc
 cd grpc

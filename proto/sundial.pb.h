@@ -87,7 +87,10 @@ enum SundialRequest_RequestType : int {
   SundialRequest_RequestType_COMMIT_REQ = 2,
   SundialRequest_RequestType_ABORT_REQ = 3,
   SundialRequest_RequestType_SYS_REQ = 4,
-  SundialRequest_RequestType_NUM_REQ_TYPES = 5,
+  SundialRequest_RequestType_LOG_YES_REQ = 5,
+  SundialRequest_RequestType_LOG_ABORT_REQ = 6,
+  SundialRequest_RequestType_LOG_COMMIT_REQ = 7,
+  SundialRequest_RequestType_NUM_REQ_TYPES = 8,
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
@@ -118,7 +121,10 @@ enum SundialResponse_ResponseType : int {
   SundialResponse_ResponseType_PREPARED_ABORT = 4,
   SundialResponse_ResponseType_ACK = 5,
   SundialResponse_ResponseType_SYS_RESP = 6,
-  SundialResponse_ResponseType_NUM_RESP_TYPES = 7,
+  SundialResponse_ResponseType_RESP_LOG_YES = 7,
+  SundialResponse_ResponseType_RESP_LOG_ABORT = 8,
+  SundialResponse_ResponseType_RESP_LOG_COMMIT = 9,
+  SundialResponse_ResponseType_NUM_RESP_TYPES = 10,
   SundialResponse_ResponseType_SundialResponse_ResponseType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SundialResponse_ResponseType_SundialResponse_ResponseType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
@@ -603,6 +609,12 @@ class SundialRequest PROTOBUF_FINAL :
     SundialRequest_RequestType_ABORT_REQ;
   static constexpr RequestType SYS_REQ =
     SundialRequest_RequestType_SYS_REQ;
+  static constexpr RequestType LOG_YES_REQ =
+    SundialRequest_RequestType_LOG_YES_REQ;
+  static constexpr RequestType LOG_ABORT_REQ =
+    SundialRequest_RequestType_LOG_ABORT_REQ;
+  static constexpr RequestType LOG_COMMIT_REQ =
+    SundialRequest_RequestType_LOG_COMMIT_REQ;
   static constexpr RequestType NUM_REQ_TYPES =
     SundialRequest_RequestType_NUM_REQ_TYPES;
   static inline bool RequestType_IsValid(int value) {
@@ -635,7 +647,9 @@ class SundialRequest PROTOBUF_FINAL :
   enum : int {
     kReadRequestsFieldNumber = 3,
     kTupleDataFieldNumber = 4,
+    kLogDataFieldNumber = 6,
     kTxnIdFieldNumber = 1,
+    kLogDataSizeFieldNumber = 5,
     kRequestTypeFieldNumber = 2,
   };
   // repeated .sundial_rpc.SundialRequest.ReadRequest read_requests = 3;
@@ -674,6 +688,22 @@ class SundialRequest PROTOBUF_FINAL :
   const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::sundial_rpc::SundialRequest_TupleData >&
       tuple_data() const;
 
+  // bytes log_data = 6;
+  void clear_log_data();
+  const std::string& log_data() const;
+  void set_log_data(const std::string& value);
+  void set_log_data(std::string&& value);
+  void set_log_data(const char* value);
+  void set_log_data(const void* value, size_t size);
+  std::string* mutable_log_data();
+  std::string* release_log_data();
+  void set_allocated_log_data(std::string* log_data);
+  private:
+  const std::string& _internal_log_data() const;
+  void _internal_set_log_data(const std::string& value);
+  std::string* _internal_mutable_log_data();
+  public:
+
   // uint64 txn_id = 1;
   void clear_txn_id();
   ::PROTOBUF_NAMESPACE_ID::uint64 txn_id() const;
@@ -681,6 +711,15 @@ class SundialRequest PROTOBUF_FINAL :
   private:
   ::PROTOBUF_NAMESPACE_ID::uint64 _internal_txn_id() const;
   void _internal_set_txn_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
+  // uint64 log_data_size = 5;
+  void clear_log_data_size();
+  ::PROTOBUF_NAMESPACE_ID::uint64 log_data_size() const;
+  void set_log_data_size(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_log_data_size() const;
+  void _internal_set_log_data_size(::PROTOBUF_NAMESPACE_ID::uint64 value);
   public:
 
   // .sundial_rpc.SundialRequest.RequestType request_type = 2;
@@ -701,7 +740,9 @@ class SundialRequest PROTOBUF_FINAL :
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::sundial_rpc::SundialRequest_ReadRequest > read_requests_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::sundial_rpc::SundialRequest_TupleData > tuple_data_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr log_data_;
   ::PROTOBUF_NAMESPACE_ID::uint64 txn_id_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 log_data_size_;
   int request_type_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_sundial_2eproto;
@@ -1012,6 +1053,12 @@ class SundialResponse PROTOBUF_FINAL :
     SundialResponse_ResponseType_ACK;
   static constexpr ResponseType SYS_RESP =
     SundialResponse_ResponseType_SYS_RESP;
+  static constexpr ResponseType RESP_LOG_YES =
+    SundialResponse_ResponseType_RESP_LOG_YES;
+  static constexpr ResponseType RESP_LOG_ABORT =
+    SundialResponse_ResponseType_RESP_LOG_ABORT;
+  static constexpr ResponseType RESP_LOG_COMMIT =
+    SundialResponse_ResponseType_RESP_LOG_COMMIT;
   static constexpr ResponseType NUM_RESP_TYPES =
     SundialResponse_ResponseType_NUM_RESP_TYPES;
   static inline bool ResponseType_IsValid(int value) {
@@ -1412,6 +1459,88 @@ inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::sundial_rpc::SundialRe
 SundialRequest::tuple_data() const {
   // @@protoc_insertion_point(field_list:sundial_rpc.SundialRequest.tuple_data)
   return tuple_data_;
+}
+
+// uint64 log_data_size = 5;
+inline void SundialRequest::clear_log_data_size() {
+  log_data_size_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SundialRequest::_internal_log_data_size() const {
+  return log_data_size_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SundialRequest::log_data_size() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialRequest.log_data_size)
+  return _internal_log_data_size();
+}
+inline void SundialRequest::_internal_set_log_data_size(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  log_data_size_ = value;
+}
+inline void SundialRequest::set_log_data_size(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_log_data_size(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialRequest.log_data_size)
+}
+
+// bytes log_data = 6;
+inline void SundialRequest::clear_log_data() {
+  log_data_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline const std::string& SundialRequest::log_data() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialRequest.log_data)
+  return _internal_log_data();
+}
+inline void SundialRequest::set_log_data(const std::string& value) {
+  _internal_set_log_data(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialRequest.log_data)
+}
+inline std::string* SundialRequest::mutable_log_data() {
+  // @@protoc_insertion_point(field_mutable:sundial_rpc.SundialRequest.log_data)
+  return _internal_mutable_log_data();
+}
+inline const std::string& SundialRequest::_internal_log_data() const {
+  return log_data_.Get();
+}
+inline void SundialRequest::_internal_set_log_data(const std::string& value) {
+  
+  log_data_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void SundialRequest::set_log_data(std::string&& value) {
+  
+  log_data_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sundial_rpc.SundialRequest.log_data)
+}
+inline void SundialRequest::set_log_data(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  log_data_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sundial_rpc.SundialRequest.log_data)
+}
+inline void SundialRequest::set_log_data(const void* value,
+    size_t size) {
+  
+  log_data_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sundial_rpc.SundialRequest.log_data)
+}
+inline std::string* SundialRequest::_internal_mutable_log_data() {
+  
+  return log_data_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* SundialRequest::release_log_data() {
+  // @@protoc_insertion_point(field_release:sundial_rpc.SundialRequest.log_data)
+  return log_data_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void SundialRequest::set_allocated_log_data(std::string* log_data) {
+  if (log_data != nullptr) {
+    
+  } else {
+    
+  }
+  log_data_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), log_data,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sundial_rpc.SundialRequest.log_data)
 }
 
 // -------------------------------------------------------------------
