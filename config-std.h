@@ -185,3 +185,5 @@
 #define ALWAYS_READ                     1    // always read cached data
 #define ALWAYS_CHECK                    2    // always contact remote node
 #define READ_INTENSIVE                  3    // only read cached data that is read-intensive
+
+#define LOG_NODE                        false

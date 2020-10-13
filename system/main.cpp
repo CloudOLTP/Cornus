@@ -21,6 +21,48 @@ void * start_rpc_server(void *);
 // defined in parser.cpp
 void parser(int argc, char ** argv);
 
+#if LOG_NODE
+int main(int argc, char* argv[])
+{
+    parser(argc, argv);
+    cout << "start node " << g_node_id << endl;
+    glob_manager = new Manager;
+    glob_manager->calibrate_cpu_frequency();
+    rpc_client = new SundialRPCClient();
+    rpc_server = new SundialRPCServerImpl;
+
+    pthread_t * pthread_rpc = new pthread_t;
+    pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
+
+    cout << "Synchronization starts" << endl;
+    // Notify other nodes that the current node has finished initialization
+    for (uint32_t i = 0; i < g_num_nodes; i ++) {
+        if (i == g_node_id) continue;
+        SundialRequest request;
+        SundialResponse response;
+        request.set_request_type( SundialRequest::SYS_REQ );
+        rpc_client->sendRequest(i, request, response);
+    }
+    // Can start only if all other nodes have also finished initialization
+    while (glob_manager->num_sync_requests_received() < g_num_nodes - 1)
+        usleep(1);
+    cout << "Synchronization done" << endl;
+
+    SundialRequest request;
+    SundialResponse response;
+    request.set_request_type( SundialRequest::SYS_REQ );
+    // Notify other nodes the completion of the current node.
+    for (uint32_t i = 0; i < g_num_nodes; i ++) {
+        if (i == g_node_id) continue;
+        rpc_client->sendRequest(i, request, response);
+    }
+    while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
+        usleep(1);
+
+    cout << "Complete." << endl;
+
+    return 0;
+#else
 int main(int argc, char* argv[])
 {
     parser(argc, argv);
@@ -142,6 +184,7 @@ int main(int argc, char* argv[])
 #endif
     return 0;
 }
+#endif
 
 void * start_thread(void * thread) {
     ((BaseThread *)thread)->run();
