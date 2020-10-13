@@ -187,3 +187,4 @@
 #define READ_INTENSIVE                  3    // only read cached data that is read-intensive
 
 #define LOG_NODE                        false
+#define REMOTE_LOG                      true

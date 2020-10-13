@@ -8,13 +8,21 @@
 //void 
 //SundialRPCClient::run() {
 SundialRPCClient::SundialRPCClient() {
+#if REMOTE_LOG
+    _servers = new SundialRPCClientStub * [g_num_nodes_and_storage];
+#else
     _servers = new SundialRPCClientStub * [g_num_nodes];
+#endif
     // get server names
     //std::istringstream in(ifconfig_string);
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t num_nodes = 0;
+#if REMOTE_LOG
+    while ( num_nodes < g_num_nodes_and_storage && getline(in, line) ) {
+#else
     while ( num_nodes < g_num_nodes && getline(in, line) ) {
+#endif
         if (line[0] == '#')
             continue;
         else {
