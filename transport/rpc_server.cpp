@@ -97,6 +97,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         request->request_type() == SundialRequest::LOG_ABORT_REQ ||
         request->request_type() == SundialRequest::LOG_COMMIT_REQ) {
         log_manager->log(request, response);
+        response->set_txn_id(request->txn_id());
         return;
     }
 #endif

@@ -281,9 +281,10 @@ TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
     rpc_semaphore->incr();
     rpc_client->sendRequestAsync(this, node_id, request, response);
     rpc_semaphore->wait();
-    assert (response.response_type() == SundialResponse::RESP_LOG_YES
+    M_ASSERT(response.response_type() == SundialResponse::RESP_LOG_YES
             || response.response_type() == SundialResponse::RESP_LOG_ABORT
-            || response.response_type() == SundialResponse::RESP_LOG_COMMIT);
+            || response.response_type() == SundialResponse::RESP_LOG_COMMIT,
+            "type=%d\n", response.response_type());
 #endif
     return RCOK;
 }
