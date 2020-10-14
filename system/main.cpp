@@ -126,11 +126,8 @@ int main(int argc, char* argv[])
         rpc_client->sendRequest(i, request, response);
     }
     // Can start only if all other nodes have also finished initialization
-#if REMOTE_LOG
+
     while (glob_manager->num_sync_requests_received() < g_num_nodes - 1)
-#else
-    while (glob_manager->num_sync_requests_received() < g_num_nodes - 1)
-#endif
         usleep(1);
     cout << "Synchronization done" << endl;
 #endif
@@ -163,11 +160,8 @@ int main(int argc, char* argv[])
         if (i == g_node_id) continue;
         rpc_client->sendRequest(i, request, response);
     }
-#if REMOTE_LOG
+
     while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
-#else
-    while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
-#endif
         usleep(1);
 #endif
 #if LOG_ENABLE
