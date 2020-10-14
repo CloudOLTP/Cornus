@@ -274,8 +274,8 @@ TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
     uint32_t log_record_size = 0;
     if (type == SundialRequest::LOG_COMMIT_REQ) {   // only commit need to log modified data
         log_record_size = _cc_manager->get_log_record(log_record);
+        request.set_log_data(log_record);
     }
-    request.set_log_data(log_record);
     request.set_log_data_size(log_record_size);
 #if ASYNC_RPC
     rpc_semaphore->incr();
