@@ -10,17 +10,22 @@ ifconfig = "ifconfig.txt"
 def start_nodes(arg, curr_node):
     f = open(ifconfig)
     num_nodes = 0
+    log_node = "false"
     for addr in f:
         if '#' in addr:
             continue
+        if addr[0] == '=':
+            if addr[1] == 'l':
+                log_node = 'true'
+                continue
         if curr_node == num_nodes:
             num_nodes += 1
             continue
         # start server
         addr = addr.split(':')[0]
-        os.system("sudo ssh {} 'pkill rundb'".format(addr))
-        cmd = "python3 test.py {} NODE_ID={}".format(arg, num_nodes)
-        ret = os.system("sudo ssh {} 'cd /users/LockeZ/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; su LockeZ; {}' &".format(addr, cmd))
+        os.system("ssh {} 'sudo pkill rundb'".format(addr))
+        cmd = "python3 test.py {} NODE_ID={} LOG_NODE={}".format(arg, num_nodes, log_node)
+        ret = os.system("ssh {} 'cd /users/LockeZ/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' &".format(addr, cmd))
         if ret != 0:
             err_msg = "error executing server"
             job['ERROR'] = err_msg
@@ -42,7 +47,7 @@ def kill_nodes(curr_node):
             continue
         if curr_node == num_nodes:
             continue
-        os.system("sudo ssh {} 'pkill rundb'".format(addr))
+        os.system("ssh {} 'sudo pkill rundb'".format(addr))
         print("[LOG] kill node {}".format(num_nodes))
         num_nodes += 1
 
