@@ -3,6 +3,7 @@
 #include "txn.h"
 #include "txn_table.h"
 #include "manager.h"
+#include "log.h"
 
 
 /*
@@ -90,6 +91,15 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         response->set_response_type( SundialResponse::SYS_RESP );
         return; 
     }
+
+#if LOG_NODE
+    if (request->request_type() == SundialRequest::LOG_YES_REQ ||
+        request->request_type() == SundialRequest::LOG_ABORT_REQ ||
+        request->request_type() == SundialRequest::LOG_COMMIT_REQ) {
+        log_manager->log(request, response);
+        return;
+    }
+#endif
 
     uint64_t txn_id = request->txn_id();
     TxnManager * txn_man = txn_table->get_txn(txn_id);

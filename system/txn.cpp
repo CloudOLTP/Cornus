@@ -57,6 +57,8 @@ TxnManager::~TxnManager()
     delete _cc_manager;
     for (auto kvp : _remote_nodes_involved)
         delete kvp.second;
+    for (auto kvp : _log_nodes_involved)
+        delete kvp.second;
     delete log_semaphore;
     delete dependency_semaphore;
     delete rpc_semaphore;
@@ -141,6 +143,9 @@ TxnManager::restart() {
     for (auto kvp : _remote_nodes_involved)
         delete kvp.second;
     _remote_nodes_involved.clear();
+    for (auto kvp : _log_nodes_involved)
+        delete kvp.second;
+    _log_nodes_involved.clear();
     return start();
 }
 
@@ -238,6 +243,11 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     }
 #else
     // if logging didn't happen, process commit phase
+#if REMOTE_LOG
+    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+            SundialRequest::LOG_ABORT_REQ;
+    send_log_request(g_storage_node_id, type);
+#endif
     _cc_manager->cleanup(rc);
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
 #endif
@@ -246,6 +256,38 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 
 // For Distributed DBMS
 // ====================
+RC
+TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
+{
+    if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
+        _log_nodes_involved[node_id] = new RemoteNodeInfo;
+        _log_nodes_involved[node_id]->state = RUNNING;
+    }
+    SundialRequest &request = _log_nodes_involved[node_id]->request;
+    SundialResponse &response = _log_nodes_involved[node_id]->response;
+    request.Clear();
+    response.Clear();
+    request.set_txn_id( get_txn_id() );
+    request.set_request_type( type );
+
+    char * log_record = NULL;
+    uint32_t log_record_size = 0;
+    if (type == SundialRequest::LOG_COMMIT_REQ) {   // only commit need to log modified data
+        log_record_size = _cc_manager->get_log_record(log_record);
+    }
+    request.set_log_data(log_record);
+    request.set_log_data_size(log_record_size);
+#if ASYNC_RPC
+    rpc_semaphore->incr();
+    rpc_client->sendRequestAsync(this, node_id, request, response);
+    rpc_semaphore->wait();
+    assert (response.response_type() == SundialResponse::RESP_LOG_YES
+            || response.response_type() == SundialResponse::RESP_LOG_ABORT
+            || response.response_type() == SundialResponse::RESP_LOG_COMMIT);
+#endif
+    return RCOK;
+}
+
 RC
 TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t index_id,
                                      uint64_t table_id, access_t access_type)

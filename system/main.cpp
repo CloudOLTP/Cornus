@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
         usleep(1);
 
     log_manager->stop_flush_thread();
+    delete log_manager;
     cout << "Complete." << endl;
 
     return 0;
@@ -67,6 +68,7 @@ int main(int argc, char* argv[])
 {
     parser(argc, argv);
     cout << "start node " << g_node_id << endl;
+    g_storage_node_id = g_num_nodes_and_storage - 1 - g_node_id;
 
     g_total_num_threads = g_num_worker_threads;
 

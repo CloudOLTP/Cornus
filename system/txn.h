@@ -60,6 +60,7 @@ public:
 public:
     RC send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t index_id,
                                 uint64_t table_id, access_t access_type);
+    RC send_log_request(uint64_t node_id, SundialRequest::RequestType type);
     RC process_remote_request(const SundialRequest* request, SundialResponse* response);
 
     void set_sub_txn(bool is_sub_txn)     { _is_sub_txn = is_sub_txn; }
@@ -105,6 +106,7 @@ private:
         SundialResponse response;
     };
     std::map<uint32_t, RemoteNodeInfo *> _remote_nodes_involved;
+    std::map<uint32_t, RemoteNodeInfo *> _log_nodes_involved;
 
     // stats
     // =====
