@@ -37,28 +37,14 @@ int main(int argc, char* argv[])
     pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
 
     cout << "Synchronization starts" << endl;
-    // Notify other nodes that the current node has finished initialization
-    for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
-        if (i == g_node_id) continue;
-        SundialRequest request;
-        SundialResponse response;
-        request.set_request_type( SundialRequest::SYS_REQ );
-        rpc_client->sendRequest(i, request, response);
-    }
+
     // Can start only if all other nodes have also finished initialization
-    while (glob_manager->num_sync_requests_received() < g_num_nodes_and_storage - 1)
+    while (glob_manager->num_sync_requests_received() < g_num_nodes)
         usleep(1);
     cout << "Synchronization done" << endl;
 
-    SundialRequest request;
-    SundialResponse response;
-    request.set_request_type( SundialRequest::SYS_REQ );
-    // Notify other nodes the completion of the current node.
-    for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
-        if (i == g_node_id) continue;
-        rpc_client->sendRequest(i, request, response);
-    }
-    while (glob_manager->num_sync_requests_received() < (g_num_nodes_and_storage - 1) * 2)
+
+    while (glob_manager->num_sync_requests_received() < (g_num_nodes) * 2)
         usleep(1);
 
     cout << "Complete." << endl;
@@ -122,6 +108,9 @@ int main(int argc, char* argv[])
         worker_threads[i] = new WorkerThread(next_thread_id ++);
         pthreads_worker[i] = new pthread_t;
     }
+
+    // make sure server is setup before moving on
+    usleep(100);
 #if DISTRIBUTED
     cout << "Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
@@ -138,7 +127,7 @@ int main(int argc, char* argv[])
     }
     // Can start only if all other nodes have also finished initialization
 #if REMOTE_LOG
-    while (glob_manager->num_sync_requests_received() < g_num_nodes_and_storage - 1)
+    while (glob_manager->num_sync_requests_received() < g_num_nodes - 1)
 #else
     while (glob_manager->num_sync_requests_received() < g_num_nodes - 1)
 #endif
@@ -175,7 +164,7 @@ int main(int argc, char* argv[])
         rpc_client->sendRequest(i, request, response);
     }
 #if REMOTE_LOG
-    while (glob_manager->num_sync_requests_received() < (g_num_nodes_and_storage - 1) * 2)
+    while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
 #else
     while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
 #endif
