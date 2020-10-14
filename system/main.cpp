@@ -28,6 +28,8 @@ int main(int argc, char* argv[])
     cout << "start node " << g_node_id << endl;
     glob_manager = new Manager;
     glob_manager->calibrate_cpu_frequency();
+    g_total_num_threads = 1; // leave one thred slot to collect stats
+    glob_stats = new Stats;
     rpc_client = new SundialRPCClient();
     rpc_server = new SundialRPCServerImpl;
 
@@ -44,7 +46,7 @@ int main(int argc, char* argv[])
         rpc_client->sendRequest(i, request, response);
     }
     // Can start only if all other nodes have also finished initialization
-    while (glob_manager->num_sync_requests_received() < g_num_nodes - 1)
+    while (glob_manager->num_sync_requests_received() < g_num_nodes_and_storage - 1)
         usleep(1);
     cout << "Synchronization done" << endl;
 
@@ -56,7 +58,7 @@ int main(int argc, char* argv[])
         if (i == g_node_id) continue;
         rpc_client->sendRequest(i, request, response);
     }
-    while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
+    while (glob_manager->num_sync_requests_received() < (g_num_nodes_and_storage - 1) * 2)
         usleep(1);
 
     cout << "Complete." << endl;

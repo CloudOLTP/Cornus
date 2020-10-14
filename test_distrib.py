@@ -13,11 +13,9 @@ def start_nodes(arg, curr_node):
     log_node = "false"
     for addr in f:
         if '#' in addr:
-            continue
-        if addr[0] == '=':
-            if addr[1] == 'l':
+            if addr[1] == '=' and addr[2] == 'l':
                 log_node = 'true'
-                continue
+            continue
         if curr_node == num_nodes:
             num_nodes += 1
             continue
