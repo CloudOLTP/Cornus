@@ -6,9 +6,14 @@
 #include "manager.h"
 #include "query.h"
 #include "txn_table.h"
+#include <string>
 
 #if LOG_ENABLE
 #include "logging_thread.h"
+#include "log.h"
+#endif
+
+#if LOG_NODE
 #include "log.h"
 #endif
 
@@ -28,7 +33,12 @@ int main(int argc, char* argv[])
     cout << "start node " << g_node_id << endl;
     glob_manager = new Manager;
     glob_manager->calibrate_cpu_frequency();
-    g_total_num_threads = 1; // leave one thred slot to collect stats
+    char log_name[50];
+    strcpy(log_name, "log_node_");
+    strcat(log_name, std::to_string(g_node_id).c_str());
+    log_manager = new LogManager(log_name);
+    log_manager->run_flush_thread();
+    g_total_num_threads = 1; // leave one thread slot to collect stats
     glob_stats = new Stats;
     rpc_client = new SundialRPCClient();
     rpc_server = new SundialRPCServerImpl;
@@ -47,6 +57,7 @@ int main(int argc, char* argv[])
     while (glob_manager->num_sync_requests_received() < (g_num_nodes) * 2)
         usleep(1);
 
+    log_manager->stop_flush_thread();
     cout << "Complete." << endl;
 
     return 0;

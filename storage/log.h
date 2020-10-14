@@ -1,51 +1,84 @@
 #pragma once
-
-#include <queue>
-
 #include "global.h"
 #include "helper.h"
-#include "txn.h"
+#include <map>
+#include "log_record.h"
 
-class TxnManager;
 
-struct LogBufferEntry {
-    TxnManager * txn;
-    bool filled;
-    int64_t lsn;
-    string record_string;
-};
+#include "sundial.pb.h"
+#include "sundial.grpc.pb.h"
 
-struct LogMetadata {
-    uint32_t num_records;
-    int64_t lsn;
-};
+//group commit
+#include <condition_variable>
+#include <future>
+#include <mutex>
+#include <atomic>
+#include <chrono>
+#include <fcntl.h>
+#include <unistd.h>
 
+// logging helper
+#define PGSIZE 512
+#define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
+
+using sundial_rpc::SundialRequest;
+using sundial_rpc::SundialResponse;
+
+typedef struct _chunck_types {
+    int yes;
+    int commmit;
+    int abort;
+    uint64_t size;
+    uint64_t flushing_time;
+} chunck_types;
 
 class LogManager {
 public:
     LogManager();
     ~LogManager();
-    // Methods accessed by worker threads
-    void                log(TxnManager * txn, uint32_t size, char * record);
+    LogManager(const char *log_name);
+    // TODO: replace by sundial grpc
+    RC log(const SundialRequest* request, SundialResponse* reply);
 
-    // Methods accessed by logging threads
-    RC                  run();
+    void run_flush_thread();
+    void stop_flush_thread();
+    void flush(bool force);
+    void test();
+
 private:
-    bool                check_response();
+    uint32_t _buffer_size;
+    char * _buffer;
+    uint32_t _lsn;
+    FILE * _log_fp;
+    int _log_fd;
+    uint32_t _name_size;
+    char * _log_name;
 
-    LogBufferEntry *    _log_buffer;
-    uint32_t            _buffer_size;
-    uint32_t            _num_shards;
-    int64_t               _curr_shard_id;
+    //group commit
+    char *flush_buffer_;
+    uint32_t logBufferOffset_ = 0;
+    uint32_t flushBufferSize_ = 0;
+    bool ENABLE_LOGGING = false;
+    std::chrono::duration<long long int, std::micro> log_timeout =
+            std::chrono::microseconds(LOG_TIMEOUT);
+    bool needFlush_ = false; //for group commit
+    std::condition_variable * appendCv_; // for notifying append thread
+    // latch for cv
+    std::mutex * latch_;
+    // flush thread
+    std::thread *flush_thread_;
+    // for notifying flush thread
+    std::condition_variable * cv_;
+    // for ensuring log on disk
+    std::condition_variable * flush_cv_;
 
-    int64_t             _lsn;         // next lsn to allocate
-    int64_t             _request_lsn;
-    int64_t             _commit_lsn;  // next lsn to commit
+    // LogRecord::Type check_log(Message * msg);
+    void log_request(const SundialRequest* request, SundialResponse* reply);
+    uint64_t get_last_lsn();
+    SundialRequest::RequestType log_to_request(LogRecord::Type vote);
+    LogRecord::Type request_to_log(SundialRequest::RequestType vote);
+    SundialResponse::ResponseType request_to_response(SundialRequest::RequestType type);
 
-    std::queue<LogMetadata> _log_metadata;
-
-    uint64_t             _max_logging_interval;
-    uint64_t             _max_records_per_log;
-    uint32_t             _curr_records;
-    uint64_t             _last_logging_time;
+    std::mutex * swap_lock;
+    std::vector<chunck_types> debug_chunck;
 };

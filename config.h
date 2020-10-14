@@ -186,5 +186,6 @@
 #define ALWAYS_CHECK                    2    // always contact remote node
 #define READ_INTENSIVE                  3    // only read cached data that is read-intensive
 
-#define LOG_NODE                        false
+#define LOG_NODE                        true
 #define REMOTE_LOG                      true
+#define LOG_TIMEOUT                     1000  // in us

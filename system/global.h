@@ -56,7 +56,7 @@ typedef uint64_t ts_t; // time stamp type
 extern Stats *          glob_stats;
 extern Manager *        glob_manager;
 
-#if LOG_ENABLE
+#if LOG_ENABLE || LOG_NODE
 extern LogManager *     log_manager;
 #endif
 

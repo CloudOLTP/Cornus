@@ -188,3 +188,4 @@
 
 #define LOG_NODE                        false // Whether the node is storage node or not
 #define REMOTE_LOG                      true  // whether use remote log or not: in distributed 2pc/1pc it is always true
+#define LOG_TIMEOUT                     1000  // in us

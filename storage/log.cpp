@@ -1,127 +1,229 @@
 #include "log.h"
-#include "manager.h"
-#include "txn_table.h"
-
-#if LOG_ENABLE
-
-//#define BOOST_NO_EXCEPTIONS
-//void boost::throw_exception(std::exception const & e){
-    //do nothing
-//}
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 LogManager::LogManager()
 {
-    _buffer_size = 8192 * 2; //g_num_worker_threads * 2;
-    _num_shards = 500;
-    _curr_shard_id = 0;
-    _max_logging_interval = 1000000; // in nanoseconds
-    _max_records_per_log = 100;
 
-    // TODO. Shuffle the entries in _log_metadata to avoid false sharing.
-    _log_buffer = new LogBufferEntry [_buffer_size];
-    for (uint32_t i = 0; i < _buffer_size; i ++) {
-        _log_buffer[i].txn = NULL;
-        _log_buffer[i].filled = false;
+}
+
+LogManager::LogManager(const char * log_name)
+{
+    _buffer_size = 64 * 1024 * 1024;
+    int align = 512 - 1;
+    _lsn = 0;
+    _name_size = 50;
+    _log_name = new char[_name_size];
+    strcpy(_log_name, log_name);
+    //TODO: delete O_TRUNC when recovery is needed.
+    _log_fd = open(log_name, O_RDWR | O_CREAT | O_TRUNC | O_APPEND | O_DIRECT, 0755);
+    if (_log_fd == 0) {
+        perror("open log file");
+        exit(1);
     }
 
-    _lsn = 0;
-    _commit_lsn = 0;
-    _request_lsn = 0;
+    _buffer = (char *)malloc(_buffer_size + align); // 64 MB
+    _buffer = (char *)(((uintptr_t)_buffer + align)&~((uintptr_t)align));
+    flush_buffer_ = (char *)malloc(_buffer_size + align); // 64 MB
+    flush_buffer_ = (char *)(((uintptr_t)flush_buffer_ + align)&~((uintptr_t)align));
 
-    _curr_records = 0;
-    _last_logging_time = get_sys_clock();
+    // group commit
+    latch_ = new std::mutex();
+    swap_lock = new std::mutex();
+    cv_ = new std::condition_variable();
+    appendCv_ = new std::condition_variable();
+    flush_cv_ = new std::condition_variable();
+    //latch_return_response_ = new std::mutex();
 
 }
 
-LogManager::~LogManager()
-{
+LogManager::~LogManager() {
+    delete[] _log_name;
+    _log_name = nullptr;
+    close(_log_fd);
 }
-
 
 void
-LogManager::log(TxnManager * txn, uint32_t size, char * record)
-{
-    // If the buffer size is too small, make it bigger or limit the number of
-    // threads.
-    //assert (_commit_lsn + _buffer_size - _lsn > g_max_num_active_txns * 2);
-
-    int64_t curr_lsn = ATOM_FETCH_ADD(_lsn, 1);
-    assert(curr_lsn < _commit_lsn + _buffer_size);
-
-    // Write to _log_buffer.
-    int32_t buffer_index = curr_lsn % _buffer_size;
-    LogBufferEntry &entry = _log_buffer[buffer_index];
-    entry.txn = txn;
-    entry.lsn = curr_lsn;
-    entry.record_string = string(record);
-    entry.record_string.resize(size);
-    entry.record_string += std::to_string(curr_lsn);
-
-    COMPILER_BARRIER
-
-    entry.filled = true;
-    INC_FLOAT_STATS(log_size, entry.record_string.length());
-    INC_INT_STATS(log_num, 1);
+LogManager::test() {
+    printf("test\n");
 }
 
-RC
-LogManager::run()
-{
-    cout << "[log] start loop" << endl;
-    // run() is executed by the logging thread. It has two jobs:
-    //    1. receive responses from logging service, and commit transactions.
-    //    2. write records in the log_buffer to disk
 
-    //std::string record_string;
-    while (!glob_manager->is_sim_done()) {
-        if (check_response())
-            continue;
-        assert(_curr_records < _max_records_per_log);
-        while (_curr_records < _max_records_per_log) {
-            LogBufferEntry &entry = _log_buffer[(_request_lsn + _curr_records) % _buffer_size];
-            if (_request_lsn < _lsn && entry.filled) {
-                uint64_t t1 = get_sys_clock();
-                // Log
-                _curr_records ++;
-                INC_FLOAT_STATS(logging_send_time, get_sys_clock() - t1);
-            } else
-                break;
-        }
-        uint64_t curr_time = get_sys_clock();
-        if (_curr_records == _max_records_per_log
-            || (curr_time - _last_logging_time >= _max_logging_interval
-                && _curr_records > 0)) {
-            uint64_t t1 = get_sys_clock();
-            _last_logging_time = curr_time;
-            _request_lsn += _curr_records;
-            //_log_metadata.push(metadata);
-            _curr_records = 0;
-            INC_FLOAT_STATS(logging_send_time, get_sys_clock() - t1);
-        }
-    }
+RC LogManager::log(const SundialRequest* request, SundialResponse* reply) {
+    // TODO: add logic for insert once
+    log_request(request, reply);
     return RCOK;
 }
 
-bool
-LogManager::check_response() {
-    if (!_log_metadata.empty()) {
-        printf("[log] check response - has metadata"); 
-        LogMetadata &metadata = _log_metadata.front();
-            uint64_t t1 = get_sys_clock();
-            // commit this transaction
-            for (uint32_t i = 0; i < metadata.num_records; i++) {
-                LogBufferEntry &entry = _log_buffer[(metadata.lsn + i) % _buffer_size];
-                entry.txn->log_semaphore->decr();
-                printf("[log] txn-%lu finishes logging and decr semaphore\n", entry.txn->get_txn_id());
-                entry.txn = NULL;
-                entry.filled = false;
-            }
-            _commit_lsn += metadata.num_records;
-            _log_metadata.pop();
-            INC_FLOAT_STATS(logging_commit_time, get_sys_clock() - t1);
-            return true;
+// if no log return INVALID else return the log type
+/*
+LogRecord::Type LogManager::check_log(Message * msg) {
+    LogRecord::Type vote = LogRecord::INVALID;
+    uint16_t watermark = msg->get_lsn();
+    if (watermark == -1) {
+        // no log for this txn
+        return vote;
     }
-    return false;
+    FILE * fp = fopen(_log_name, "r");
+    fseek(fp, 0, SEEK_END);
+    fseek(fp, -sizeof(LogRecord), SEEK_CUR);
+    LogRecord cur_log;
+    if (fread((void *)&cur_log, sizeof(LogRecord), 1, fp) != 1) {
+        return vote;
+    }
+    while (cur_log.get_latest_lsn() > watermark) {
+        //TODO: whether to add log type equals?
+        if (cur_log.get_txn_id() == msg->get_txn_id() &&
+        log_to_message(cur_log.get_log_record_type()) == msg->get_type()) {
+            // log exists
+            vote = cur_log.get_log_record_type();
+            break;
+        }
+        if (fseek(fp, -2 * sizeof(LogRecord), SEEK_CUR) == -1)
+            break;
+        assert(fread((void *)&cur_log, sizeof(LogRecord), 1, fp) == 1);
+    }
+    fseek(fp, 0, SEEK_END);
+    fclose(fp);
+    return vote;
+}
+*/
+
+void LogManager::log_request(const SundialRequest* request, SundialResponse * reply) {
+    std::unique_lock<std::mutex> latch(*latch_);
+    ATOM_FETCH_ADD(_lsn, 1);
+    uint32_t size_total = sizeof(LogRecord) + request->log_data_size();
+    swap_lock->lock();
+    if (logBufferOffset_ + size_total > _buffer_size) {
+        needFlush_ = true;
+        cv_->notify_one(); //let RunFlushThread wake up.
+        appendCv_->wait(latch, [&] {return logBufferOffset_ <= _buffer_size;});
+        // logBufferOffset_ = 0;
+    }
+    LogRecord log{request->txn_id(),
+                  _lsn, request_to_log(request->request_type())};
+    // format: | node_id | txn_id | lsn | type | size of data(if any) | data(if any)
+    memcpy(_buffer + logBufferOffset_, &log, sizeof(log));
+    logBufferOffset_ += sizeof(LogRecord);
+    if (request->log_data_size() != 0) {
+        uint64_t data_size = request->log_data_size();
+        memcpy(_buffer + logBufferOffset_, &data_size, sizeof(uint64_t));
+        logBufferOffset_ += sizeof(uint64_t);
+        memcpy(_buffer + logBufferOffset_, request->log_data().c_str(), data_size);
+        logBufferOffset_ += data_size;
+    }
+    swap_lock->unlock();
+    // TODO: sleep until flush finish and wakeup
+    flush_cv_->wait(latch);
+    reply->set_response_type(request_to_response(request->request_type()));
 }
 
-#endif
+uint64_t LogManager::get_last_lsn() {
+    return _lsn;
+}
+
+//SundialRequest::RequestType LogManager::log_to_request(LogRecord::Type vote) {
+//    switch (vote)
+//    {
+//        case LogRecord::INVALID :
+//            return SundialRequest:: LOG_ACK;
+//        case LogRecord::COMMIT :
+//            return SundialRequest:: LOG_COMMIT;
+//        case LogRecord::ABORT :
+//            return SundialRequest:: LOG_ABORT;
+//        case LogRecord::YES :
+//            return SundialRequest:: LOG_YES;
+//        default:
+//            assert(false);
+//    }
+//}
+
+SundialResponse::ResponseType LogManager::request_to_response(SundialRequest::RequestType type) {
+    switch (type)
+    {
+        case SundialRequest:: LOG_YES_REQ :
+            return SundialResponse:: RESP_LOG_YES;
+        case SundialRequest:: LOG_COMMIT_REQ :
+            return SundialResponse:: RESP_LOG_COMMIT;
+        case SundialRequest:: LOG_ABORT_REQ :
+            return SundialResponse:: RESP_LOG_ABORT;
+        default:
+            assert(false);
+    }
+};
+
+LogRecord::Type LogManager::request_to_log(SundialRequest::RequestType vote) {
+    switch (vote)
+    {
+        case SundialRequest:: LOG_COMMIT_REQ:
+            return LogRecord::COMMIT;
+        case SundialRequest:: LOG_ABORT_REQ:
+            return LogRecord::ABORT;
+        case SundialRequest:: LOG_YES_REQ:
+            return LogRecord::YES;
+        default:
+            assert(false);
+    }
+}
+//group commit
+// spawn a separate thread to wake up periodically to flush
+void LogManager::run_flush_thread() {
+    if (ENABLE_LOGGING) return;
+    ENABLE_LOGGING = true;
+    flush_thread_ = new std::thread([&] {
+        while (ENABLE_LOGGING) { //The thread is triggered every LOG_TIMEOUT seconds or when the log buffer is full
+            std::unique_lock<std::mutex> latch(*latch_);
+            // (2) When LOG_TIMEOUT is triggered.
+            cv_->wait_for(latch, log_timeout, [&] {return needFlush_;});
+            assert(flushBufferSize_ == 0);
+            if (logBufferOffset_ > 0) {
+
+                swap_lock->lock();
+                std::swap(_buffer,flush_buffer_);
+                std::swap(logBufferOffset_,flushBufferSize_);
+                swap_lock->unlock();
+
+                if (write(_log_fd, flush_buffer_, PGROUNDUP(flushBufferSize_)) == -1) {
+                    perror("write2");
+                    exit(1);
+                }
+                // }
+                if (fsync(_log_fd) == -1) {
+                    perror("fsync");
+                    exit(1);
+                }
+
+                flushBufferSize_ = 0;
+                // TODO: finish flushing and notify all
+                flush_cv_->notify_all();
+            }
+            needFlush_ = false;
+            appendCv_->notify_all();
+        }
+    });
+};
+/*
+ * Stop and join the flush thread, set ENABLE_LOGGING = false
+ */
+void LogManager::stop_flush_thread() {
+    if (!ENABLE_LOGGING) return;
+    ENABLE_LOGGING = false;
+    flush(true);
+    flush_thread_->join();
+    assert(logBufferOffset_ == 0 && flushBufferSize_ == 0);
+    delete flush_thread_;
+};
+
+void LogManager::flush(bool force) {
+    std::unique_lock<std::mutex> latch(*latch_);
+    if (force) {
+        needFlush_ = true;
+        cv_->notify_one(); //let RunFlushThread wake up.
+        if (ENABLE_LOGGING)
+            appendCv_->wait(latch, [&] { return !needFlush_; }); //block append thread
+    } else {
+        appendCv_->wait(latch);// group commit,  But instead of forcing flush,
+        // you need to wait for LOG_TIMEOUT or other operations to implicitly trigger the flush operations
+    }
+}
