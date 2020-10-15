@@ -6,6 +6,7 @@
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024
 #define NUM_RPC_SERVER_THREADS          24
+#define NUM_STORAGE_RPC_SERVER_THREADS          24
 
 // only a limited number of active threads are allowed. This configuration is
 // effective only when LOG_ENABLE == true.
