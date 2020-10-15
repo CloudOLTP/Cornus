@@ -99,14 +99,15 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
 void
 SundialRPCClient::sendRequestDone(SundialResponse * response)
 {
-    if (IS_LOG_RESPONSE(response->response_type())) {
-        // not decrease semaphore for log resp
-        return;
-    }
     uint64_t txn_id = response->txn_id();
     TxnManager * txn = txn_table->get_txn(txn_id);
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response->response_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response->response_type() ] += response->SpaceUsedLong();
     // mark as returned. 
-    txn->rpc_semaphore->decr();
+    if (IS_LOG_RESPONSE(response->response_type())) {
+        // not decrease semaphore for log resp
+        txn->rpc_log_semaphore->decr();
+    } else {
+        txn->rpc_semaphore->decr();
+    }
 }

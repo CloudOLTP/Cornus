@@ -48,6 +48,7 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     log_semaphore = new SemaphoreSync();
     dependency_semaphore = new SemaphoreSync();
     rpc_semaphore = new SemaphoreSync();
+    rpc_log_semaphore = new SemaphoreSync();
 }
 
 TxnManager::~TxnManager()
@@ -62,6 +63,7 @@ TxnManager::~TxnManager()
     delete log_semaphore;
     delete dependency_semaphore;
     delete rpc_semaphore;
+    delete rpc_log_semaphore;
 }
 
 void
@@ -280,9 +282,9 @@ TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
     }
     request.set_log_data_size(log_record_size);
 #if ASYNC_RPC
-    // rpc_semaphore->incr();
+    rpc_log_semaphore->incr();
     rpc_client->sendRequestAsync(this, node_id, request, response);
-    // rpc_semaphore->wait();
+    rpc_log_semaphore->wait();
     /*
     M_ASSERT(response.response_type() == SundialResponse::RESP_LOG_YES
             || response.response_type() == SundialResponse::RESP_LOG_ABORT

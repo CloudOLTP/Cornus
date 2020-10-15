@@ -54,6 +54,7 @@ public:
     SemaphoreSync *   log_semaphore;
     SemaphoreSync *   dependency_semaphore;
     SemaphoreSync *   rpc_semaphore;
+    SemaphoreSync *   rpc_log_semaphore;
 
     // Distributed transactions
     // ========================
