@@ -350,6 +350,10 @@ TxnManager::process_2pc_phase1()
     glob_manager->wakeup_next_thread();
   #endif
 #endif
+#if REMOTE_LOG
+    SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
+    send_log_request(g_storage_node_id, type);
+#endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         assert(it->second->state == RUNNING);
         SundialRequest &request = it->second->request;
@@ -414,6 +418,11 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: perform local logging and commit request in parallel
     // log_semaphore->wait();
   #endif
+#if REMOTE_LOG
+    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+            SundialRequest::LOG_ABORT_REQ;
+    send_log_request(g_storage_node_id, type);
+#endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // No need to run this phase if the remote sub-txn has already committed
         // or aborted.
@@ -466,6 +475,8 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
     char * log_record = NULL;
     uint32_t log_record_size = 0;
   #endif
+    int log_commit = 0;
+    SundialRequest::RequestType log_type;
     switch(request->request_type()) {
         case SundialRequest::READ_REQ :
             num_tuples = request->read_requests_size();
@@ -524,10 +535,17 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
     #endif
             log_semaphore->wait();
   #endif
+    #if REMOTE_LOG
+        send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
+    #endif
             response->set_response_type( SundialResponse::PREPARED_OK );
             return rc;
         case SundialRequest::COMMIT_REQ :
+            log_type = SundialRequest::LOG_COMMIT_REQ;
+            log_commit = 1;
         case SundialRequest::ABORT_REQ :
+            if (log_commit == 0)
+                log_type = SundialRequest::LOG_ABORT_REQ;
   #if LOG_ENABLE
             record = std::to_string(_txn_id);
             log_record = (char *)record.c_str();
@@ -535,6 +553,9 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             log_semaphore->incr();
             log_manager->log(this, log_record_size, log_record);
   #endif
+    #if REMOTE_LOG
+        send_log_request(g_storage_node_id, log_type);
+    #endif
             dependency_semaphore->wait();
             rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;
             _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
