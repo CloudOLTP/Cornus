@@ -249,6 +249,9 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
     send_log_request(g_storage_node_id, type);
+    #if ASYNC_RPC
+        rpc_log_semaphore->wait();
+    #endif
 #endif
     _cc_manager->cleanup(rc);
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
@@ -284,7 +287,6 @@ TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
 #if ASYNC_RPC
     rpc_log_semaphore->incr();
     rpc_client->sendRequestAsync(this, node_id, request, response);
-    rpc_log_semaphore->wait();
     /*
     M_ASSERT(response.response_type() == SundialResponse::RESP_LOG_YES
             || response.response_type() == SundialResponse::RESP_LOG_ABORT
@@ -391,6 +393,7 @@ TxnManager::process_2pc_phase1()
     log_semaphore->wait();
 #if ASYNC_RPC
     rpc_semaphore->wait();
+    rpc_log_semaphore->wait();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         assert(it->second->state == RUNNING);
         SundialResponse &response = it->second->response;
@@ -428,6 +431,9 @@ TxnManager::process_2pc_phase2(RC rc)
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
     send_log_request(g_storage_node_id, type);
+    #if ASYNC_RPC
+        rpc_log_semaphore->wait();
+    #endif
 #endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // No need to run this phase if the remote sub-txn has already committed
@@ -543,6 +549,9 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
   #endif
     #if REMOTE_LOG
         send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
+        #if ASYNC_RPC
+            rpc_log_semaphore->wait();
+        #endif
     #endif
             response->set_response_type( SundialResponse::PREPARED_OK );
             return rc;
@@ -561,6 +570,9 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
   #endif
     #if REMOTE_LOG
         send_log_request(g_storage_node_id, log_type);
+        #if ASYNC_RPC
+            rpc_log_semaphore->wait();
+        #endif
     #endif
             dependency_semaphore->wait();
             rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;
