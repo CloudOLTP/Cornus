@@ -61,7 +61,7 @@ public:
 
     bool                    are_all_remote_nodes_done()
 #if REMOTE_LOG
-    { return _num_sync_received == (g_num_nodes_and_storage - 1) * 2; }
+    { return _num_sync_received == (g_num_nodes - 1) * 2; }
 #else
     { return _num_sync_received == (g_num_nodes - 1) * 2; }
 #endif
