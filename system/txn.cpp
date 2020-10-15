@@ -259,12 +259,14 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 RC
 TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
 {
-    if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
-        _log_nodes_involved[node_id] = new RemoteNodeInfo;
-        _log_nodes_involved[node_id]->state = RUNNING;
-    }
-    SundialRequest &request = _log_nodes_involved[node_id]->request;
-    SundialResponse &response = _log_nodes_involved[node_id]->response;
+    // if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
+    //     _log_nodes_involved[node_id] = new RemoteNodeInfo;
+    //     _log_nodes_involved[node_id]->state = RUNNING;
+    // }
+    // SundialRequest &request = _log_nodes_involved[node_id]->request;
+    // SundialResponse &response = _log_nodes_involved[node_id]->response;
+    SundialRequest request;
+    SundialResponse response;
     request.Clear();
     response.Clear();
     request.set_txn_id( get_txn_id() );
@@ -278,13 +280,15 @@ TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
     }
     request.set_log_data_size(log_record_size);
 #if ASYNC_RPC
-    rpc_semaphore->incr();
+    // rpc_semaphore->incr();
     rpc_client->sendRequestAsync(this, node_id, request, response);
-    rpc_semaphore->wait();
+    // rpc_semaphore->wait();
+    /*
     M_ASSERT(response.response_type() == SundialResponse::RESP_LOG_YES
             || response.response_type() == SundialResponse::RESP_LOG_ABORT
             || response.response_type() == SundialResponse::RESP_LOG_COMMIT,
             "type=%d\n", response.response_type());
+            */
 #endif
     return RCOK;
 }

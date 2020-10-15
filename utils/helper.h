@@ -174,3 +174,7 @@ inline uint64_t get_sys_clock() {
 #endif
 }
 
+#define IS_LOG_RESPONSE(type)  \
+     (type == SundialResponse::RESP_LOG_YES \
+            || type == SundialResponse::RESP_LOG_ABORT \
+            || type== SundialResponse::RESP_LOG_COMMIT) 
