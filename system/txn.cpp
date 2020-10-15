@@ -431,7 +431,7 @@ TxnManager::process_2pc_phase2(RC rc)
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
     send_log_request(g_storage_node_id, type);
-    #if ASYNC_RPC
+    #if ASYNC_RPC && COMMIT_ALG == TWO_PC
         rpc_log_semaphore->wait();
     #endif
 #endif
@@ -463,6 +463,9 @@ TxnManager::process_2pc_phase2(RC rc)
     _cc_manager->cleanup(rc);
     log_semaphore->wait();
 #if ASYNC_RPC
+    #if COMMIT_ALG == ONE_PC
+        rpc_log_semaphore->wait();
+    #endif
     rpc_semaphore->wait();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         if (it->second->state == ABORTED || it->second->state == COMMITTED) continue;
@@ -570,7 +573,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
   #endif
     #if REMOTE_LOG
         send_log_request(g_storage_node_id, log_type);
-        #if ASYNC_RPC
+        #if ASYNC_RPC && COMMIT_ALG == TWO_PC
             rpc_log_semaphore->wait();
         #endif
     #endif
@@ -582,6 +585,9 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             // No need to wait for this log since it is optional (shared log
             // optimization)
             log_semaphore->wait();
+            #if ASYNC_RPC && COMMIT_ALG == ONE_PC
+                rpc_log_semaphore->wait();
+            #endif
             response->set_response_type( SundialResponse::ACK );
             return rc;
         default:
