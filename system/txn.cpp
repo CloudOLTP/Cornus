@@ -433,6 +433,7 @@ TxnManager::process_2pc_phase2(RC rc)
     send_log_request(g_storage_node_id, type);
     #if ASYNC_RPC && COMMIT_ALG == TWO_PC
         rpc_log_semaphore->wait();
+        _cc_manager->cleanup(rc); // release lock after receive log resp
     #endif
 #endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
@@ -460,11 +461,11 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
     dependency_semaphore->wait();
-    _cc_manager->cleanup(rc);
     log_semaphore->wait();
 #if ASYNC_RPC
     #if COMMIT_ALG == ONE_PC
-        rpc_log_semaphore->wait();
+        rpc_log_semaphore->wait(); 
+        _cc_manager->cleanup(rc); // release lock after receive log resp
     #endif
     rpc_semaphore->wait();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
@@ -580,7 +581,6 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             dependency_semaphore->wait();
             rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;
             _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
-            _cc_manager->cleanup(rc);
             // OPTIMIZATION: release locks as early as possible.
             // No need to wait for this log since it is optional (shared log
             // optimization)
@@ -588,6 +588,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             #if ASYNC_RPC && COMMIT_ALG == ONE_PC
                 rpc_log_semaphore->wait();
             #endif
+            _cc_manager->cleanup(rc); // release lock after log is received
             response->set_response_type( SundialResponse::ACK );
             return rc;
         default:
