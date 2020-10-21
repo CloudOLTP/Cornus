@@ -427,15 +427,6 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: perform local logging and commit request in parallel
     // log_semaphore->wait();
   #endif
-#if REMOTE_LOG
-    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-            SundialRequest::LOG_ABORT_REQ;
-    send_log_request(g_storage_node_id, type);
-    #if ASYNC_RPC && COMMIT_ALG == TWO_PC
-        rpc_log_semaphore->wait();
-        _cc_manager->cleanup(rc); // release lock after receive log resp
-    #endif
-#endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // No need to run this phase if the remote sub-txn has already committed
         // or aborted.
@@ -458,6 +449,16 @@ TxnManager::process_2pc_phase2(RC rc)
         _remote_nodes_involved[it->first]->state = (rc == COMMIT)? COMMITTED : ABORTED;
 #endif
     }
+    
+#if REMOTE_LOG
+    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+            SundialRequest::LOG_ABORT_REQ;
+    send_log_request(g_storage_node_id, type);
+    #if ASYNC_RPC && COMMIT_ALG == TWO_PC
+        rpc_log_semaphore->wait();
+        _cc_manager->cleanup(rc); // release lock after receive log resp
+    #endif
+#endif
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
     dependency_semaphore->wait();
