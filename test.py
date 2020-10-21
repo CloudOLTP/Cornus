@@ -36,7 +36,7 @@ def run(test = '', job=None):
     app_flags = ""
     if "NODE_ID" in job:
         app_flags += "-Gn{} ".format(job['NODE_ID'])
-    os.system("./rundb %s" % app_flags)
+    os.system("./rundb %s | tee temp.out" % app_flags)
 
 
 def compile_and_run(job) :
@@ -44,16 +44,30 @@ def compile_and_run(job) :
     run('', job)
 
 def parse_output(job):
-    output = open("temp.out")
-    for line in output:
-        line = line.strip()
-        if "[summary]" in line:
-            for token in line.strip().split('[summary]')[-1].split(','):
-                key, val = token.strip().split('=')
-                job[key] = val
-            break
-    output.close()
-    return job
+	output = open("temp.out")
+	phase = 0
+	for line in output:
+		if phase == 0:
+			if "=Worker Thread=" in line:
+				phase = 1
+				continue
+		elif phase == 1:
+			if "=Input/Output Thread=" in line:
+				phase = 2
+				continue
+			line = line.strip()
+			if ":" in line:
+				# for token in line.strip().split('[summary]')[-1].split(','):
+				list = line.split(':')
+				# list = re.split(r'\s+|:\s+', line)
+				key = list[0].strip()
+				list[1] = list[1].strip()
+				val = re.split(r'\s+', list[1])[0]
+				job[key] = val
+				# break
+	output.close()
+	os.system("rm -f temp.out")
+	return job
 
 def parse_arg(arg):
     job = {}
@@ -67,4 +81,8 @@ if __name__ == "__main__":
     job = parse_arg(sys.argv[1:])
     print(json.dumps(job)+"\n")
     compile_and_run(job)
+    job = parse_output(job)
+    stats = open("outputs/stats.json", 'a+')
+    stats.write(json.dumps(job)+"\n")
+    stats.close()
 

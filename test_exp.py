@@ -45,4 +45,5 @@ if __name__ == "__main__":
             print("[LOG] FINISH EXECUTION ")
         else:
             compile_and_run(parse_arg(arg))
+    os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")
