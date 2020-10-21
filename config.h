@@ -1,17 +1,17 @@
 #pragma once
 
-#define DISTRIBUTED                     false
-#define NUM_NODES                       1
+#define DISTRIBUTED true
+#define NUM_NODES 2
 
 // number of server threads on each node
-#define NUM_WORKER_THREADS              4096 //2048 //1024
-#define NUM_RPC_SERVER_THREADS          24
-#define NUM_STORAGE_RPC_SERVER_THREADS          24
+#define NUM_WORKER_THREADS 28
+#define NUM_RPC_SERVER_THREADS 14
+#define NUM_STORAGE_RPC_SERVER_THREADS 40
 
 // only a limited number of active threads are allowed. This configuration is
 // effective only when LOG_ENABLE == true.
-#define ENABLE_ADMISSION_CONTROL        true
-#define MAX_NUM_ACTIVE_TXNS             16
+#define ENABLE_ADMISSION_CONTROL false
+#define MAX_NUM_ACTIVE_TXNS 28
 
 // WORKLOAD can be YCSB or TPCC
 #define WORKLOAD                        TPCC
@@ -90,8 +90,8 @@
 
 // Logging
 // =======
-#define LOG_ENABLE                      true
-#define CONTROLLED_LOCK_VIOLATION       true
+#define LOG_ENABLE false
+#define CONTROLLED_LOCK_VIOLATION false
 
 // Benchmark
 // =========
@@ -119,7 +119,7 @@
 // For large warehouse count, the tables do not fit in memory
 // small tpcc schemas shrink the table size.
 #define TPCC_SMALL                      false
-#define NUM_WH                          16
+#define NUM_WH 32
 
 // In the current implementation, the standard delivery transaction is modeled
 // as 10 seperate transactions (one for each district). All the percentage
@@ -190,3 +190,7 @@
 #define LOG_NODE                        false // Whether the node is storage node or not
 #define REMOTE_LOG                      true  // whether use remote log or not: in distributed 2pc/1pc it is always true
 #define LOG_TIMEOUT                     1000  // in us
+
+#define ONE_PC                          1
+#define TWO_PC                          2
+#define COMMIT_ALG TWO_PC
