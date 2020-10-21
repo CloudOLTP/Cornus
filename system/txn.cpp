@@ -111,6 +111,9 @@ TxnManager::update_stats()
             INC_INT_STATS(num_multi_part_txn, 1);
             // latency = _commit_start_time - _txn_start_time; // why commit start time?
             latency = _finish_time - _txn_start_time;
+            #if COLLECT_LATENCY
+                INC_FLOAT_STATS(dist_txn_latency, latency);
+            #endif
         }
 #if COLLECT_LATENCY
         INC_FLOAT_STATS(txn_latency, latency);

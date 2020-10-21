@@ -9,6 +9,7 @@ enum StatsFloat {
     // Worker Thread
     STAT_run_time,
     STAT_txn_latency,
+    STAT_dist_txn_latency,
 
     STAT_time_process_txn,
     //STAT_time_commit_process,
@@ -199,6 +200,7 @@ public:
         // worker thread
         "run_time",
         "average_latency",
+        "dist_txn_latency",
 
         //"time_read_input_queue",
         "time_process_txn",
