@@ -574,21 +574,21 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
   #endif
     #if REMOTE_LOG
         send_log_request(g_storage_node_id, log_type);
-        #if ASYNC_RPC && COMMIT_ALG == TWO_PC
+        #if ASYNC_RPC // for now, commit phase of part is same for 1pc and 2pc
             rpc_log_semaphore->wait();
         #endif
     #endif
             dependency_semaphore->wait();
             rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;
             _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
+            _cc_manager->cleanup(rc); // release lock after log is received
             // OPTIMIZATION: release locks as early as possible.
             // No need to wait for this log since it is optional (shared log
             // optimization)
             log_semaphore->wait();
-            #if ASYNC_RPC && COMMIT_ALG == ONE_PC
-                rpc_log_semaphore->wait();
-            #endif
-            _cc_manager->cleanup(rc); // release lock after log is received
+            // #if ASYNC_RPC && COMMIT_ALG == ONE_PC
+            //     rpc_log_semaphore->wait();
+            // #endif
             response->set_response_type( SundialResponse::ACK );
             return rc;
         default:
