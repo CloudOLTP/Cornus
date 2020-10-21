@@ -69,7 +69,6 @@ TxnManager::~TxnManager()
 void
 TxnManager::update_stats()
 {
-    _finish_time = get_sys_clock();
     // TODO. collect stats for sub_queries.
     if (is_sub_txn())
         return;
@@ -254,6 +253,7 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     #endif
 #endif
     _cc_manager->cleanup(rc);
+    _finish_time = get_sys_clock();
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
 #endif
     return rc;
@@ -458,6 +458,7 @@ TxnManager::process_2pc_phase2(RC rc)
         rpc_log_semaphore->wait();
         _cc_manager->cleanup(rc); // release lock after receive log resp
     #endif
+    _finish_time = get_sys_clock();
 #endif
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
@@ -583,6 +584,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;
             _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
             _cc_manager->cleanup(rc); // release lock after log is received
+            _finish_time = get_sys_clock();
             // OPTIMIZATION: release locks as early as possible.
             // No need to wait for this log since it is optional (shared log
             // optimization)
