@@ -58,6 +58,8 @@ TxnTable::get_txn(uint64_t txn_id)
 void
 TxnTable::print_txn()
 {
+    char buffer[4000];
+    sprintf(buffer, "[%u. %lu] Debug Info:\n", g_node_id, glob_manager->get_thd_id());
     // we don't acquire locks
     for(uint32_t i=0; i<_txn_table_size; ++i)
     {
