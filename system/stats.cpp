@@ -178,7 +178,13 @@ void Stats::output(std::ostream * os)
         avg_dist_latency += _stats[tid]->_float_stats[STAT_dist_txn_latency];
     avg_dist_latency /= total_num_multi_part_txns;
 
+    double avg_dist_total_time = 0;
+    for (uint32_t tid = 0; tid < g_total_num_threads; tid ++)
+        avg_dist_total_time+= _stats[tid]->_float_stats[STAT_time_debug7];
+    avg_dist_total_time /= total_num_multi_part_txns;
+
     out << "    " << setw(30) << left << "average_dist_latency:" << avg_dist_latency / BILLION << endl;
+    out << "    " << setw(30) << left << "average_dist_total_time:" << avg_dist_total_time / BILLION << endl;
     out << "    " << setw(30) << left << "average_latency:" << avg_latency / BILLION << endl;
     // print latency distribution
     out << "    " << setw(30) << left << "90%_latency:"
