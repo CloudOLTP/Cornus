@@ -45,7 +45,9 @@ int main(int argc, char* argv[])
 
     pthread_t * pthread_rpc = new pthread_t;
     pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
-
+    
+    // make sure server is setup before moving on
+    sleep(2);
     cout << "Synchronization starts" << endl;
 
     // Can start only if all other nodes have also finished initialization
@@ -123,7 +125,7 @@ int main(int argc, char* argv[])
     }
 
     // make sure server is setup before moving on
-    usleep(100);
+    sleep(2);
 #if DISTRIBUTED
     cout << "Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
