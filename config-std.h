@@ -102,7 +102,7 @@
 
 // [YCSB]
 // Number of tuples per node
-#define SYNTH_TABLE_SIZE                (1024 * 10) // * 1024)
+#define SYNTH_TABLE_SIZE                (1024 * 10 * 1024)
 #define ZIPF_THETA                      0.6
 #define READ_PERC                       0.9
 #define PERC_READONLY_DATA              0
