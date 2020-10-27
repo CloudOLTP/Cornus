@@ -1,6 +1,6 @@
 # a list of servers; each on a new line
-128.105.144.171:50051
-128.105.144.197:50051
+node-0.4nodes.nextgendb-pg0.wisc.cloudlab.us:50051
+node-1.4nodes.nextgendb-pg0.wisc.cloudlab.us:50051
 #=l
-128.105.144.38:50051
-128.105.144.42:50051
+node-2.4nodes.nextgendb-pg0.wisc.cloudlab.us:50051
+node-3.4nodes.nextgendb-pg0.wisc.cloudlab.us:50051
