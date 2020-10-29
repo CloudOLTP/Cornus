@@ -570,6 +570,14 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             rpc_log_semaphore->wait();
         #endif
     #endif
+            // readonly remote nodes
+            if (num_tuples == 0) {
+                _txn_state = COMMITTED;
+                _cc_manager->cleanup(rc); // release lock after log is received
+                _finish_time = get_sys_clock();
+                response->set_response_type( SundialResponse::PREPARED_OK_RO );
+                return rc;
+            }
             response->set_response_type( SundialResponse::PREPARED_OK );
             return rc;
         case SundialRequest::COMMIT_REQ :
