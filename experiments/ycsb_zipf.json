@@ -2,8 +2,8 @@
     "i": [0, 1, 2],
 	"DISTRIBUTED": "true",
 	"NUM_NODES": 2,
-	"NUM_WORKER_THREADS": 10,
-	"NUM_RPC_SERVER_THREADS": [16, 18, 20, 22, 24],
+	"NUM_WORKER_THREADS": [16],
+	"NUM_RPC_SERVER_THREADS": [16],
 	"NUM_STORAGE_RPC_SERVER_THREADS": 20,
 	"MAX_NUM_ACTIVE_TXNS": 28,
     "LOG_ENABLE": "false",
@@ -11,7 +11,7 @@
     "ENABLE_ADMISSION_CONTROL": "false",
     "COMMIT_ALG": ["ONE_PC", "TWO_PC"],
     "WORKLOAD": "YCSB",
-    "ZIPF_THETA": 0,
+    "ZIPF_THETA": [0, 0.6, 0.8, 0.9, 0.99, 1.1],
     "READ_PERC": 0.5,
-    "PERC_REMOTE": 0.05
+    "PERC_REMOTE": [0.05]
 }
