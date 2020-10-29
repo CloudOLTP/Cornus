@@ -433,6 +433,19 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: perform local logging and commit request in parallel
     // log_semaphore->wait();
   #endif
+    bool remote_readonly = false;
+    for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
+        if (it->second->state == ABORTED || it->second->state == COMMITTED) {
+            remote_readonly = true;
+            break;
+        }
+    }
+    if (remote_readonly && is_read_only()) { // no logging  and remote message at all
+        _cc_manager->cleanup(rc);
+        _finish_time = get_sys_clock(); 
+        _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
+        return rc;
+    }
   #if REMOTE_LOG && COMMIT_ALG == TWO_PC
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
