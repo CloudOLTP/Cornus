@@ -10,6 +10,7 @@ server_setup = "git clone https://github.com/ScarletGuo/Sundial.git; cd Sundial;
 cmd = "cd Sundial; sudo ./run_proto.sh"
 sync = "cd Sundial; sudo ./pull.sh"
 kill = "cd Sundial; sudo pkill -f rundb"
+clean_output = "cd Sundial/output; rm stats.json"
 
 class myThread (threading.Thread):
 	def __init__(self, line, setup):
@@ -48,7 +49,7 @@ if __name__ == "__main__":
 			# 	if ret != 0:
 			# 		err_msg = "error setup storage"
 			# 		print("ERROR: " + err_msg)
-			thread1 = myThread(line, sync)
+			thread1 = myThread(line, clean_output)
 			# if node_type == 2:
 			# 	thread1 = myThread(line, storage_setup)
 			thread1.start()
