@@ -74,7 +74,7 @@ double          g_read_intensity_thresh = READ_INTENSITY_THRESH;
 
 // Distributed DBMS
 // ================
-uint32_t        g_num_worker_threads    = NUM_RPC_SERVER_THREADS; // TODO: better integration
+uint32_t        g_num_worker_threads    = NUM_WORKER_THREADS; // TODO: better integration
 uint32_t        g_total_num_threads     = 0;
 
 uint32_t        g_num_nodes             = NUM_NODES;
@@ -95,7 +95,7 @@ InOutQueue **   output_queues;
 WorkerThread ** worker_threads;
 
 // TODO. tune this table size
-uint32_t        g_txn_table_size        = NUM_RPC_SERVER_THREADS * 10; // TODO:
+uint32_t        g_txn_table_size        = NUM_WORKER_THREADS * 10; // TODO:
 TxnTable *      txn_table;
 
 FreeQueue *     free_queue_txn_man;
