@@ -45,11 +45,12 @@ SundialRPCServerImpl::run() {
     // XXX(zhihan): only use one cq as it is thread safe. can switch to more cqs if does not scale 
     //_thread_pool = new pthread_t * [NUM_RPC_SERVER_THREADS];
 #if LOG_NODE
-    _thread_pool = new std::thread * [NUM_STORAGE_RPC_SERVER_THREADS];
+    uint32_t num_thds = NUM_STORAGE_RPC_SERVER_THREADS;
 #else
-    _thread_pool = new std::thread * [NUM_RPC_SERVER_THREADS];
+    uint32_t num_thds = NUM_RPC_SERVER_THREADS;
 #endif
-    for (uint32_t i = 0; i < NUM_RPC_SERVER_THREADS; i++) {
+    _thread_pool = new std::thread * [num_thds];
+    for (uint32_t i = 0; i < num_thds; i++) {
         //_thread_pool[i] = new pthread_t;
         //pthread_create(_thread_pool[i], NULL, HandleRpcs, NULL); 
         _thread_pool[i] = new std::thread(HandleRpcs, this);
