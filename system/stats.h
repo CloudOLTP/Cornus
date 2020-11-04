@@ -196,6 +196,8 @@ public:
 
     void output(std::ostream * os);
 
+    void profile_log();
+
     std::string statsFloatName[NUM_FLOAT_STATS] = {
         // worker thread
         "run_time",

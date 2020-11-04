@@ -98,6 +98,13 @@ void Stats::clear(uint64_t tid) {
     }
 }
 
+void Stats::profile_log() {
+    STAT_SUM(uint64_t, total_log, _int_stats[STAT_int_debug3]);
+    STAT_SUM(double, total_log_cost, _float_stats[STAT_time_debug3]);
+    total_log_cost = total_log_cost / total_log * 1000000  / BILLION ; // in us.
+    printf("avg log cost: %lf\n", total_log_cost);
+}
+
 void Stats::output(std::ostream * os)
 {
     std::ostream &out = *os;

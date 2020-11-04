@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
     log_manager->stop_flush_thread();
     delete log_manager;
     cout << "Complete." << endl;
+    glob_stats->profile_log();
 
     return 0;
 }

@@ -101,7 +101,10 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     if (request->request_type() == SundialRequest::LOG_YES_REQ ||
         request->request_type() == SundialRequest::LOG_ABORT_REQ ||
         request->request_type() == SundialRequest::LOG_COMMIT_REQ) {
+        uint64_t time_begin = get_sys_clock();
         log_manager->log(request, response);
+        INC_FLOAT_STATS(time_debug3, get_sys_clock() - time_begin);
+        INC_INT_STATS(int_debug3, 1);
         response->set_txn_id(request->txn_id());
         return;
     }
