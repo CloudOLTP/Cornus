@@ -65,7 +65,10 @@ YCSBStoreProcedure::execute()
             RequestYCSB * req = &requests[i];
             uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
             if (home_node != g_node_id) {
+                uint64_t time_begin = get_sys_clock();
                 rc = _txn->send_remote_read_request(home_node, req->key, 0, 0, req->rtype);
+                INC_FLOAT_STATS(time_debug1, get_sys_clock() - time_begin);
+                INC_INT_STATS(int_debug1, 1);
                 if (rc == ABORT) return rc;
                 // has_remote_req = true;
             }

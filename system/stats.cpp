@@ -129,6 +129,11 @@ void Stats::output(std::ostream * os)
     STAT_SUM(uint64_t, total_num_multi_part_txns, _int_stats[STAT_num_multi_part_txn]);
     STAT_SUM(uint64_t, total_num_commits, _int_stats[STAT_num_commits]);
     STAT_SUM(double, total_run_time, _float_stats[STAT_run_time]);
+    // profile communication cost
+    STAT_SUM(uint64_t, total_remote_req, _int_stats[STAT_int_debug1]);
+    STAT_SUM(double, total_remote_req_cost, _float_stats[STAT_time_debug1]);
+    total_remote_req_cost = total_remote_req_cost / total_remote_req * 1000000  / BILLION ; // in us.
+    printf("avg remote cost: %lf\n", total_remote_req_cost);
 
     assert(total_num_commits > 0);
     out << "=Worker Thread=" << endl;
