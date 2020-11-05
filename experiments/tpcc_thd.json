@@ -1,0 +1,14 @@
+{
+    "i": [0, 1],
+	"DISTRIBUTED": "true",
+	"NUM_NODES": 4,
+	"NUM_WORKER_THREADS": [34, 36, 38, 40, 44],
+	"NUM_RPC_SERVER_THREADS": 20,
+	"NUM_STORAGE_RPC_SERVER_THREADS": 20,
+	"MAX_NUM_ACTIVE_TXNS": 28,
+    "LOG_ENABLE": "false",
+    "CONTROLLED_LOCK_VIOLATION": "false",
+    "ENABLE_ADMISSION_CONTROL": "false",
+    "COMMIT_ALG": ["ONE_PC", "TWO_PC"],
+    "NUM_WH": 32
+}
