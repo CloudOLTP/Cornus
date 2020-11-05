@@ -87,6 +87,14 @@ SundialRPCServerImpl::contactRemote(ServerContext* context, const SundialRequest
 void
 SundialRPCServerImpl::processContactRemote(ServerContext* context, const SundialRequest* request, 
         SundialResponse* response) {
+    uint64_t begin = get_sys_clock();
+        while (true) {
+            PAUSE100
+            uint64_t end = get_sys_clock();
+            double gap = (end - begin) * 1000000 / BILLION; // in us
+            if (gap >= NETWORK_DELAY)
+                break;
+        }
     if (request->request_type() == SundialRequest::SYS_REQ) {
         // At the beginning of run, (g_num_nodes - 1) sync requests are received
         // as global synchronization. At the end of the run, another
@@ -98,6 +106,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     }
 
 #if LOG_NODE
+    usleep(LOG_DELAY);
     if (request->request_type() == SundialRequest::LOG_YES_REQ ||
         request->request_type() == SundialRequest::LOG_ABORT_REQ ||
         request->request_type() == SundialRequest::LOG_COMMIT_REQ) {

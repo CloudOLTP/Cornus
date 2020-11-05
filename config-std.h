@@ -194,3 +194,6 @@
 #define ONE_PC                          1
 #define TWO_PC                          2
 #define COMMIT_ALG                      ONE_PC
+
+#define NETWORK_DELAY                   1000 // in us  
+#define LOG_DELAY                       0
