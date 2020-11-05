@@ -41,8 +41,14 @@ LockManager::get_row(row_t * row, access_t type, uint64_t key)
         // For now, assume get_row() will not be called if the record is already
         // locked.
         for (vector<AccessLock>::iterator it = _access_set.begin(); it != _access_set.end(); it ++)
-            if (it->row == row)
+            if (it->row == row) {
+                printf("access key: %ld\n", key);
+                printf("currnt key: ");
+                for (vector<AccessLock>::iterator jj = _access_set.begin(); jj != _access_set.end(); jj ++)
+                    printf(" %ld", jj->key);
+                printf("\n");
                 assert(false);
+            }
         AccessLock ac;
         _access_set.push_back( ac );
         AccessLock * access = &(*_access_set.rbegin());
