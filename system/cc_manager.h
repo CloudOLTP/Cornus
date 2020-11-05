@@ -42,6 +42,10 @@ public:
     RC                row_delete(row_t * row);
     virtual RC        index_read(INDEX * index, uint64_t key, set<row_t *> * &rows, uint32_t limit = -1)
                       { assert(false); return RCOK; }
+
+    
+    //debug
+    int          remote_key = 0;
 protected:
     // reserve permission on the index.
     virtual RC        index_insert(INDEX * index, uint64_t key) { assert(false); return RCOK; }

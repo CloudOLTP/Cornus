@@ -539,6 +539,8 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 }
                 assert(rows);
                 row_t * row = *rows->begin();
+                get_cc_manager()->remote_key += 1;
+                // printf("txn: %ld access key by remote req: %ld node: %u\n", get_txn_id(), key, g_node_id);
                 rc = get_cc_manager()->get_row(row, access_type, key);
                 if (rc == ABORT) break;
                 uint64_t table_id = row->get_table_id();

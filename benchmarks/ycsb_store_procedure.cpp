@@ -61,8 +61,13 @@ YCSBStoreProcedure::execute()
     if (_phase == 0) {
         // for each request, if it touches a remote node, add it to a remote query.
         // bool has_remote_req = false;
+        std::map<uint64_t, int> debug;
         for (uint32_t i = 0; i < query->get_request_count(); i ++) {
             RequestYCSB * req = &requests[i];
+            if (debug.find(req->key) == debug.end())
+                debug[req->key] = 1;
+            else 
+                printf("!!!two same key in a query\n");
             uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
             if (home_node != g_node_id) {
                 uint64_t time_begin = get_sys_clock();
@@ -88,6 +93,7 @@ YCSBStoreProcedure::execute()
             if (home_node == g_node_id) {
                 uint64_t key = req->key;
                 access_t type = req->rtype;
+                // printf("txn: %ld access local key: %ld node: %u\n", _txn->get_txn_id(), key, g_node_id);
                 GET_DATA( key, index, type);
             }
         }
