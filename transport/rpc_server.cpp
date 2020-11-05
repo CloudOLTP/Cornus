@@ -106,7 +106,14 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     }
 
 #if LOG_NODE
-    usleep(LOG_DELAY);
+    uint64_t begin_2 = get_sys_clock();
+        while (true) {
+            PAUSE100
+            uint64_t end_2 = get_sys_clock();
+            double gap_2 = (end_2 - begin_2) * 1000000 / BILLION; // in us
+            if (gap_2 >= LOG_DELAY)
+                break;
+        }
     if (request->request_type() == SundialRequest::LOG_YES_REQ ||
         request->request_type() == SundialRequest::LOG_ABORT_REQ ||
         request->request_type() == SundialRequest::LOG_COMMIT_REQ) {
