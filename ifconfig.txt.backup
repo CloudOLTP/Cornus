@@ -1,6 +1,10 @@
 # a list of servers; each on a new line
-node-0.4nodes.nextgendb-pg0.wisc.cloudlab.us:50051
-node-1.4nodes.nextgendb-pg0.wisc.cloudlab.us:50051
+node-0.8nodesg2.nextgendb-pg0.wisc.cloudlab.us:50051
+node-1.8nodesg2.nextgendb-pg0.wisc.cloudlab.us:50051
+node-2.8nodesg2.nextgendb-pg0.wisc.cloudlab.us:50051
+node-3.8nodesg2.nextgendb-pg0.wisc.cloudlab.us:50051
 #=l
-node-2.4nodes.nextgendb-pg0.wisc.cloudlab.us:50051
-node-3.4nodes.nextgendb-pg0.wisc.cloudlab.us:50051
+node-4.8nodesg2.nextgendb-pg0.wisc.cloudlab.us:50051
+node-5.8nodesg2.nextgendb-pg0.wisc.cloudlab.us:50051
+node-6.8nodesg2.nextgendb-pg0.wisc.cloudlab.us:50051
+node-7.8nodesg2.nextgendb-pg0.wisc.cloudlab.us:50051

@@ -1,2 +1,2 @@
 git fetch
-git reset --hard origin/grpc-20201012
+git reset --hard origin/grpc-1110
