@@ -7,6 +7,7 @@
 #include "query.h"
 #include "txn_table.h"
 #include <string>
+#include <fstream>
 
 #if LOG_ENABLE
 #include "logging_thread.h"
@@ -22,6 +23,7 @@
 
 void * start_thread(void *);
 void * start_rpc_server(void *);
+void get_node_id();
 
 // defined in parser.cpp
 void parser(int argc, char ** argv);
@@ -29,7 +31,8 @@ void parser(int argc, char ** argv);
 #if LOG_NODE
 int main(int argc, char* argv[])
 {
-    parser(argc, argv);
+    // parser(argc, argv);
+    get_node_id(); // for better debug experience
     cout << "start node " << g_node_id << endl;
     glob_manager = new Manager;
     glob_manager->calibrate_cpu_frequency();
@@ -69,7 +72,8 @@ int main(int argc, char* argv[])
 #else
 int main(int argc, char* argv[])
 {
-    parser(argc, argv);
+    // parser(argc, argv);
+    get_node_id(); // for better debug experience
     cout << "start node " << g_node_id << endl;
     g_storage_node_id = g_num_nodes_and_storage - 1 - g_node_id;
 
@@ -212,4 +216,32 @@ void * start_thread(void * thread) {
 void * start_rpc_server(void * input) {
     rpc_server->run();
     return NULL;
+}
+
+void get_node_id()
+{
+    // get server names
+    vector<string> _urls;
+    string line;
+    std::ifstream file (ifconfig_file);
+    assert(file.is_open());
+    while (getline (file, line)) {
+        if (line[0] == '#')
+            continue;
+        else {
+            std::string delimiter = ":";
+            std::string token = line.substr(0, line.find(delimiter));
+            _urls.push_back(token);
+        }
+    }
+    char hostname[1024];
+    gethostname(hostname, 1023);
+    printf("[!] My Hostname is %s\n", hostname);
+    for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++)  {
+        if (_urls[i] == string(hostname)) {
+            printf("[!] My node id id %u\n", i);
+            g_node_id = i;
+        }
+    }
+    file.close();
 }
