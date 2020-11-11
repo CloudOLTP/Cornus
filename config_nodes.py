@@ -10,7 +10,7 @@ server_setup = "git clone https://github.com/ScarletGuo/Sundial.git; cd Sundial;
 cmd = "cd Sundial; sudo ./run_proto.sh"
 sync = "cd Sundial; sudo ./pull.sh"
 kill = "cd Sundial; sudo pkill -f rundb"
-clean_output = "cd Sundial/output; rm stats.json"
+clean_output = "cd Sundial/outputs; rm stats.json"
 
 class myThread (threading.Thread):
 	def __init__(self, line, setup):
