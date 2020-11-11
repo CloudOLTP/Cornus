@@ -56,53 +56,47 @@ YCSBStoreProcedure::execute()
     return COMMIT;
 #else
     // Phase 0: figure out whether we need remote queries; if so, send messages.
+    // for each request, if it touches a remote node, add it to a remote query.
+    // bool has_remote_req = false;
+    std::map<uint64_t, int> debug;
+    for (uint32_t i = 0; i < query->get_request_count(); i ++) {
+        RequestYCSB * req = &requests[i];
+        if (debug.find(req->key) == debug.end())
+            debug[req->key] = 1;
+        else 
+            printf("!!!two same key in a query\n");
+        uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
+        if (home_node != g_node_id) {
+            uint64_t time_begin = get_sys_clock();
+            rc = _txn->send_remote_read_request(home_node, req->key, 0, 0, req->rtype);
+            INC_FLOAT_STATS(time_debug1, get_sys_clock() - time_begin);
+            INC_INT_STATS(int_debug1, 1);
+            if (rc == ABORT) return rc;
+            // has_remote_req = true;
+        }
+    }
+
+    // if (has_remote_req)
+    //     return LOCAL_MISS;
+    // else
+    //     remote_requests.clear();
+
     // Phase 1: grab permission of local accesses.
+    // access local rows.
+    for ( ; _curr_query_id < query->get_request_count(); _curr_query_id ++) {
+        RequestYCSB * req = &requests[ _curr_query_id ];
+        uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
+        if (home_node == g_node_id) {
+            uint64_t key = req->key;
+            access_t type = req->rtype;
+            // printf("txn: %ld access local key: %ld node: %u\n", _txn->get_txn_id(), key, g_node_id);
+            GET_DATA( key, index, type);
+        }
+    }
+    // if (!remote_requests.empty())
+    //     return RCOK;
+
     // Phase 2: after all data is acquired, finish the rest of the transaction.
-    if (_phase == 0) {
-        // for each request, if it touches a remote node, add it to a remote query.
-        // bool has_remote_req = false;
-        std::map<uint64_t, int> debug;
-        for (uint32_t i = 0; i < query->get_request_count(); i ++) {
-            RequestYCSB * req = &requests[i];
-            if (debug.find(req->key) == debug.end())
-                debug[req->key] = 1;
-            else 
-                printf("!!!two same key in a query\n");
-            uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
-            if (home_node != g_node_id) {
-                uint64_t time_begin = get_sys_clock();
-                rc = _txn->send_remote_read_request(home_node, req->key, 0, 0, req->rtype);
-                INC_FLOAT_STATS(time_debug1, get_sys_clock() - time_begin);
-                INC_INT_STATS(int_debug1, 1);
-                if (rc == ABORT) return rc;
-                // has_remote_req = true;
-            }
-        }
-
-        _phase = 1;
-        // if (has_remote_req)
-        //     return LOCAL_MISS;
-        // else
-        //     remote_requests.clear();
-    }
-    if (_phase == 1) {
-        // access local rows.
-        for ( ; _curr_query_id < query->get_request_count(); _curr_query_id ++) {
-            RequestYCSB * req = &requests[ _curr_query_id ];
-            uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
-            if (home_node == g_node_id) {
-                uint64_t key = req->key;
-                access_t type = req->rtype;
-                // printf("txn: %ld access local key: %ld node: %u\n", _txn->get_txn_id(), key, g_node_id);
-                GET_DATA( key, index, type);
-            }
-        }
-        _phase = 2;
-        // if (!remote_requests.empty())
-        //     return RCOK;
-    }
-
-    if (_phase == 2) {
         // all the data is here. Do computation and commit.
         for (uint32_t i = 0; i < query->get_request_count(); i ++) {
             RequestYCSB * req = &requests[i];
@@ -117,7 +111,6 @@ YCSBStoreProcedure::execute()
                     *(uint64_t *)(&data[fid * 100]) = _txn->get_txn_id();
             }
         }
-    }
 #endif
     return COMMIT;
 }
