@@ -96,7 +96,7 @@
 // Benchmark
 // =========
 // max number of rows touched per transaction
-#define RUN_TIME                        60 // in second
+#define RUN_TIME                       1 // in second
 #define MAX_TUPLE_SIZE                  1024 // in bytes
 #define INIT_PARALLELISM                8
 
