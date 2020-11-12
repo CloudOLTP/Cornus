@@ -43,9 +43,9 @@ LockManager::get_row(row_t * row, access_t type, uint64_t key)
         for (vector<AccessLock>::iterator it = _access_set.begin(); it != _access_set.end(); it ++)
             if (it->row == row) {
                 //debug:
-                it->data = new char [it->row->get_tuple_size()];
-                memcpy(it->data, it->row->get_data(), it->row->get_tuple_size());
-                return rc;
+                // it->data = new char [it->row->get_tuple_size()];
+                // memcpy(it->data, it->row->get_data(), it->row->get_tuple_size());
+                // return rc;
                 //end debug
                 printf("remote key cnt: %d\n", remote_key);
                 printf("access key: %ld\n", key);
