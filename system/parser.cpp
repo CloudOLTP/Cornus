@@ -15,6 +15,7 @@ void print_usage() {
     printf("\t-GbINT      ; TS_BATCH_ALLOC\n");
     printf("\t-GuINT      ; TS_BATCH_NUM\n");
     printf("\t-GsINT      ; MAX_CLOCK_SKEW\n");
+    printf("\t-Gn         ; node id\n");
     printf("\t-o STRING   ; output file\n\n");
     printf("Benchmarks\n");
     printf("[YCSB]:\n");
@@ -90,9 +91,10 @@ void parser(int argc, char * argv[]) {
                 g_max_clock_skew = atoi( &argv[i][3] );
             else if (argv[i][2] == 'T')
                 g_run_time = atof( &argv[i][3] );
-            else if (argv[i][2] == 'n')
+            else if (argv[i][2] == 'n') {
                 g_node_id = atoi( &argv[i][3] );
-            else
+	    	cout << g_node_id << endl;
+	    } else
                 exit(0);
         } else if (argv[i][1] == 'Y') {
             if (argv[i][2] == 'r')

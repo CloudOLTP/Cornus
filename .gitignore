@@ -3,6 +3,7 @@
 **.out
 **.swp
 **.swo
+**.pyc
 rundb
 __pycache__
 .vscode

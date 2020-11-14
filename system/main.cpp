@@ -31,8 +31,8 @@ void parser(int argc, char ** argv);
 #if LOG_NODE
 int main(int argc, char* argv[])
 {
-    // parser(argc, argv);
-    get_node_id(); // for better debug experience
+    parser(argc, argv);
+    // get_node_id(); // for better debug experience
     cout << "start node " << g_node_id << endl;
     glob_manager = new Manager;
     glob_manager->calibrate_cpu_frequency();
@@ -72,8 +72,8 @@ int main(int argc, char* argv[])
 #else
 int main(int argc, char* argv[])
 {
-    // parser(argc, argv);
-    get_node_id(); // for better debug experience
+    parser(argc, argv);
+    // get_node_id(); // for better debug experience
     cout << "start node " << g_node_id << endl;
     g_storage_node_id = g_num_nodes_and_storage - 1 - g_node_id;
 
