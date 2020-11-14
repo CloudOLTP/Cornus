@@ -517,8 +517,10 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
     char * log_record = NULL;
     uint32_t log_record_size = 0;
   #endif
+#if REMOTE_LOG
     int log_commit = 0;
     SundialRequest::RequestType log_type;
+#endif
     switch(request->request_type()) {
         case SundialRequest::READ_REQ :
             num_tuples = request->read_requests_size();
@@ -596,11 +598,15 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             response->set_response_type( SundialResponse::PREPARED_OK );
             return rc;
         case SundialRequest::COMMIT_REQ :
+#if REMOTE_LOG
             log_type = SundialRequest::LOG_COMMIT_REQ;
             log_commit = 1;
+#endif
         case SundialRequest::ABORT_REQ :
+#if REMOTE_LOG
             if (log_commit == 0)
                 log_type = SundialRequest::LOG_ABORT_REQ;
+#endif
   #if LOG_ENABLE
             record = std::to_string(_txn_id);
             log_record = (char *)record.c_str();
