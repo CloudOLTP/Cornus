@@ -23,7 +23,7 @@ def start_nodes(arg, curr_node):
         addr = addr.split(':')[0]
         os.system("ssh {} 'sudo pkill rundb'".format(addr))
         cmd = "python3 test.py {} NODE_ID={} LOG_NODE={}".format(arg, num_nodes, log_node)
-        ret = os.system("ssh {} 'cd /users/LockeZ/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' &".format(addr, cmd))
+        ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' &".format(addr, cmd))
         if ret != 0:
             err_msg = "error executing server"
             job['ERROR'] = err_msg

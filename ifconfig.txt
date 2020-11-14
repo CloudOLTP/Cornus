@@ -2,7 +2,7 @@
 130.127.133.230:50051
 130.127.133.191:50051
 #=l
-node-4.8nodes.nextgendb-pg0.wisc.cloudlab.us:50051
-node-5.8nodes.nextgendb-pg0.wisc.cloudlab.us:50051
-node-6.8nodes.nextgendb-pg0.wisc.cloudlab.us:50051
-node-7.8nodes.nextgendb-pg0.wisc.cloudlab.us:50051
+#node-4.8nodes.nextgendb-pg0.wisc.cloudlab.us:50051
+#node-5.8nodes.nextgendb-pg0.wisc.cloudlab.us:50051
+#node-6.8nodes.nextgendb-pg0.wisc.cloudlab.us:50051
+#node-7.8nodes.nextgendb-pg0.wisc.cloudlab.us:50051

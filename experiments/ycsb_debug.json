@@ -12,7 +12,7 @@
     "COMMIT_ALG": ["ONE_PC"],
     "WORKLOAD": "YCSB",
     "ZIPF_THETA": 0,
-    "READ_PERC": 0.5,
+    "READ_PERC": 0,
     "PERC_REMOTE": 0.05,
     "REMOTE_LOG": false
 }
