@@ -7,7 +7,7 @@ import os, sys, re, os.path
 
 ifconfig = "ifconfig.txt"
 
-def start_nodes(arg, curr_node, debug_mode="release"):
+def start_nodes(arg, curr_node, mode="release"):
     f = open(ifconfig)
     num_nodes = 0
     log_node = "false"
@@ -35,7 +35,7 @@ def start_nodes(arg, curr_node, debug_mode="release"):
     # start own server
     os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
     print("[LOG] start node {}".format(curr_node))
-    os.system("python3 test.py {} DEBUG_MODE={} NODE_ID={}".format(arg, debug_mode, curr_node))
+    os.system("python3 test.py {} DEBUG_MODE={} NODE_ID={}".format(arg, mode, curr_node))
 
 def kill_nodes(curr_node):
     f = open(ifconfig)

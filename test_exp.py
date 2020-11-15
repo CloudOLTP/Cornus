@@ -14,7 +14,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 3:
         mode = sys.argv[3]
     else:
-        debug_mode = "release"
+        mode = "release"
     job = json.load(open(sys.argv[1]))
     exp_name = sys.argv[1].split('.')[0]
     if '/' in exp_name:
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         print("[LOG] issue exp {}/{}".format(i+1, len(args)))
         print("[LOG] arg = {}".format(arg))
         if script == "test_distrib.py":
-            ret = start_nodes(arg, curr_node, debug_mode)
+            ret = start_nodes(arg, curr_node, mode)
             if ret != 0:
                 continue
             print("[LOG] KILLING REMOTE SERVER ... ")
@@ -49,11 +49,11 @@ if __name__ == "__main__":
             print("[LOG] FINISH EXECUTION ")
         else:
             job = parse_arg(arg)
-            if debug_mode == "compile":
+            if mode == "compile":
                 try_compile(job)
-            elif debug_mode == "debug":
+            elif mode == "debug":
                 compile_and_run(job)
-            elif debug_mode == "release":
+            elif mode == "release":
                 compile_and_run(job)
                 collect_result(job);
     if debug_mode == "release":
