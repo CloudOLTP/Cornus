@@ -62,6 +62,7 @@ RC WorkerThread::run() {
         }
         if (_native_txn) {
             // restart a previously aborted transaction
+	    printf("[node-%u] restart aborted txn-%lu\n", g_node_id, _native_txn->get_txn_id());
             rc = _native_txn->restart();
         } else {
   #if ENABLE_ADMISSION_CONTROL
