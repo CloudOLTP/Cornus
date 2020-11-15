@@ -52,5 +52,6 @@ if __name__ == "__main__":
             compile_and_run(job)
             if not debug_mode:
                 collect_result(job);
-    os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
+    if not debug_mode:
+        os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")

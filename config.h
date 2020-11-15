@@ -103,10 +103,10 @@
 // [YCSB]
 // Number of tuples per node
 #define SYNTH_TABLE_SIZE                (1024 * 10 * 1024)
-#define ZIPF_THETA 0
+#define ZIPF_THETA 0.9
 #define READ_PERC 0
 #define PERC_READONLY_DATA              0
-#define PERC_REMOTE 0.05
+#define PERC_REMOTE 0.9
 #define SINGLE_PART_ONLY                false // access single partition only
 #define REQ_PER_QUERY                   16
 #define THINK_TIME                      0  // in us
@@ -187,7 +187,7 @@
 #define ALWAYS_CHECK                    2    // always contact remote node
 #define READ_INTENSIVE                  3    // only read cached data that is read-intensive
 
-#define LOG_NODE false
+#define LOG_NODE                        false // Whether the node is storage node or not
 #define REMOTE_LOG False
 #define LOG_TIMEOUT                     1000  // in us
 
