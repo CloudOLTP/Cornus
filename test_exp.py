@@ -49,7 +49,7 @@ if __name__ == "__main__":
             print("[LOG] FINISH EXECUTION ")
         else:
             job = parse_arg(arg)
-            if debug_mode == "compile"
+            if debug_mode == "compile":
                 try_compile(job)
             elif debug_mode == "debug":
                 compile_and_run(job)
