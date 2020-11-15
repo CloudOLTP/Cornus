@@ -11,6 +11,10 @@ from test import compile_and_run, parse_arg
 script = "test_distrib.py"
 
 if __name__ == "__main__":
+    if len(sys.argv) > 3:
+        debug_mode = sys.argv[3] == "debug"
+    else:
+        debug_mode = False
     job = json.load(open(sys.argv[1]))
     exp_name = sys.argv[1].split('.')[0]
     if '/' in exp_name:
@@ -35,7 +39,7 @@ if __name__ == "__main__":
         print("[LOG] issue exp {}/{}".format(i+1, len(args)))
         print("[LOG] arg = {}".format(arg))
         if script == "test_distrib.py":
-            ret = start_nodes(arg, curr_node)
+            ret = start_nodes(arg, curr_node, debug_mode)
             if ret != 0:
                 continue
             print("[LOG] KILLING REMOTE SERVER ... ")
@@ -44,6 +48,9 @@ if __name__ == "__main__":
             os.system("ssh node-1 'sudo pkill rundb'")
             print("[LOG] FINISH EXECUTION ")
         else:
-            compile_and_run(parse_arg(arg))
+            job = parse_arg(arg)
+            compile_and_run(job)
+            if not debug_mode:
+                collect_result(job);
     os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")

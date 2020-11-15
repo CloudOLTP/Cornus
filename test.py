@@ -77,12 +77,16 @@ def parse_arg(arg):
         job[key] = value
     return job
 
-if __name__ == "__main__":
-    job = parse_arg(sys.argv[1:])
-    print(json.dumps(job)+"\n")
-    compile_and_run(job)
+def collect_result(job):
     job = parse_output(job)
     stats = open("outputs/stats.json", 'a+')
     stats.write(json.dumps(job)+"\n")
     stats.close()
+
+if __name__ == "__main__":
+    job = parse_arg(sys.argv[1:])
+    print(json.dumps(job)+"\n")
+    compile_and_run(job)
+    if "DEBUG_MODE" not in job or job["DEBUG_MODE"] == False:
+        collect_result(job)
 
