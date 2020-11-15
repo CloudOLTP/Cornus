@@ -4,6 +4,7 @@
 **.swp
 **.swo
 **.pyc
+config.h
 rundb
 __pycache__
 .vscode
