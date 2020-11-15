@@ -86,7 +86,11 @@ def collect_result(job):
 if __name__ == "__main__":
     job = parse_arg(sys.argv[1:])
     print(json.dumps(job)+"\n")
-    compile_and_run(job)
-    if "DEBUG_MODE" not in job or job["DEBUG_MODE"] == False:
+    if "DEBUG_MODE" not in job or job["DEBUG_MODE"] == "release":
+        compile_and_run(job)
         collect_result(job)
+    elif job["DEBUG_MODE"] == "debug":
+        compile_and_run(job)
+    elif job["DEBUG_MODE"] == "compile":
+        try_compile(job)
 

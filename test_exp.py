@@ -12,9 +12,9 @@ script = "test_distrib.py"
 
 if __name__ == "__main__":
     if len(sys.argv) > 3:
-        debug_mode = sys.argv[3] == "debug"
+        mode = sys.argv[3]
     else:
-        debug_mode = False
+        debug_mode = "release"
     job = json.load(open(sys.argv[1]))
     exp_name = sys.argv[1].split('.')[0]
     if '/' in exp_name:
@@ -49,9 +49,13 @@ if __name__ == "__main__":
             print("[LOG] FINISH EXECUTION ")
         else:
             job = parse_arg(arg)
-            compile_and_run(job)
-            if not debug_mode:
+            if debug_mode == "compile"
+                try_compile(job)
+            elif debug_mode == "debug":
+                compile_and_run(job)
+            elif debug_mode == "release":
+                compile_and_run(job)
                 collect_result(job);
-    if not debug_mode:
+    if debug_mode == "release":
         os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")

@@ -7,7 +7,7 @@ import os, sys, re, os.path
 
 ifconfig = "ifconfig.txt"
 
-def start_nodes(arg, curr_node, debug_mode=False):
+def start_nodes(arg, curr_node, debug_mode="release"):
     f = open(ifconfig)
     num_nodes = 0
     log_node = "false"
