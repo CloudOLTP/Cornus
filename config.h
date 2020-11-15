@@ -1,7 +1,7 @@
 #pragma once
 
 #define DISTRIBUTED true
-#define NUM_NODES 2
+#define NUM_NODES 3
 
 // number of server threads on each node
 #define NUM_WORKER_THREADS 20
