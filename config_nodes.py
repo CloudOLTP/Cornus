@@ -8,7 +8,7 @@ import threading
 server_setup = "git clone https://github.com/ScarletGuo/Sundial.git; cd Sundial; git checkout grpc-1110; sudo ./setup_grpc.sh; sudo ./conf.sh; sudo ./run_proto.sh"
 # storage_setup = "git clone https://github.com/ScarletGuo/Sundial.git; cd Sundial; git checkout 1pc-log; cp ./storage_setup.sh ../; cd ..; sudo ./storage_setup.sh"
 cmd = "cd Sundial; sudo ./run_proto.sh"
-sync = "cd Sundial; sudo ./pull.sh"
+sync = "cd Sundial; ./pull.sh"
 kill = "cd Sundial; sudo pkill -f rundb"
 clean_output = "cd Sundial/outputs; rm stats.json"
 
