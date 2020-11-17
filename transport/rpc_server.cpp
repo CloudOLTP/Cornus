@@ -142,7 +142,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 printf("[node-%u] txn-%lu exists, not new\n", g_node_id, request->txn_id());
     }
     // the transaction handles the RPC call
-    txn_man->process_remote_request(request, response);
+    RC rc = txn_man->process_remote_request(request, response);
+    printf("[node-%u] txn-%lu returns: %d\n", g_node_id, request->txn_id(), rc);
     response->set_txn_id(txn_id);
 
     // if the sub-transaction is no longer required, remove from txn_table
