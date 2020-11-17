@@ -143,6 +143,7 @@ LockManager::index_get_permission(access_t type, INDEX * index, uint64_t key, ui
         access.rows = index->read(key);
     _index_access_set.push_back(access);
 
+printf("[node-%u] txn-%lu current last index access should be %lu\n", g_node_id, _txn->get_txn_id(), key);
     return rc;
 }
 
