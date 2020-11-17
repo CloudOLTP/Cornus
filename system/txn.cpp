@@ -107,6 +107,7 @@ TxnManager::update_stats()
             INC_FLOAT_STATS(multi_part_prepare_phase, _commit_start_time - _prepare_start_time);
             INC_FLOAT_STATS(multi_part_commit_phase, _finish_time - _commit_start_time);
             INC_FLOAT_STATS(multi_part_abort, _txn_restart_time - _txn_start_time);
+            INC_FLOAT_STATS(multi_part_cleanup_phase, get_sys_clock() - _finish_time);
 
             INC_INT_STATS(num_multi_part_txn, 1);
             // latency = _commit_start_time - _txn_start_time; // why commit start time?

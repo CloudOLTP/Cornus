@@ -58,6 +58,7 @@ enum StatsFloat {
     STAT_multi_part_prepare_phase,
     STAT_multi_part_commit_phase,
     STAT_multi_part_abort,
+    STAT_multi_part_cleanup_phase,
 
     STAT_log_ready_time,
     STAT_dependency_ready_time,
@@ -250,6 +251,7 @@ public:
         "multi_part_prepare_phase",
         "multi_part_commit_phase",
         "multi_part_abort",
+        "multi_part_cleanup_phase",
 
         "log_ready_time",
         "dependency_ready_time",

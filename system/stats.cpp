@@ -166,7 +166,7 @@ void Stats::output(std::ostream * os)
             total = total / total_num_single_part_txns * 1000000; // in us.
             suffix = " (in us) ";
         }
-        if (i >= STAT_multi_part_execute_phase && i <= STAT_multi_part_abort) {
+        if (i >= STAT_multi_part_execute_phase && i <= STAT_multi_part_cleanup_phase) {
             total = total / total_num_multi_part_txns * 1000000; // in us.
             suffix = " (in us) ";
         }
