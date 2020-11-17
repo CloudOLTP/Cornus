@@ -137,6 +137,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         txn_man = new TxnManager();
         txn_man->set_txn_id( txn_id );
         txn_table->add_txn( txn_man );
+    } else {
+printf("[node-%u] txn-%lu exists, not new\n", g_node_id, request->txn_id());
     }
     // the transaction handles the RPC call
     txn_man->process_remote_request(request, response);
