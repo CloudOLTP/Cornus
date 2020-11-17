@@ -168,7 +168,8 @@ SundialRPCServerImpl::CallData::Proceed() {
         // Spawn a new CallData instance to serve new clients while processing
         new CallData(service_, cq_);
         if (request_.request_type() == SundialRequest::READ_REQ) {
-   	printf("[node-%u] txn-%lu rec remote read on first key: %lu, call data: %p\n", g_node_id, request_.txn_id(), request_.read_requests(0).key(), &this);
+		void * address = this;
+   	printf("[node-%u] txn-%lu rec remote read on first key: %lu, call data: %p\n", g_node_id, request_.txn_id(), request_.read_requests(0).key(), address);
         }
         
         processContactRemote(&ctx_, &request_ , &reply_);
