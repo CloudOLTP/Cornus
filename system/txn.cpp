@@ -437,10 +437,10 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: perform local logging and commit request in parallel
     // log_semaphore->wait();
   #endif
-    bool remote_readonly = false;
+    bool remote_readonly = true;
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
-        if (it->second->state == ABORTED || it->second->state == COMMITTED) {
-            remote_readonly = true;
+        if (!(it->second->state == ABORTED || it->second->state == COMMITTED)) {
+            remote_readonly = false;
             break;
         }
     }
