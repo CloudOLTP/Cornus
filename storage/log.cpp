@@ -30,6 +30,7 @@ LogManager::LogManager(const char * log_name)
 
     // group commit
     latch_ = new std::mutex();
+    flush_latch_ = new std::mutex();
     swap_lock = new std::mutex();
     cv_ = new std::condition_variable();
     appendCv_ = new std::condition_variable();
@@ -53,6 +54,11 @@ LogManager::test() {
 RC LogManager::log(const SundialRequest* request, SundialResponse* reply) {
     // TODO: add logic for insert once
     log_request(request, reply);
+    
+    // sleep until flush finish and wakeup
+    // CAUTION: race condition may occur but it is rare because flushing is too long
+    std::unique_lock<std::mutex> latch(*flush_latch_);
+    flush_cv_->wait(latch);
     return RCOK;
 }
 
@@ -114,8 +120,6 @@ void LogManager::log_request(const SundialRequest* request, SundialResponse * re
         logBufferOffset_ += data_size;
     }
     swap_lock->unlock();
-    // TODO: sleep until flush finish and wakeup
-    flush_cv_->wait(latch);
     reply->set_response_type(request_to_response(request->request_type()));
 }
 

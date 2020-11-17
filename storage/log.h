@@ -65,6 +65,8 @@ private:
     std::condition_variable * appendCv_; // for notifying append thread
     // latch for cv
     std::mutex * latch_;
+    // latch for flush wakeup
+    std::mutex * flush_latch_;
     // flush thread
     std::thread *flush_thread_;
     // for notifying flush thread
