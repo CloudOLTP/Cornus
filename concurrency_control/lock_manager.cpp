@@ -143,7 +143,6 @@ LockManager::index_get_permission(access_t type, INDEX * index, uint64_t key, ui
         access.rows = index->read(key);
     _index_access_set.push_back(access);
 
-printf("[node-%u] txn-%lu current last index access should be %lu\n", g_node_id, _txn->get_txn_id(), key);
     return rc;
 }
 
@@ -153,10 +152,6 @@ LockManager::index_read(INDEX * index, uint64_t key, set<row_t *> * &rows, uint3
     RC rc = RCOK;
     rc = index_get_permission(RD, index, key, limit);
     if (rc == RCOK) {
-	if (_index_access_set.rbegin()->key != key) {
-		printf("[node-%u] txn-%lu abort when read on %lu but have %lu\n", g_node_id, _txn->get_txn_id(), key, _index_access_set.rbegin()->key );
-		fflush(stdout);
-	}
         assert(_index_access_set.rbegin()->key == key);
         rows = _index_access_set.rbegin()->rows;
     }

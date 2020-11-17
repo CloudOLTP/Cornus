@@ -71,7 +71,6 @@ void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
       // tells us whether there is any kind of event or cq_ is shutting down.
       GPR_ASSERT(s->cq_->Next(&tag, &ok));
       GPR_ASSERT(ok);
-      printf("process call data: %p\n", tag);
       static_cast<CallData*>(tag)->Proceed();
     }
 }
@@ -140,7 +139,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         txn_table->add_txn( txn_man );
     } 
     // the transaction handles the RPC call
-    RC rc = txn_man->process_remote_request(request, response);
+    txn_man->process_remote_request(request, response);
     response->set_txn_id(txn_id);
 
     // if the sub-transaction is no longer required, remove from txn_table
