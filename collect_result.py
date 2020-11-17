@@ -32,8 +32,12 @@ if __name__ == "__main__":
 		df_list.append(df)
 	df_result = df_list[0]
 	sum_thruput = df_result["Throughput"]
+	sum_latency = df_result["average_dist_latency"]
 	for i in range(1, output_cnt):
 		sum_thruput += df_list[i]["Throughput"]
+		sum_latency += df_list[i]["average_dist_latency"]
+	avg_latency = sum_latency/output_cnt
 	df_result["sum_throughput"] = sum_thruput
+	df_result["avg_avg_dist_latency"] = avg_latency
 	df_result.to_csv(exp_name+"_final.csv", index=False)
 	os.system("mv ./*.csv ./outputs")

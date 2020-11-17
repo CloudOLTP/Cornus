@@ -6,7 +6,7 @@
 import os, sys, re, os.path
 import subprocess, datetime, time, signal, json
 from test_distrib import start_nodes, kill_nodes
-from test import compile_and_run, parse_arg
+from test import compile_and_run, parse_arg, try_compile, collect_result
 
 script = "test_distrib.py"
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
                 compile_and_run(job)
             elif mode == "release":
                 compile_and_run(job)
-                collect_result(job);
+                collect_result(job)
     if mode == "release":
         os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")
