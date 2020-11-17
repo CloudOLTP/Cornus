@@ -71,6 +71,7 @@ void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
       // tells us whether there is any kind of event or cq_ is shutting down.
       GPR_ASSERT(s->cq_->Next(&tag, &ok));
       GPR_ASSERT(ok);
+      printf("process call data: %p\n", tag);
       static_cast<CallData*>(tag)->Proceed();
     }
 }
