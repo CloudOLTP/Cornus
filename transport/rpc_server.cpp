@@ -138,12 +138,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         txn_man = new TxnManager();
         txn_man->set_txn_id( txn_id );
         txn_table->add_txn( txn_man );
-    } else {
-printf("[node-%u] txn-%lu exists, not new\n", g_node_id, request->txn_id());
-    }
+    } 
     // the transaction handles the RPC call
     RC rc = txn_man->process_remote_request(request, response);
-    printf("[node-%u] txn-%lu returns: %d\n", g_node_id, request->txn_id(), rc);
     response->set_txn_id(txn_id);
 
     // if the sub-transaction is no longer required, remove from txn_table
@@ -169,11 +166,6 @@ SundialRPCServerImpl::CallData::Proceed() {
     } else if (status_ == PROCESS) {
         // Spawn a new CallData instance to serve new clients while processing
         new CallData(service_, cq_);
-        if (request_.request_type() == SundialRequest::READ_REQ) {
-		void * address = this;
-   	printf("[node-%u] txn-%lu rec remote read on first key: %lu, call data: %p\n", g_node_id, request_.txn_id(), request_.read_requests(0).key(), address);
-        }
-        
         processContactRemote(&ctx_, &request_ , &reply_);
         status_ = FINISH;
         responder_.Finish(reply_, Status::OK, this);
