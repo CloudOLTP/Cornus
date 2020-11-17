@@ -335,6 +335,7 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
         ((LockManager *)_cc_manager)->process_remote_read_response(node_id, access_type, response);
         return RCOK;
     } else {
+        printf("[node-%u] txn-%lu on %lu to node-%lu returns abort\n", g_node_id, get_txn_id(), key, node_id);
         _remote_nodes_involved[node_id]->state = ABORTED;
         _is_remote_abort = true;
         return ABORT;
@@ -344,6 +345,7 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
 RC
 TxnManager::process_2pc_phase1()
 {
+    printf("[node-%u] txn-%lu enter phase 1\n", g_node_id, get_txn_id());
     // Start Two-Phase Commit
     _txn_state = PREPARING;
 #if LOG_ENABLE
@@ -421,6 +423,7 @@ TxnManager::process_2pc_phase1()
 RC
 TxnManager::process_2pc_phase2(RC rc)
 {
+    printf("[node-%u] txn-%lu enter phase 2\n", g_node_id, get_txn_id());
     assert(rc == COMMIT || rc == ABORT);
     _txn_state = (rc == COMMIT)? COMMITTING : ABORTING;
     // TODO. for CLV this logging is optional. Here we use a conservative
@@ -442,6 +445,7 @@ TxnManager::process_2pc_phase2(RC rc)
         }
     }
     if (remote_readonly && is_read_only()) { // no logging  and remote message at all
+    printf("[node-%u] txn-%lu is readonly and no remote commit req\n", g_node_id, get_txn_id());
         _cc_manager->cleanup(rc);
         _finish_time = get_sys_clock(); 
         _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
@@ -460,7 +464,7 @@ TxnManager::process_2pc_phase2(RC rc)
         // No need to run this phase if the remote sub-txn has already committed
         // or aborted.
         if (it->second->state == ABORTED || it->second->state == COMMITTED) continue;
-
+printf("[node-%u] txn-%lu send remote commit/abort on to node-%u\n", g_node_id, get_txn_id(), it->first);
         SundialRequest &request = it->second->request;
         SundialResponse &response = it->second->response;
         request.Clear();
@@ -622,6 +626,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             rpc_log_semaphore->wait();
         #endif
     #endif
+    printf("[node-%u] txn-%lu rec remote commit/abort\n", g_node_id, get_txn_id());
             dependency_semaphore->wait();
             rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;
             _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
