@@ -326,9 +326,16 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
     read_request->set_key(key);
     read_request->set_index_id(index_id);
     read_request->set_access_type(access_type);
-
+#if ASYNC_RPC
+        rpc_semaphore->incr();
+        rpc_client->sendRequestAsync(this, node_id, request, response);
+#else
     rpc_client->sendRequest(node_id, request, response);
+#endif
 
+#if ASYNC_RPC
+        return RCOK;
+#else
     // handle RPC response
     assert(response.response_type() == SundialResponse::RESP_OK
            || response.response_type() ==  SundialResponse::RESP_ABORT);
@@ -340,6 +347,27 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
         _is_remote_abort = true;
         return ABORT;
     }
+#endif
+    
+}
+
+RC
+TxnManager::handle_read_request_resp() {
+    rpc_semaphore->wait();
+    RC rc = RCOK;
+    for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
+        SundialResponse &response = it->second->response;
+        assert(response.response_type() == SundialResponse::RESP_OK
+           || response.response_type() ==  SundialResponse::RESP_ABORT);
+        if (response.response_type() == SundialResponse::RESP_OK) {
+            ((LockManager *)_cc_manager)->process_remote_read_response(node_id, access_type, response);
+        } else {
+            _remote_nodes_involved[node_id]->state = ABORTED;
+            _is_remote_abort = true;
+            rc = ABORT;
+        }
+    }
+    return rc;
 }
 
 RC

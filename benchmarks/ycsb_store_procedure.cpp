@@ -71,10 +71,16 @@ YCSBStoreProcedure::execute()
             rc = _txn->send_remote_read_request(home_node, req->key, 0, 0, req->rtype);
             INC_FLOAT_STATS(time_debug1, get_sys_clock() - time_begin);
             INC_INT_STATS(int_debug1, 1);
-            if (rc == ABORT) return rc;
+            #if !ASYNC_RPC
+                if (rc == ABORT) return rc;
+            #endif
             // has_remote_req = true;
         }
     }
+    #if ASYNC_RPC
+        rc = _txn->handle_read_request_resp();
+        if (rc == ABORT) return rc;
+    #endif
 
     // if (has_remote_req)
     //     return LOCAL_MISS;
