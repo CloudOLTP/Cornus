@@ -360,9 +360,10 @@ TxnManager::handle_read_request_resp() {
         assert(response.response_type() == SundialResponse::RESP_OK
            || response.response_type() ==  SundialResponse::RESP_ABORT);
         if (response.response_type() == SundialResponse::RESP_OK) {
-            ((LockManager *)_cc_manager)->process_remote_read_response(node_id, access_type, response);
+            SundialRequest &request = it->second->request;
+            ((LockManager *)_cc_manager)->process_remote_read_response(it->first, (access_t)request.read_requests(0).access_type(), response);
         } else {
-            _remote_nodes_involved[node_id]->state = ABORTED;
+            _remote_nodes_involved[it->first]->state = ABORTED;
             _is_remote_abort = true;
             rc = ABORT;
         }
