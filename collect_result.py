@@ -3,6 +3,13 @@ import platform
 import subprocess, datetime, time, signal, json
 import pandas as pd
 
+def produce_avg(df_result, df_list, col, output_cnt):
+	sum_val = df_result[col]
+	for i in range(1, output_cnt):
+		sum_val += df_list[i][col]
+	df_result["avg_"+col] = sum_val / output_cnt
+	return df_result
+
 if __name__ == "__main__":
 	exp_name = sys.argv[1]
 
@@ -39,5 +46,10 @@ if __name__ == "__main__":
 	avg_latency = sum_latency/output_cnt
 	df_result["sum_throughput"] = sum_thruput
 	df_result["avg_avg_dist_latency"] = avg_latency
+	df_result = produce_avg(df_result, df_list, "multi_part_execute_phase (in us)", output_cnt)
+	df_result = produce_avg(df_result, df_list, "multi_part_prepare_phase (in us)", output_cnt)
+	df_result = produce_avg(df_result, df_list, "multi_part_commit_phase (in us)", output_cnt)
+	df_result = produce_avg(df_result, df_list, "multi_part_abort (in us)", output_cnt)
+	df_result = produce_avg(df_result, df_list, "multi_part_cleanup_phase (in us)", output_cnt)
 	df_result.to_csv(exp_name+"_final.csv", index=False)
 	os.system("mv ./*.csv ./outputs")
