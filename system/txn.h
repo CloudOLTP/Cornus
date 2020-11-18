@@ -61,6 +61,7 @@ public:
 public:
     RC send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t index_id,
                                 uint64_t table_id, access_t access_type);
+    RC send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> &remote_requests);
     RC send_log_request(uint64_t node_id, SundialRequest::RequestType type);
     RC process_remote_request(const SundialRequest* request, SundialResponse* response);
     RC handle_read_request_resp();

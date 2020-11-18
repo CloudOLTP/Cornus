@@ -59,6 +59,7 @@ YCSBStoreProcedure::execute()
     // for each request, if it touches a remote node, add it to a remote query.
     // bool has_remote_req = false;
     std::map<uint64_t, int> debug;
+    remote_requests.clear();
     for (uint32_t i = 0; i < query->get_request_count(); i ++) {
         RequestYCSB * req = &requests[i];
         if (debug.find(req->key) == debug.end())
@@ -67,19 +68,32 @@ YCSBStoreProcedure::execute()
             printf("!!!two same key in a query\n");
         uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
         if (home_node != g_node_id) {
-            uint64_t time_begin = get_sys_clock();
-            rc = _txn->send_remote_read_request(home_node, req->key, 0, 0, req->rtype);
-            INC_FLOAT_STATS(time_debug1, get_sys_clock() - time_begin);
-            INC_INT_STATS(int_debug1, 1);
-            #if !ASYNC_RPC
+            #if ASYNC_RPC
+                if (remote_requests.find(home_node) == remote_requests.end())
+                    remote_requests.insert(pair<uint64_t, vector<RemoteRequestInfo *> > (home_node, vector<RemoteRequestInfo *>()));
+                // TODO. Ideally, we should send SQL or some other intermediate representation of the query over.
+                // For now, we just send the message using the following format (RemoteQuery)
+                //        | key | index_id | type | [optional] cc_specific_data |
+                RemoteRequestInfo * remote_request = new RemoteRequestInfo;
+                remote_request->access_type = req->rtype;
+                remote_request->index_id = 0;
+                remote_request->key = req->key;
+                remote_request->table_id = 0;
+                remote_requests[home_node].push_back(remote_request);
+            #else
+                rc = _txn->send_remote_read_request(home_node, req->key, 0, 0, req->rtype);
                 if (rc == ABORT) return rc;
             #endif
             // has_remote_req = true;
         }
     }
+    // send remote package, if abort return abort
     #if ASYNC_RPC
-        rc = _txn->handle_read_request_resp();
-        if (rc == ABORT) return rc;
+        if (remote_requests.size() > 0) {
+            _txn->send_remote_package(remote_requests);
+            rc = _txn->handle_read_request_resp();
+            if (rc == ABORT) return rc;
+        }
     #endif
 
     // if (has_remote_req)

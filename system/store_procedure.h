@@ -32,6 +32,13 @@ public:
 
     access_t _local_miss_type;
     uint64_t _local_miss_key;
+    struct RemoteRequestInfo {
+        uint64_t key;
+        uint64_t index_id;
+        uint64_t table_id;
+        access_t access_type;
+    };
+    std::map<uint64_t, vector<RemoteRequestInfo *>> remote_requests;
     //map<uint32_t, UnstructuredBuffer> remote_requests;
     //bool is_single_partition() { return _is_single_partition; }
 protected:
