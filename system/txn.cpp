@@ -1,4 +1,4 @@
-#include "txn.h"
+#include "txns.h"
 #include "row.h"
 #include "workload.h"
 #include "ycsb.h"
@@ -326,9 +326,16 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
     read_request->set_key(key);
     read_request->set_index_id(index_id);
     read_request->set_access_type(access_type);
-
+#if ASYNC_RPC
+        rpc_semaphore->incr();
+        rpc_client->sendRequestAsync(this, node_id, request, response);
+#else
     rpc_client->sendRequest(node_id, request, response);
+#endif
 
+#if ASYNC_RPC
+        return RCOK;
+#else
     // handle RPC response
     assert(response.response_type() == SundialResponse::RESP_OK
            || response.response_type() ==  SundialResponse::RESP_ABORT);
@@ -340,6 +347,92 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
         _is_remote_abort = true;
         return ABORT;
     }
+#endif
+    
+}
+
+RC
+TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> &remote_requests)
+{
+    // printf("[node-%u] txn-%lu send remote read on %lu to node-%lu\n", g_node_id, get_txn_id(), key, node_id);
+    _is_single_partition = false;
+    for (auto it = remote_requests.begin(); it != remote_requests.end(); it ++) {
+        uint64_t node_id = it->first;
+        if ( _remote_nodes_involved.find(node_id) == _remote_nodes_involved.end() ) {
+            _remote_nodes_involved[node_id] = new RemoteNodeInfo;
+            _remote_nodes_involved[node_id]->state = RUNNING;
+        }
+        SundialRequest &request = _remote_nodes_involved[node_id]->request;
+        SundialResponse &response = _remote_nodes_involved[node_id]->response;
+        request.set_txn_id( get_txn_id() );
+        request.set_request_type( SundialRequest::READ_REQ );
+        SundialRequest::ReadRequest * read_request = request.add_read_requests();
+        read_request->set_key(it->second->key);
+        read_request->set_index_id(it->second->index_id);
+        read_request->set_access_type(it->second->access_type);
+    }
+   
+    for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
+        #if ASYNC_RPC
+            rpc_semaphore->incr();
+            rpc_client->sendRequestAsync(this, it->first, it->second->request, it->second->response);
+        #else
+            rpc_client->sendRequest(it->first, it->second->request, it->second->response);
+        #endif
+    }
+        
+
+#if ASYNC_RPC
+        rpc_semaphore->wait();
+    RC rc = RCOK;
+    for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
+        SundialResponse &response = it->second->response;
+        assert(response.response_type() == SundialResponse::RESP_OK
+           || response.response_type() ==  SundialResponse::RESP_ABORT);
+        if (response.response_type() == SundialResponse::RESP_OK) {
+            SundialRequest &request = it->second->request;
+            ((LockManager *)_cc_manager)->process_remote_read_response(it->first, (access_t)request.read_requests(0).access_type(), response);
+        } else {
+            _remote_nodes_involved[it->first]->state = ABORTED;
+            _is_remote_abort = true;
+            rc = ABORT;
+        }
+    }
+    return rc;
+#else
+    // handle RPC response
+    assert(response.response_type() == SundialResponse::RESP_OK
+           || response.response_type() ==  SundialResponse::RESP_ABORT);
+    if (response.response_type() == SundialResponse::RESP_OK) {
+        ((LockManager *)_cc_manager)->process_remote_read_response(node_id, access_type, response);
+        return RCOK;
+    } else {
+        _remote_nodes_involved[node_id]->state = ABORTED;
+        _is_remote_abort = true;
+        return ABORT;
+    }
+#endif
+    
+}
+
+RC
+TxnManager::handle_read_request_resp() {
+    rpc_semaphore->wait();
+    RC rc = RCOK;
+    for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
+        SundialResponse &response = it->second->response;
+        assert(response.response_type() == SundialResponse::RESP_OK
+           || response.response_type() ==  SundialResponse::RESP_ABORT);
+        if (response.response_type() == SundialResponse::RESP_OK) {
+            SundialRequest &request = it->second->request;
+            ((LockManager *)_cc_manager)->process_remote_read_response(it->first, (access_t)request.read_requests(0).access_type(), response);
+        } else {
+            _remote_nodes_involved[it->first]->state = ABORTED;
+            _is_remote_abort = true;
+            rc = ABORT;
+        }
+    }
+    return rc;
 }
 
 RC
