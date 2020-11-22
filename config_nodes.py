@@ -11,6 +11,7 @@ cmd = "cd Sundial; sudo ./run_proto.sh"
 sync = "cd Sundial; ./pull.sh"
 kill = "cd Sundial; sudo pkill -f rundb"
 clean_output = "cd Sundial/outputs; rm stats.json"
+clean_log = "cd Sundial; rm -f log_*"
 
 class myThread (threading.Thread):
 	def __init__(self, line, setup):
@@ -31,6 +32,7 @@ if __name__ == "__main__":
 	cmds['sync'] = sync
 	cmds['kill'] = kill
 	cmds['clean_output'] = clean_output
+	cmds['clean_log'] = clean_log
 	ifconfig = open("ifconfig.txt")
 	node_type = -1
 	threads = []

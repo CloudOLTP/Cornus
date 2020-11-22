@@ -51,5 +51,6 @@ if __name__ == "__main__":
 	df_result = produce_avg(df_result, df_list, "multi_part_commit_phase (in us)", output_cnt)
 	df_result = produce_avg(df_result, df_list, "multi_part_abort (in us)", output_cnt)
 	df_result = produce_avg(df_result, df_list, "multi_part_cleanup_phase (in us)", output_cnt)
+	df_result = produce_avg(df_result, df_list, "average_latency", output_cnt)
 	df_result.to_csv(exp_name+"_final.csv", index=False)
 	os.system("mv ./*.csv ./outputs")
