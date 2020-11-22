@@ -120,6 +120,14 @@ extern char             ifconfig_file[];
 
 enum RC {RCOK, COMMIT, ABORT, WAIT, LOCAL_MISS, SPECULATE, ERROR, FINISH};
 enum access_t {RD, WR, XP, SCAN, INS, DEL};
+
+struct RemoteRequestInfo {
+        uint64_t key;
+        uint64_t index_id;
+        uint64_t table_id;
+        access_t access_type;
+    };
+
 // INDEX
 enum latch_t {LATCH_EX, LATCH_SH, LATCH_NONE};
 // accessing type determines the latch type on nodes

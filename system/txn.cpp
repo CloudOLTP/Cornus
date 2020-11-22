@@ -1,4 +1,4 @@
-#include "txns.h"
+#include "txn.h"
 #include "row.h"
 #include "workload.h"
 #include "ycsb.h"
@@ -352,7 +352,7 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
 }
 
 RC
-TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> &remote_requests)
+TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> > &remote_requests)
 {
     // printf("[node-%u] txn-%lu send remote read on %lu to node-%lu\n", g_node_id, get_txn_id(), key, node_id);
     _is_single_partition = false;
@@ -363,13 +363,14 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> &
             _remote_nodes_involved[node_id]->state = RUNNING;
         }
         SundialRequest &request = _remote_nodes_involved[node_id]->request;
-        SundialResponse &response = _remote_nodes_involved[node_id]->response;
         request.set_txn_id( get_txn_id() );
         request.set_request_type( SundialRequest::READ_REQ );
-        SundialRequest::ReadRequest * read_request = request.add_read_requests();
-        read_request->set_key(it->second->key);
-        read_request->set_index_id(it->second->index_id);
-        read_request->set_access_type(it->second->access_type);
+	for (auto it2 = it->second.begin(); it2 != it->second.end(); it2 ++) {
+            SundialRequest::ReadRequest * read_request = request.add_read_requests();
+            read_request->set_key((*it2)->key);
+            read_request->set_index_id((*it2)->index_id);
+            read_request->set_access_type((*it2)->access_type);
+	}
     }
    
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {

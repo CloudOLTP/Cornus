@@ -70,7 +70,7 @@ YCSBStoreProcedure::execute()
         if (home_node != g_node_id) {
             #if ASYNC_RPC
                 if (remote_requests.find(home_node) == remote_requests.end())
-                    remote_requests.insert(pair<uint64_t, vector<RemoteRequestInfo *> > (home_node, vector<RemoteRequestInfo *>()));
+                    remote_requests.insert(std::pair<uint64_t, vector<RemoteRequestInfo *> > (home_node, vector<RemoteRequestInfo *>()));
                 // TODO. Ideally, we should send SQL or some other intermediate representation of the query over.
                 // For now, we just send the message using the following format (RemoteQuery)
                 //        | key | index_id | type | [optional] cc_specific_data |
@@ -90,8 +90,7 @@ YCSBStoreProcedure::execute()
     // send remote package, if abort return abort
     #if ASYNC_RPC
         if (remote_requests.size() > 0) {
-            _txn->send_remote_package(remote_requests);
-            rc = _txn->handle_read_request_resp();
+            rc = _txn->send_remote_package(remote_requests);
             if (rc == ABORT) return rc;
         }
     #endif
