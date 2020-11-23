@@ -346,7 +346,7 @@ LockManager::process_remote_read_response(uint32_t node_id, SundialResponse &res
         access->row = NULL;
         access->key = response.tuple_data(i).key();
         access->table_id = response.tuple_data(i).table_id();
-        access->type = response.tuple_data(i).access_type();
+        access->type = (access_t) response.tuple_data(i).access_type();
         access->data_size = response.tuple_data(i).size();
         access->data = new char [access->data_size];
         memcpy(access->data, response.tuple_data(i).data().c_str(), access->data_size);

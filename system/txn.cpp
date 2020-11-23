@@ -391,7 +391,6 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
         assert(response.response_type() == SundialResponse::RESP_OK
            || response.response_type() ==  SundialResponse::RESP_ABORT);
         if (response.response_type() == SundialResponse::RESP_OK) {
-            SundialRequest &request = it->second->request;
             ((LockManager *)_cc_manager)->process_remote_read_response(it->first, response);
         } else {
             _remote_nodes_involved[it->first]->state = ABORTED;
