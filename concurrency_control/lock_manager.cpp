@@ -333,6 +333,27 @@ LockManager::process_remote_read_response(uint32_t node_id, access_t type, Sundi
 }
 
 void
+LockManager::process_remote_read_response(uint32_t node_id, SundialResponse &response)
+{
+    assert(response.response_type() == SundialResponse::RESP_OK);
+    for (int i = 0; i < response.tuple_data_size(); i ++) {
+        AccessLock ac;
+        _remote_set.push_back(ac);
+        AccessLock * access = &(*_remote_set.rbegin());
+        assert(node_id != g_node_id);
+
+        access->home_node_id = node_id;
+        access->row = NULL;
+        access->key = response.tuple_data(i).key();
+        access->table_id = response.tuple_data(i).table_id();
+        access->type = response.tuple_data(i).access_type();
+        access->data_size = response.tuple_data(i).size();
+        access->data = new char [access->data_size];
+        memcpy(access->data, response.tuple_data(i).data().c_str(), access->data_size);
+    }
+}
+
+void
 LockManager::build_prepare_req(uint32_t node_id, SundialRequest &request)
 {
     for (auto access : _remote_set) {

@@ -365,12 +365,12 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
         SundialRequest &request = _remote_nodes_involved[node_id]->request;
         request.set_txn_id( get_txn_id() );
         request.set_request_type( SundialRequest::READ_REQ );
-	for (auto it2 = it->second.begin(); it2 != it->second.end(); it2 ++) {
+        for (auto it2 = it->second.begin(); it2 != it->second.end(); it2 ++) {
             SundialRequest::ReadRequest * read_request = request.add_read_requests();
             read_request->set_key((*it2)->key);
             read_request->set_index_id((*it2)->index_id);
             read_request->set_access_type((*it2)->access_type);
-	}
+        }
     }
    
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
@@ -392,7 +392,7 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
            || response.response_type() ==  SundialResponse::RESP_ABORT);
         if (response.response_type() == SundialResponse::RESP_OK) {
             SundialRequest &request = it->second->request;
-            ((LockManager *)_cc_manager)->process_remote_read_response(it->first, (access_t)request.read_requests(0).access_type(), response);
+            ((LockManager *)_cc_manager)->process_remote_read_response(it->first, response);
         } else {
             _remote_nodes_involved[it->first]->state = ABORTED;
             _is_remote_abort = true;
@@ -649,6 +649,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 tuple->set_key(key);
                 tuple->set_table_id( table_id );
                 tuple->set_size( tuple_size );
+                tuple->set_access_type( access_type );
                 tuple->set_data( get_cc_manager()->get_data(key, table_id), tuple_size );
             }
             if (rc == ABORT) {

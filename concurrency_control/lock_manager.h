@@ -20,6 +20,7 @@ public:
     RC            index_delete(INDEX * index, uint64_t key);
 
     void          process_remote_read_response(uint32_t node_id, access_t type, SundialResponse &response);
+    void          process_remote_read_response(uint32_t node_id, SundialResponse &response);
     void          build_prepare_req(uint32_t node_id, SundialRequest &request);
 
     RC            commit_insdel();
