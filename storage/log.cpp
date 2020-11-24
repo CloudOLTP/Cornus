@@ -52,6 +52,9 @@ LogManager::test() {
 
 
 RC LogManager::log(const SundialRequest* request, SundialResponse* reply) {
+    #if DEBUG_LOG
+reply->set_response_type(request_to_response(request->request_type()));
+    #else
     // TODO: add logic for insert once
     log_request(request, reply);
     
@@ -59,6 +62,7 @@ RC LogManager::log(const SundialRequest* request, SundialResponse* reply) {
     // CAUTION: race condition may occur but it is rare because flushing is too long
     std::unique_lock<std::mutex> latch(*flush_latch_);
     flush_cv_->wait(latch);
+    #endif
     return RCOK;
 }
 
