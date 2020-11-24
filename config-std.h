@@ -197,3 +197,5 @@
 
 #define NETWORK_DELAY                   0 // in us  
 #define LOG_DELAY                       0
+
+#define DEBUG_LOG                       false
