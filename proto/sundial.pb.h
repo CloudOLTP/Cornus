@@ -866,6 +866,7 @@ class SundialResponse_TupleData PROTOBUF_FINAL :
     kKeyFieldNumber = 1,
     kTableIdFieldNumber = 2,
     kSizeFieldNumber = 3,
+    kAccessTypeFieldNumber = 5,
   };
   // bytes data = 4;
   void clear_data();
@@ -910,6 +911,15 @@ class SundialResponse_TupleData PROTOBUF_FINAL :
   void _internal_set_size(::PROTOBUF_NAMESPACE_ID::uint64 value);
   public:
 
+  // uint64 access_type = 5;
+  void clear_access_type();
+  ::PROTOBUF_NAMESPACE_ID::uint64 access_type() const;
+  void set_access_type(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_access_type() const;
+  void _internal_set_access_type(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
   // @@protoc_insertion_point(class_scope:sundial_rpc.SundialResponse.TupleData)
  private:
   class _Internal;
@@ -921,6 +931,7 @@ class SundialResponse_TupleData PROTOBUF_FINAL :
   ::PROTOBUF_NAMESPACE_ID::uint64 key_;
   ::PROTOBUF_NAMESPACE_ID::uint64 table_id_;
   ::PROTOBUF_NAMESPACE_ID::uint64 size_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 access_type_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_sundial_2eproto;
 };
@@ -1667,6 +1678,26 @@ inline void SundialResponse_TupleData::set_allocated_data(std::string* data) {
   data_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), data,
       GetArena());
   // @@protoc_insertion_point(field_set_allocated:sundial_rpc.SundialResponse.TupleData.data)
+}
+
+// uint64 access_type = 5;
+inline void SundialResponse_TupleData::clear_access_type() {
+  access_type_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SundialResponse_TupleData::_internal_access_type() const {
+  return access_type_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SundialResponse_TupleData::access_type() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialResponse.TupleData.access_type)
+  return _internal_access_type();
+}
+inline void SundialResponse_TupleData::_internal_set_access_type(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  access_type_ = value;
+}
+inline void SundialResponse_TupleData::set_access_type(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_access_type(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialResponse.TupleData.access_type)
 }
 
 // -------------------------------------------------------------------

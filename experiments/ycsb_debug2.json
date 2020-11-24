@@ -16,3 +16,4 @@
     "RUN_TIME": 30,
     "DEBUG_LOG": ["true", "false"],
     "i": [0, 1, 2, 3, 4, 5]
+}
