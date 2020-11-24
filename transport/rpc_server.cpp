@@ -122,6 +122,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         uint64_t time_begin = get_sys_clock();
         #if !DEBUG_LOG
         log_manager->log(request, response);
+        #else
+        response->set_response_type(request_to_response(request->request_type()))
         #endif
         INC_FLOAT_STATS(time_debug3, get_sys_clock() - time_begin);
         INC_INT_STATS(int_debug3, 1);
