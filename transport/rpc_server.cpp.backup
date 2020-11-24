@@ -36,41 +36,44 @@ SundialRPCServerImpl::run() {
             num_nodes ++;
         }
     }
-    SundialRPCServerImpl service;
-
-  //grpc::EnableDefaultHealthCheckService(true);
-  //grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-  ServerBuilder builder;
-  // Listen on the given address without any authentication mechanism.
-  builder.AddListeningPort(line, grpc::InsecureServerCredentials());
-  // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
-  builder.RegisterService(&service);
-  // Finally assemble the server.
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-
+    ServerBuilder builder;
+    builder.AddListeningPort(line, grpc::InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    cq_ = builder.AddCompletionQueue();
+    server_ = builder.BuildAndStart();
+    // set up multiple server threads to start accepting requests
+    // XXX(zhihan): only use one cq as it is thread safe. can switch to more cqs if does not scale 
+    //_thread_pool = new pthread_t * [NUM_RPC_SERVER_THREADS];
+#if LOG_NODE
+    uint32_t num_thds = NUM_STORAGE_RPC_SERVER_THREADS;
+#else
+    uint32_t num_thds = NUM_RPC_SERVER_THREADS;
+#endif
+    _thread_pool = new std::thread * [num_thds];
+    for (uint32_t i = 0; i < num_thds; i++) {
+        //_thread_pool[i] = new pthread_t;
+        //pthread_create(_thread_pool[i], NULL, HandleRpcs, NULL); 
+        _thread_pool[i] = new std::thread(HandleRpcs, this);
+    }
     cout <<"sundial server initialized, lisentening on " << line << endl;
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
-  server->Wait();
 }
 
-// void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
-//     // Spawn a new CallData instance to serve new clients.
-//     new CallData(&(s->service_), s->cq_.get());
-//     void* tag;  // uniquely identifies a request.
-//     bool ok;
-//     while (true) {
-//       // Block waiting to read the next event from the completion queue. The
-//       // event is uniquely identified by its tag, which in this case is the
-//       // memory address of a CallData instance.
-//       // The return value of Next should always be checked. This return value
-//       // tells us whether there is any kind of event or cq_ is shutting down.
-//       GPR_ASSERT(s->cq_->Next(&tag, &ok));
-//       GPR_ASSERT(ok);
-//       static_cast<CallData*>(tag)->Proceed();
-//     }
-// }
+void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
+    // Spawn a new CallData instance to serve new clients.
+    new CallData(&(s->service_), s->cq_.get());
+    void* tag;  // uniquely identifies a request.
+    bool ok;
+    while (true) {
+      // Block waiting to read the next event from the completion queue. The
+      // event is uniquely identified by its tag, which in this case is the
+      // memory address of a CallData instance.
+      // The return value of Next should always be checked. This return value
+      // tells us whether there is any kind of event or cq_ is shutting down.
+      GPR_ASSERT(s->cq_->Next(&tag, &ok));
+      GPR_ASSERT(ok);
+      static_cast<CallData*>(tag)->Proceed();
+    }
+}
 
 Status
 SundialRPCServerImpl::contactRemote(ServerContext* context, const SundialRequest* request,
@@ -150,26 +153,26 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 }
 
 
-// SundialRPCServerImpl::CallData::CallData(SundialRPC::AsyncService* service, ServerCompletionQueue* cq) : service_(service), cq_(cq), responder_(&ctx_), status_(CREATE) {
-//     Proceed();
-// }
+SundialRPCServerImpl::CallData::CallData(SundialRPC::AsyncService* service, ServerCompletionQueue* cq) : service_(service), cq_(cq), responder_(&ctx_), status_(CREATE) {
+    Proceed();
+}
 
-// void
-// SundialRPCServerImpl::CallData::Proceed() {
-//     if (status_ == CREATE) {
-//         service_->RequestcontactRemote(&ctx_, &request_, &responder_, cq_, cq_, this);  
-//         status_ = PROCESS;
-//     } else if (status_ == PROCESS) {
-//         // Spawn a new CallData instance to serve new clients while processing
-//         new CallData(service_, cq_);
-//         processContactRemote(&ctx_, &request_ , &reply_);
-//         status_ = FINISH;
-//         responder_.Finish(reply_, Status::OK, this);
-//     } else {
-//         GPR_ASSERT(status_ == FINISH);
-//         delete this;
-//     }
-// }
+void
+SundialRPCServerImpl::CallData::Proceed() {
+    if (status_ == CREATE) {
+        service_->RequestcontactRemote(&ctx_, &request_, &responder_, cq_, cq_, this);  
+        status_ = PROCESS;
+    } else if (status_ == PROCESS) {
+        // Spawn a new CallData instance to serve new clients while processing
+        new CallData(service_, cq_);
+        processContactRemote(&ctx_, &request_ , &reply_);
+        status_ = FINISH;
+        responder_.Finish(reply_, Status::OK, this);
+    } else {
+        GPR_ASSERT(status_ == FINISH);
+        delete this;
+    }
+}
 
 /*
 void
