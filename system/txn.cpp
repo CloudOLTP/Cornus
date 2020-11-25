@@ -464,6 +464,8 @@ TxnManager::process_2pc_phase1()
     SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
     send_log_request(g_storage_node_id, type);
 #endif
+
+    uint64_t start_time3 = get_sys_clock();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         assert(it->second->state == RUNNING);
         SundialRequest &request = it->second->request;
@@ -492,6 +494,7 @@ TxnManager::process_2pc_phase1()
             _remote_nodes_involved[it->first]->state = COMMITTED;
 #endif
     }
+    INC_FLOAT_STATS(time_debug5, get_sys_clock() - start_time3);
     log_semaphore->wait();
 #if ASYNC_RPC
     uint64_t start_time2 = get_sys_clock();

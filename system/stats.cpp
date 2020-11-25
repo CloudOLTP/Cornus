@@ -198,7 +198,9 @@ void Stats::output(std::ostream * os)
     // debug prepare phase
     STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
     STAT_SUM(double, total_wait_log, _float_stats[STAT_time_debug3]);
-    STAT_SUM(double, total_wait_vote, _int_stats[STAT_time_debug4]);
+    STAT_SUM(double, total_send_prepare, _float_stats[STAT_time_debug5]);
+    STAT_SUM(double, total_wait_vote, _float_stats[STAT_time_debug4]);
+    out << "    " << setw(30) << left << "average_send_prepare:" << total_send_prepare / total_prepare / BILLION * 1000000 << endl;
     out << "    " << setw(30) << left << "average_wait_log:" << total_wait_log / total_prepare / BILLION * 1000000 << endl;
     out << "    " << setw(30) << left << "average_wait_vote:" << total_wait_vote / total_prepare / BILLION * 1000000 << endl;
 
