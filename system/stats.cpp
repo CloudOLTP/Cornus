@@ -196,10 +196,23 @@ void Stats::output(std::ostream * os)
     avg_dist_total_time /= total_num_multi_part_txns;
 
     // debug prepare phase
+    STAT_SUM(uint64_t, sum_prepared_ok_msg_count, _resp_msg_count[SundialResponse::PREPARED_OK]);
+    STAT_SUM(uint64_t, sum_prepared_ok_msg_size, _resp_msg_size[SundialResponse::PREPARED_OK]);
+    STAT_SUM(uint64_t, sum_prepared_ok_ro_msg_count, _resp_msg_count[SundialResponse::PREPARED_OK_RO]);
+    STAT_SUM(uint64_t, sum_prepared_ok_ro_msg_size, _resp_msg_size[SundialResponse::PREPARED_OK_RO]);
+    uint64_t total_prepare_resp_cnt = sum_prepared_ok_msg_count + sum_prepared_ok_ro_msg_count;
+    uint64_t total_prepare_resp_size = sum_prepared_ok_msg_size + sum_prepared_ok_ro_msg_size;
+    STAT_SUM(uint64_t, sum_prepare_count, _req_msg_count[SundialRequest::PREPARE_REQ]);
+    STAT_SUM(uint64_t, sum_prepare_size, _req_msg_size[SundialRequest::PREPARE_REQ]);
+
     STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
     STAT_SUM(double, total_wait_log, _float_stats[STAT_time_debug3]);
     STAT_SUM(double, total_send_prepare, _float_stats[STAT_time_debug5]);
     STAT_SUM(double, total_wait_vote, _float_stats[STAT_time_debug4]);
+    out << "    " << setw(30) << left << "average_prepare_req_cnt:" << sum_prepare_count * 1.0 / total_prepare << endl;
+    out << "    " << setw(30) << left << "average_prepare_req_size:" << sum_prepare_size * 1.0 / total_prepare << endl;
+    out << "    " << setw(30) << left << "average_prepare_resp_cnt:" << total_prepare_resp_cnt * 1.0 / total_prepare << endl;
+    out << "    " << setw(30) << left << "average_prepare_resp_size:" << total_prepare_resp_size * 1.0 / total_prepare << endl;
     out << "    " << setw(30) << left << "average_send_prepare:" << total_send_prepare / total_prepare / BILLION * 1000000 << endl;
     out << "    " << setw(30) << left << "average_wait_log:" << total_wait_log / total_prepare / BILLION * 1000000 << endl;
     out << "    " << setw(30) << left << "average_wait_vote:" << total_wait_vote / total_prepare / BILLION * 1000000 << endl;
