@@ -492,9 +492,15 @@ TxnManager::process_2pc_phase1()
             _remote_nodes_involved[it->first]->state = COMMITTED;
 #endif
     }
+    uint64_t start_time = get_sys_clock();
     log_semaphore->wait();
+    INC_FLOAT_STATS(time_debug3, get_sys_clock() - start_time);
+    INC_INT_STATS(int_debug3, 1);
 #if ASYNC_RPC
+    uint64_t start_time2 = get_sys_clock();
     rpc_semaphore->wait();
+    INC_FLOAT_STATS(time_debug4, get_sys_clock() - start_time2);
+    INC_INT_STATS(int_debug4, 1);
     rpc_log_semaphore->wait();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         assert(it->second->state == RUNNING);

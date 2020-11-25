@@ -99,6 +99,10 @@ enum StatsInt {
     // Logging
     STAT_log_num,
 
+    //msg
+    STAT_msg_cnt,
+    STAT_msg_size,
+
     STAT_num_renewals,
     STAT_num_no_need_to_renewal,
 
@@ -289,6 +293,10 @@ public:
 
         // Logging
         "log_num",
+
+        //mgs
+        "msg_cnt",
+        "msg_size",
 
         "num_renewals",
         "num_no_need_to_renewal",

@@ -195,6 +195,14 @@ void Stats::output(std::ostream * os)
         avg_dist_total_time+= _stats[tid]->_float_stats[STAT_time_debug7];
     avg_dist_total_time /= total_num_multi_part_txns;
 
+    // debug prepare phase
+    STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
+    STAT_SUM(double, total_wait_log, _float_stats[STAT_time_debug3]);
+    STAT_SUM(double, total_wait_vote, _int_stats[STAT_time_debug4]);
+    out << "    " << setw(30) << left << "average_wait_log:" << total_wait_log / total_prepare / BILLION * 1000000 << endl;
+    out << "    " << setw(30) << left << "average_wait_vote:" << total_wait_vote / total_prepare / BILLION * 1000000 << endl;
+
+
     out << "    " << setw(30) << left << "average_dist_latency:" << avg_dist_latency / BILLION << endl;
     out << "    " << setw(30) << left << "average_dist_total_time:" << avg_dist_total_time / BILLION << endl;
     out << "    " << setw(30) << left << "average_latency:" << avg_latency / BILLION << endl;
