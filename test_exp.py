@@ -59,3 +59,4 @@ if __name__ == "__main__":
     if mode == "release":
         os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")
+    os.system("python3 send_email.py {}".format(exp_name))
