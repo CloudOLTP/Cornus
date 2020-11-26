@@ -199,3 +199,5 @@
 #define LOG_DELAY                       0
 
 #define DEBUG_LOG                       false
+
+#define WORKER_SERVER_SAME              false

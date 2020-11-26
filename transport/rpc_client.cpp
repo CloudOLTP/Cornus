@@ -82,6 +82,7 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     //printf("[REQ] client send to node %ld. type=%s\n", node_id,
     //       SundialRequest::RequestType_Name(request.request_type()).c_str());
     assert(node_id != g_node_id);
+    // RACE CONDITION: should assign thd id to server thread
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_req_msg_size[ request.request_type() ] += request.SpaceUsedLong();
     call->response_reader = _servers[node_id]->stub_->PrepareAsynccontactRemote(&call->context, request, &cq);
