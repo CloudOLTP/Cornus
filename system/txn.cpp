@@ -334,8 +334,8 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
 #endif
 
 #if ASYNC_RPC
-        return RCOK;
-#else
+    rpc_semaphore->wait();
+#endif
     // handle RPC response
     assert(response.response_type() == SundialResponse::RESP_OK
            || response.response_type() ==  SundialResponse::RESP_ABORT);
@@ -347,7 +347,6 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
         _is_remote_abort = true;
         return ABORT;
     }
-#endif
     
 }
 
