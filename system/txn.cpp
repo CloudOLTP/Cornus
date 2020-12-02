@@ -326,16 +326,16 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
     read_request->set_key(key);
     read_request->set_index_id(index_id);
     read_request->set_access_type(access_type);
-#if ASYNC_RPC
-        rpc_semaphore->incr();
-        rpc_client->sendRequestAsync(this, node_id, request, response);
-#else
+// #if ASYNC_RPC
+        // rpc_semaphore->incr();
+        // rpc_client->sendRequestAsync(this, node_id, request, response);
+// #else
     rpc_client->sendRequest(node_id, request, response);
-#endif
+// #endif
 
-#if ASYNC_RPC
-    rpc_semaphore->wait();
-#endif
+// #if ASYNC_RPC
+//     rpc_semaphore->wait();
+// #endif
     // handle RPC response
     assert(response.response_type() == SundialResponse::RESP_OK
            || response.response_type() ==  SundialResponse::RESP_ABORT);
