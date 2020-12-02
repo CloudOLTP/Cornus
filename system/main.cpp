@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     }
 
     // make sure server is setup before moving on
-    sleep(2);
+    sleep(5);
 #if DISTRIBUTED
     cout << "Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
