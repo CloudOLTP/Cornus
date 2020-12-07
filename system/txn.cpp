@@ -460,10 +460,10 @@ TxnManager::process_2pc_phase1()
   #endif
 #endif
 #if REMOTE_LOG
-    if (!is_read_only()) {
+    // if (!is_read_only()) {
         SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
         send_log_request(g_storage_node_id, type);
-    }
+    // }
 #endif
 
     uint64_t start_time3 = get_sys_clock();
@@ -503,9 +503,9 @@ TxnManager::process_2pc_phase1()
     INC_FLOAT_STATS(time_debug4, get_sys_clock() - start_time2);
     INC_INT_STATS(int_debug4, 1);
     uint64_t start_time = get_sys_clock();
-    if (!is_read_only()) {
+    // if (!is_read_only()) {
         rpc_log_semaphore->wait();
-    }
+    // }
     INC_FLOAT_STATS(time_debug3, get_sys_clock() - start_time);
     INC_INT_STATS(int_debug3, 1);
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
