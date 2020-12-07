@@ -271,14 +271,14 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 RC
 TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
 {
-    // if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
-    //     _log_nodes_involved[node_id] = new RemoteNodeInfo;
-    //     _log_nodes_involved[node_id]->state = RUNNING;
-    // }
-    // SundialRequest &request = _log_nodes_involved[node_id]->request;
-    // SundialResponse &response = _log_nodes_involved[node_id]->response;
-    SundialRequest request;
-    SundialResponse response;
+    if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
+        _log_nodes_involved[node_id] = new RemoteNodeInfo;
+        _log_nodes_involved[node_id]->state = RUNNING;
+    }
+    SundialRequest &request = _log_nodes_involved[node_id]->request;
+    SundialResponse &response = _log_nodes_involved[node_id]->response;
+    //SundialRequest request;
+    //SundialResponse response;
     request.Clear();
     response.Clear();
     request.set_txn_id( get_txn_id() );
@@ -695,12 +695,12 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             log_semaphore->wait();
   #endif
     #if REMOTE_LOG
-        // if (num_tuples != 0) {
+        if (num_tuples != 0) {
             send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
             #if ASYNC_RPC
                 rpc_log_semaphore->wait();
             #endif
-        // }
+        }
     #endif
             // readonly remote nodes
             if (num_tuples == 0) {
