@@ -695,12 +695,12 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             log_semaphore->wait();
   #endif
     #if REMOTE_LOG
-        if (num_tuples != 0) {
+        // if (num_tuples != 0) {
             send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
             #if ASYNC_RPC
                 rpc_log_semaphore->wait();
             #endif
-        }
+        // }
     #endif
             // readonly remote nodes
             if (num_tuples == 0) {
