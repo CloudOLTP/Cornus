@@ -252,12 +252,14 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 #else
     // if logging didn't happen, process commit phase
 #if REMOTE_LOG
-    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-            SundialRequest::LOG_ABORT_REQ;
-    send_log_request(g_storage_node_id, type);
-    #if ASYNC_RPC
-        rpc_log_semaphore->wait();
-    #endif
+    if (!is_read_only()) {
+        SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+                SundialRequest::LOG_ABORT_REQ;
+        send_log_request(g_storage_node_id, type);
+        #if ASYNC_RPC
+            rpc_log_semaphore->wait();
+        #endif
+    }
 #endif
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
