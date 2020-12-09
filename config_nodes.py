@@ -33,7 +33,8 @@ if __name__ == "__main__":
 	cmds['kill'] = kill
 	cmds['clean_output'] = clean_output
 	cmds['clean_log'] = clean_log
-	cmds['change_ifconfig'] = "cd Sundial; python3 change_ifconfig {}".format(sys.argv[2])
+	if len(sys.argv) > 2:
+		cmds['change_ifconfig'] = "cd Sundial; python3 change_ifconfig.py {}".format(sys.argv[2])
 	ifconfig = open("ifconfig.txt")
 	node_type = -1
 	threads = []
@@ -63,7 +64,7 @@ if __name__ == "__main__":
 			# 	thread1 = myThread(line, storage_setup)
 			thread1.start()
 			threads.append(thread1)
-			time.sleep(1)
+			time.sleep(0.5)
 	for t in threads:
 		t.join()
 	ifconfig.close()
