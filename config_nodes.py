@@ -33,6 +33,7 @@ if __name__ == "__main__":
 	cmds['kill'] = kill
 	cmds['clean_output'] = clean_output
 	cmds['clean_log'] = clean_log
+	cmds['change_ifconfig'] = "cd Sundial; python3 change_ifconfig {}".format(sys.argv[2])
 	ifconfig = open("ifconfig.txt")
 	node_type = -1
 	threads = []
