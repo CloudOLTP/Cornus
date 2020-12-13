@@ -1,8 +1,7 @@
 {
-    "i": [0, 1, 2],
 	"DISTRIBUTED": "true",
-	"NUM_NODES": 4,
-	"NUM_WORKER_THREADS": 16,
+	"NUM_NODES": 2,
+	"NUM_WORKER_THREADS": 20,
 	"NUM_RPC_SERVER_THREADS": 20,
 	"NUM_STORAGE_RPC_SERVER_THREADS": 20,
 	"MAX_NUM_ACTIVE_TXNS": 28,
@@ -10,5 +9,7 @@
     "CONTROLLED_LOCK_VIOLATION": "false",
     "ENABLE_ADMISSION_CONTROL": "false",
     "COMMIT_ALG": ["ONE_PC", "TWO_PC"],
-    "NUM_WH": 1 
+    "NUM_WH": 32, 
+    "RUN_TIME": 10,
+    "i": [0, 1, 2]
 }
