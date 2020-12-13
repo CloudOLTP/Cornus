@@ -116,6 +116,8 @@ TxnManager::update_stats()
             #if COLLECT_LATENCY
                 INC_FLOAT_STATS(dist_txn_latency, latency);
                 INC_FLOAT_STATS(time_debug7, total_time);
+                vector<double> &all = glob_stats->_stats[GET_THD_ID]->dist_latency;
+                all.push_back(latency);
             #endif
         }
 #if COLLECT_LATENCY

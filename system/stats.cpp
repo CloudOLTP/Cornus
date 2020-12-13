@@ -230,6 +230,15 @@ void Stats::output(std::ostream * os)
         << _aggregate_latency[(uint64_t)(total_num_commits * 0.99)] / BILLION << endl;
     out << "    " << setw(30) << left << "max_latency:"
         << _aggregate_latency[total_num_commits - 1] / BILLION << endl;
+    // dist tail latency
+    out << "    " << setw(30) << left << "90%_dist_latency:"
+        << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.90)] / BILLION << endl;
+    out << "    " << setw(30) << left << "95%_dist_latency:"
+        << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.95)] / BILLION << endl;
+    out << "    " << setw(30) << left << "99%_dist_latency:"
+        << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.99)] / BILLION << endl;
+    out << "    " << setw(30) << left << "max_dist_latency:"
+        << _aggregate_dist_latency[total_num_multi_part_txns - 1] / BILLION << endl;
 
     out << endl;
 #endif
@@ -363,12 +372,19 @@ void Stats::print()
         M_ASSERT(_stats[tid]->all_latency.size() == _stats[tid]->_int_stats[STAT_num_commits],
                  "%ld vs. %ld\n",
                  _stats[tid]->all_latency.size(), _stats[tid]->_int_stats[STAT_num_commits]);
+        M_ASSERT(_stats[tid]->dist_latency.size() == _stats[tid]->_int_stats[STAT_num_multi_part_txn],
+                 "%ld vs. %ld\n",
+                 _stats[tid]->dist_latency.size(), _stats[tid]->_int_stats[STAT_num_multi_part_txn]);
         // TODO. should exclude txns during the warmup
         _aggregate_latency.insert(_aggregate_latency.end(),
                                  _stats[tid]->all_latency.begin(),
                                  _stats[tid]->all_latency.end());
+        _aggregate_dist_latency.insert(_aggregate_dist_latency.end(),
+                                 _stats[tid]->dist_latency.begin(),
+                                 _stats[tid]->dist_latency.end());
     }
     std::sort(_aggregate_latency.begin(), _aggregate_latency.end());
+    std::sort(_aggregate_dist_latency.begin(), _aggregate_dist_latency.end());
 #endif
     output(&cout);
     return;

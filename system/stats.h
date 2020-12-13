@@ -159,6 +159,7 @@ public:
 
 #if COLLECT_LATENCY
     vector<double> all_latency;
+    vector<double> dist_latency;
 #endif
     uint64_t * _req_msg_count;
     uint64_t * _req_msg_size;
@@ -343,6 +344,7 @@ public:
     };
 private:
     vector<double> _aggregate_latency;
+    vector<double> _aggregate_dist_latency;
     vector<Stats *> _checkpoints;
     uint32_t        _num_cp;
 };
