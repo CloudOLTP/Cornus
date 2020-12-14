@@ -188,12 +188,14 @@ void Stats::output(std::ostream * os)
     double avg_dist_latency = 0;
     for (uint32_t tid = 0; tid < g_total_num_threads; tid ++)
         avg_dist_latency += _stats[tid]->_float_stats[STAT_dist_txn_latency];
-    avg_dist_latency /= total_num_multi_part_txns;
+    if (total_num_multi_part_txns != 0)
+        avg_dist_latency /= total_num_multi_part_txns;
 
     double avg_dist_total_time = 0;
     for (uint32_t tid = 0; tid < g_total_num_threads; tid ++)
         avg_dist_total_time+= _stats[tid]->_float_stats[STAT_time_debug7];
-    avg_dist_total_time /= total_num_multi_part_txns;
+    if (total_num_multi_part_txns != 0)
+        avg_dist_total_time /= total_num_multi_part_txns;
 
     // debug prepare phase
     STAT_SUM(uint64_t, sum_prepared_ok_msg_count, _resp_msg_count[SundialResponse::PREPARED_OK]);
@@ -231,14 +233,16 @@ void Stats::output(std::ostream * os)
     out << "    " << setw(30) << left << "max_latency:"
         << _aggregate_latency[total_num_commits - 1] / BILLION << endl;
     // dist tail latency
-    out << "    " << setw(30) << left << "90%_dist_latency:"
-        << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.90)] / BILLION << endl;
-    out << "    " << setw(30) << left << "95%_dist_latency:"
-        << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.95)] / BILLION << endl;
-    out << "    " << setw(30) << left << "99%_dist_latency:"
-        << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.99)] / BILLION << endl;
-    out << "    " << setw(30) << left << "max_dist_latency:"
-        << _aggregate_dist_latency[total_num_multi_part_txns - 1] / BILLION << endl;
+    if (total_num_multi_part_txns != 0) {
+        out << "    " << setw(30) << left << "90%_dist_latency:"
+            << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.90)] / BILLION << endl;
+        out << "    " << setw(30) << left << "95%_dist_latency:"
+            << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.95)] / BILLION << endl;
+        out << "    " << setw(30) << left << "99%_dist_latency:"
+            << _aggregate_dist_latency[(uint64_t)(total_num_multi_part_txns * 0.99)] / BILLION << endl;
+        out << "    " << setw(30) << left << "max_dist_latency:"
+            << _aggregate_dist_latency[total_num_multi_part_txns - 1] / BILLION << endl;
+    }
 
     out << endl;
 #endif
