@@ -10,6 +10,6 @@
     "ENABLE_ADMISSION_CONTROL": "false",
     "COMMIT_ALG": ["ONE_PC", "TWO_PC"],
     "NUM_WH": 32, 
-    "RUN_TIME": 10,
+    "RUN_TIME": 30,
     "i": [0, 1, 2]
 }

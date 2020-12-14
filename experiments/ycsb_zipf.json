@@ -1,5 +1,4 @@
 {
-    "i": [0, 1, 2],
 	"DISTRIBUTED": "true",
 	"NUM_NODES": 4,
 	"NUM_WORKER_THREADS": [20],
@@ -11,8 +10,9 @@
     "ENABLE_ADMISSION_CONTROL": "false",
     "COMMIT_ALG": ["ONE_PC", "TWO_PC"],
     "WORKLOAD": "YCSB",
-    "ZIPF_THETA": [0, 0.6, 0.8, 0.9, 0.99, 1.1],
+    "ZIPF_THETA": [0, 0.6, 0.8, 0.9, 0.99, 1.1, 1.2, 1.3],
     "READ_PERC": 0.5,
     "PERC_REMOTE": [0.05],
-    "RUN_TIME": 3
+    "RUN_TIME": 30,
+    "i": [0, 1, 2]
 }

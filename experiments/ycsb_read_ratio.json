@@ -1,7 +1,7 @@
 {
 	"DISTRIBUTED": "true",
 	"NUM_NODES": 4,
-	"NUM_WORKER_THREADS": [16],
+	"NUM_WORKER_THREADS": [20],
 	"NUM_RPC_SERVER_THREADS": [20],
 	"NUM_STORAGE_RPC_SERVER_THREADS": 20,
 	"MAX_NUM_ACTIVE_TXNS": 28,
@@ -13,6 +13,6 @@
     "ZIPF_THETA": 0,
     "READ_PERC": [0,0.4, 0.8, 0.9, 0.95, 0.98, 1],
     "PERC_REMOTE": [0.05],
-    "RUN_TIME": 10,
-    "i": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    "RUN_TIME": 30,
+    "i": [0, 1, 2, 3, 4]
 }
