@@ -59,4 +59,17 @@ if __name__ == "__main__":
     if mode == "release":
         os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")
+    f = open('ifconfig.txt')
+    num_nodes = 0
+    for addr in f:
+        if '#' in addr:
+            continue
+        if curr_node == num_nodes:
+            num_nodes += 1
+            continue
+        # start server
+        addr = addr.split(':')[0]
+        os.system("ssh {} 'cd Sundial/outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(addr, exp_name, exp_name))
+        num_nodes += 1
+    print("[LOG] FINISH collecting results")
     os.system("python3 send_email.py {}".format(exp_name))
