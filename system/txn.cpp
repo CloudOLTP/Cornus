@@ -275,6 +275,8 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 RC
 TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
 {
+	// TODO: send log request to redis
+	// TODO: add storage option as a flag
     if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
         _log_nodes_involved[node_id] = new RemoteNodeInfo;
         _log_nodes_involved[node_id]->state = RUNNING;
