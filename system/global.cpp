@@ -9,7 +9,7 @@
 Stats *             glob_stats;
 Manager *           glob_manager;
 
-#if LOG_ENABLE || LOG_NODE
+#if LOG_LOCAL || LOG_NODE
 LogManager *        log_manager;
 #endif
 

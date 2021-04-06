@@ -8,7 +8,7 @@
 //void 
 //SundialRPCClient::run() {
 SundialRPCClient::SundialRPCClient() {
-#if REMOTE_LOG
+#if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
     _servers = new SundialRPCClientStub * [g_num_nodes_and_storage];
 #else
     _servers = new SundialRPCClientStub * [g_num_nodes];
@@ -18,7 +18,7 @@ SundialRPCClient::SundialRPCClient() {
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t num_nodes = 0;
-#if REMOTE_LOG
+#if LOG_REMOTE
     while ( num_nodes < g_num_nodes_and_storage && getline(in, line) ) {
 #else
     while ( num_nodes < g_num_nodes && getline(in, line) ) {

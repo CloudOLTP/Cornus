@@ -23,6 +23,7 @@ public:
     enum State {
         RUNNING,
         PREPARING,
+        PREPARED,
         COMMITTING,
         ABORTING,
         COMMITTED,
@@ -68,6 +69,14 @@ public:
 
     void set_sub_txn(bool is_sub_txn)     { _is_sub_txn = is_sub_txn; }
     bool is_sub_txn()                     { return _is_sub_txn; }
+    inline State rc_to_state(RC rc) {
+        switch(rc) {
+            case ABORT: return ABORTED;
+            case COMMIT: return COMMITTED;
+            default: assert(false); return 0;
+        }
+    };
+
 private:
     RC process_2pc_phase1();
     RC process_2pc_phase2(RC rc);
@@ -109,6 +118,7 @@ private:
         SundialResponse response;
     };
     std::map<uint32_t, RemoteNodeInfo *> _remote_nodes_involved;
+    // used for native remote log
     std::map<uint32_t, RemoteNodeInfo *> _log_nodes_involved;
 
     // stats

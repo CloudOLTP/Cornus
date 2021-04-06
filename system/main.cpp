@@ -9,7 +9,7 @@
 #include <string>
 #include <fstream>
 
-#if LOG_ENABLE
+#if LOG_LOCAL
 #include "logging_thread.h"
 #include "log.h"
 #endif
@@ -86,12 +86,15 @@ int main(int argc, char* argv[])
 #if DISTRIBUTED
     rpc_client = new SundialRPCClient();
     rpc_server = new SundialRPCServerImpl;
-
+#if LOG_DEVICE == LOG_DEVICE_REDIS
+    // assume a shared logging but store different node's info to different key
+    redis_client = new RedisClient();
+#endif
     pthread_t * pthread_rpc = new pthread_t;
     pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
 #endif
 
-#if LOG_ENABLE
+#if LOG_LOCAL
     g_total_num_threads ++;
     log_manager = new LogManager();
 #endif
@@ -134,7 +137,7 @@ int main(int argc, char* argv[])
 #if DISTRIBUTED
     cout << "Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
-#if REMOTE_LOG
+#if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
     for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
 #else
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
@@ -154,7 +157,7 @@ int main(int argc, char* argv[])
     for (uint64_t i = 0; i < g_num_worker_threads - 1; i++)
         pthread_create(pthreads_worker[i], NULL, start_thread, (void *)worker_threads[i]);
 
-#if LOG_ENABLE
+#if LOG_LOCAL
     LoggingThread * logging_thread = new LoggingThread(next_thread_id ++);
     pthread_t * pthreads_logging = new pthread_t;
     pthread_create(pthreads_logging, NULL, start_thread, (void *)logging_thread);
@@ -172,7 +175,7 @@ int main(int argc, char* argv[])
     SundialResponse response;
     request.set_request_type( SundialRequest::SYS_REQ );
     // Notify other nodes the completion of the current node.
-#if REMOTE_LOG
+#if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
     for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
 #else
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
@@ -184,7 +187,7 @@ int main(int argc, char* argv[])
     while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
         usleep(1);
 #endif
-#if LOG_ENABLE
+#if LOG_LOCAL
     pthread_join(*pthreads_logging, NULL);
 #endif
     assert( txn_table->get_size() == 0 );
@@ -199,7 +202,7 @@ int main(int argc, char* argv[])
     }
     delete [] pthreads_worker;
     delete [] worker_threads;
-#if LOG_ENABLE
+#if LOG_LOCAL
     delete pthreads_logging;
     delete logging_thread;
     delete log_manager;

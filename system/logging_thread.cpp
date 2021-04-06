@@ -2,7 +2,7 @@
 #include "log.h"
 #include "manager.h"
 
-#if LOG_ENABLE
+#if LOG_LOCAL
 
 LoggingThread::LoggingThread(uint64_t thd_id)
     : BaseThread(thd_id, LOGGING_THREAD)

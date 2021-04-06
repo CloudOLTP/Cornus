@@ -91,7 +91,7 @@ TxnManager::update_stats()
         #if CONTROLLED_LOCK_VIOLATION
             INC_FLOAT_STATS(single_part_precommit_phase, _precommit_finish_time - _commit_start_time);
         #endif
-        #if LOG_ENABLE
+        #if LOG_LOCAL
             INC_FLOAT_STATS(single_part_log_latency, _log_ready_time - _commit_start_time);
         #endif
             INC_FLOAT_STATS(single_part_commit_phase, _finish_time - _commit_start_time);
@@ -195,7 +195,7 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         _store_procedure->txn_abort();
     } else
         assert(false);
-#if LOG_ENABLE
+#if LOG_LOCAL
     // TODO. Changed from design A to design B
     // [Design A] the worker thread is detached from the transaction once the log
     // buffer is filled. The logging thread handles the rest of the commit.
@@ -253,14 +253,20 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     }
 #else
     // if logging didn't happen, process commit phase
-#if REMOTE_LOG
+#if LOG_REMOTE
     if (!is_read_only()) {
+#if LOG_DEVICE == LOG_DEVICE_NATIVE
         SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
                 SundialRequest::LOG_ABORT_REQ;
         send_log_request(g_storage_node_id, type);
         #if ASYNC_RPC
             rpc_log_semaphore->wait();
         #endif
+#else
+       string data = "placehoder";
+       redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
+           data);
+#endif
     }
 #endif
     _cc_manager->cleanup(rc);
@@ -275,16 +281,12 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 RC
 TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
 {
-	// TODO: send log request to redis
-	// TODO: add storage option as a flag
     if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
         _log_nodes_involved[node_id] = new RemoteNodeInfo;
         _log_nodes_involved[node_id]->state = RUNNING;
     }
     SundialRequest &request = _log_nodes_involved[node_id]->request;
     SundialResponse &response = _log_nodes_involved[node_id]->response;
-    //SundialRequest request;
-    //SundialResponse response;
     request.Clear();
     response.Clear();
     request.set_txn_id( get_txn_id() );
@@ -300,12 +302,6 @@ TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
 #if ASYNC_RPC
     rpc_log_semaphore->incr();
     rpc_client->sendRequestAsync(this, node_id, request, response);
-    /*
-    M_ASSERT(response.response_type() == SundialResponse::RESP_LOG_YES
-            || response.response_type() == SundialResponse::RESP_LOG_ABORT
-            || response.response_type() == SundialResponse::RESP_LOG_COMMIT,
-            "type=%d\n", response.response_type());
-            */
 #endif
     return RCOK;
 }
@@ -446,7 +442,7 @@ TxnManager::process_2pc_phase1()
     // printf("[node-%u] txn-%lu enter phase 1\n", g_node_id, get_txn_id());
     // Start Two-Phase Commit
     _txn_state = PREPARING;
-#if LOG_ENABLE
+#if LOG_LOCAL
     char * log_record = NULL;
     uint32_t log_record_size = _cc_manager->get_log_record(log_record);
     if (log_record_size > 0) {
@@ -465,13 +461,21 @@ TxnManager::process_2pc_phase1()
     glob_manager->wakeup_next_thread();
   #endif
 #endif
-#if REMOTE_LOG
+#if LOG_REMOTE
     if (!is_read_only()) {
+        // asynchronously log prepare for this node
+#if LOG_DEVICE == LOG_DEVICE_NATIVE
         SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
         send_log_request(g_storage_node_id, type);
+#elif LOG_DEVICE == LOG_DEVICE_REDIS
+        // TODO(zhihan): replace data with txn's log record
+        string data = "[LSN] data";
+        rpc_log_semaphore->incr();
+        redis_client->log_if_ne_data(get_node_id(), get_txn_id(), data);
+#endif
     }
 #endif
-
+    // send prepare request to participants
     uint64_t start_time3 = get_sys_clock();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         assert(it->second->state == RUNNING);
@@ -480,10 +484,8 @@ TxnManager::process_2pc_phase1()
         request.Clear();
         response.Clear();
         request.set_txn_id( get_txn_id() );
-        request.set_request_type( SundialRequest::PREPARE_REQ );
-
+        request.set_request_type( SundialRequest::PREPARE_REQ);
         ((LockManager *)_cc_manager)->build_prepare_req( it->first, request );
-
 #if ASYNC_RPC
         rpc_semaphore->incr();
         rpc_client->sendRequestAsync(this, it->first, request, response);
@@ -502,7 +504,10 @@ TxnManager::process_2pc_phase1()
 #endif
     }
     INC_FLOAT_STATS(time_debug5, get_sys_clock() - start_time3);
+    // wait for log prepare to return
+#if LOG_LOCAL
     log_semaphore->wait();
+#endif
 #if ASYNC_RPC
     uint64_t start_time2 = get_sys_clock();
     rpc_semaphore->wait();
@@ -539,7 +544,7 @@ TxnManager::process_2pc_phase2(RC rc)
     _txn_state = (rc == COMMIT)? COMMITTING : ABORTING;
     // TODO. for CLV this logging is optional. Here we use a conservative
     // implementation as logging is not on the critical path of locking anyway.
-  #if LOG_ENABLE
+  #if LOG_LOCAL
     std::string record = std::to_string(_txn_id);
     char * log_record = (char *)record.c_str();
     uint32_t log_record_size = record.length();
@@ -561,7 +566,8 @@ TxnManager::process_2pc_phase2(RC rc)
         _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
         return rc;
     }
-  #if REMOTE_LOG && COMMIT_ALG == TWO_PC
+#if LOG_REMOTE && COMMIT_ALG == TWO_PC
+#if LOG_DEVICE == LOG_DEVICE_NATIVE
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
     send_log_request(g_storage_node_id, type);
@@ -569,6 +575,9 @@ TxnManager::process_2pc_phase2(RC rc)
         rpc_log_semaphore->wait();
         _cc_manager->cleanup(rc); // release lock after receive log resp
     #endif
+#elif LOG_DEVICE == LOG_DEVICE_REDIS
+    redis_client->log_sync(g_node_id, get_txn_id(), rc_to_state(rc));
+#endif
 #endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // No need to run this phase if the remote sub-txn has already committed
@@ -591,10 +600,16 @@ TxnManager::process_2pc_phase2(RC rc)
         _remote_nodes_involved[it->first]->state = (rc == COMMIT)? COMMITTED : ABORTED;
 #endif
     }
-    #if REMOTE_LOG && COMMIT_ALG == ONE_PC
+
+#if LOG_REMOTE && COMMIT_ALG == ONE_PC
+    #if LOG_DEVICE == LOG_DEVICE_NATIVE
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
     send_log_request(g_storage_node_id, type);
+    #elif LOG_DEVICE == LOG_DEVICE_REDIS
+    rpc_log_semaphore->incr();
+    redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
+    #endif
 #endif
     
     _finish_time = get_sys_clock();
@@ -602,11 +617,11 @@ TxnManager::process_2pc_phase2(RC rc)
     // No need to wait for this log since it is optional (shared log optimization)
     dependency_semaphore->wait();
     log_semaphore->wait();
-    #if !REMOTE_LOG
+    #if !LOG_REMOTE
         _cc_manager->cleanup(rc);
     #endif
 #if ASYNC_RPC
-    #if REMOTE_LOG && COMMIT_ALG == ONE_PC
+    #if LOG_REMOTE && COMMIT_ALG == ONE_PC
         rpc_log_semaphore->wait(); 
         _cc_manager->cleanup(rc); // release lock after receive log resp
     #endif
@@ -629,21 +644,17 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 {
     RC rc = RCOK;
     uint32_t num_tuples;
-  #if LOG_ENABLE
+#if LOG_LOCAL
     std::string record;
     char * log_record = NULL;
     uint32_t log_record_size = 0;
-  #endif
-#if REMOTE_LOG
-    int log_commit = 0;
-    SundialRequest::RequestType log_type;
 #endif
+
     switch(request->request_type()) {
         case SundialRequest::READ_REQ :
             num_tuples = request->read_requests_size();
             for (uint32_t i = 0; i < num_tuples; i++) {
                 uint64_t key = request->read_requests(i).key();
-   	// printf("[node-%u] txn-%lu rec remote read on %lu\n", g_node_id, get_txn_id(), key);
                 uint64_t index_id = request->read_requests(i).index_id();
                 access_t access_type = (access_t)request->read_requests(i).access_type();
 
@@ -687,7 +698,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 char * data = get_cc_manager()->get_data(key, table_id);
                 memcpy(data, request->tuple_data(i).data().c_str(), request->tuple_data(i).size());
             }
-  #if LOG_ENABLE
+  #if LOG_LOCAL
             log_record_size = _cc_manager->get_log_record(log_record);
             if (log_record_size > 0) {
                 assert(log_record);
@@ -695,21 +706,30 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 log_manager->log(this, log_record_size, log_record);
                 delete [] log_record;
             }
-    #if CONTROLLED_LOCK_VIOLATION
+#if CONTROLLED_LOCK_VIOLATION
             _cc_manager->process_precommit_phase_coord();
-    #endif
+#endif
             log_semaphore->wait();
-  #endif
-    #if REMOTE_LOG
-        if (num_tuples != 0) {
-            send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
-            #if ASYNC_RPC
+#endif
+#if LOG_REMOTE
+            if (num_tuples != 0) {
+                // log prepare msg
+#if LOG_DEVICE == LOG_DEVICE_NATIVE
+                send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
+                #if ASYNC_RPC
+                    rpc_log_semaphore->wait();
+                #endif
+#elif LOG_DEVICE == LOG_DEVICE_REDIS
+                // TODO(zhihan): replace data with txn's log record
+                string data = "[LSN] data";
+                rpc_log_semaphore->incr();
+                redis_client->log_if_ne_data(get_node_id(), get_txn_id(), data);
                 rpc_log_semaphore->wait();
-            #endif
-        }
-    #endif
-            // readonly remote nodes
-            if (num_tuples == 0) {
+#endif
+            }
+#endif
+            else if (num_tuples == 0) {
+                // readonly remote nodes
                 _txn_state = COMMITTED;
                 _cc_manager->cleanup(COMMIT); // release lock after log is received
                 _finish_time = get_sys_clock();
@@ -719,44 +739,56 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             response->set_response_type( SundialResponse::PREPARED_OK );
             return rc;
         case SundialRequest::COMMIT_REQ :
-#if REMOTE_LOG
-            log_type = SundialRequest::LOG_COMMIT_REQ;
-            log_commit = 1;
+#if LOG_REMOTE
+#if LOG_DEVICE == LOG_DEVICE_NATIVE
+            send_log_request(g_storage_node_id, SundialRequest::LOG_COMMIT_REQ);
+            #if ASYNC_RPC
+                rpc_log_semaphore->wait();
+            #endif
+#elif LOG_DEVICE == LOG_DEVICE_REDIS
+            redis_client->log_sync(get_node_id(), get_txn_id(), COMMITTED);
 #endif
+#endif
+            break;
         case SundialRequest::ABORT_REQ :
-#if REMOTE_LOG
-            if (log_commit == 0)
-                log_type = SundialRequest::LOG_ABORT_REQ;
-#endif
-  #if LOG_ENABLE
-            record = std::to_string(_txn_id);
-            log_record = (char *)record.c_str();
-            log_record_size = record.length();
-            log_semaphore->incr();
-            log_manager->log(this, log_record_size, log_record);
-  #endif
-    #if REMOTE_LOG
-        send_log_request(g_storage_node_id, log_type);
-        #if ASYNC_RPC // for now, commit phase of part is same for 1pc and 2pc
-            rpc_log_semaphore->wait();
-        #endif
-    #endif
-            dependency_semaphore->wait();
-            rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;
-            _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
-            _cc_manager->cleanup(rc); // release lock after log is received
-            _finish_time = get_sys_clock();
-            // OPTIMIZATION: release locks as early as possible.
-            // No need to wait for this log since it is optional (shared log
-            // optimization)
-            log_semaphore->wait();
-            // #if ASYNC_RPC && COMMIT_ALG == ONE_PC
-            //     rpc_log_semaphore->wait();
-            // #endif
-            response->set_response_type( SundialResponse::ACK );
-            return rc;
+
+            break;
         default:
             assert(false);
             exit(0);
     }
+#if LOG_LOCAL
+    record = std::to_string(_txn_id);
+    log_record = (char *)record.c_str();
+    log_record_size = record.length();
+    log_semaphore->incr();
+    log_manager->log(this, log_record_size, log_record);
+#endif
+#if LOG_REMOTE
+#if LOG_DEVICE == LOG_DEVICE_NATIVE
+    SundialRequest::RequestType log_type = (request->request_type() ==
+        SundialRequest::COMMIT_REQ)? SundialRequest::LOG_COMMIT_REQ :
+            SundialRequest::LOG_ABORT_REQ;
+    send_log_request(g_storage_node_id, log_type);
+#if ASYNC_RPC
+    rpc_log_semaphore->wait();
+#endif
+#elif LOG_DEVICE == LOG_DEVICE_REDIS
+    State status = _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
+    redis_client->log_sync(get_node_id(), get_txn_id(), status);
+#endif
+#endif
+    dependency_semaphore->wait();
+    rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;
+    _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
+    _cc_manager->cleanup(rc); // release lock after log is received
+    _finish_time = get_sys_clock();
+    // OPTIMIZATION: release locks as early as possible.
+    // No need to wait for this log since it is optional (shared log
+    // optimization)
+#if LOG_LOCAL
+    log_semaphore->wait();
+#endif
+    response->set_response_type( SundialResponse::ACK );
+    return rc;
 }

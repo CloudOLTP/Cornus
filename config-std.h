@@ -1,20 +1,15 @@
 #pragma once
 
+// System Setup
+// ==========
+#define LOG_NODE                        false // init as native log node
 #define DISTRIBUTED                     false
 #define NUM_NODES                       1
 
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024
 #define NUM_RPC_SERVER_THREADS          24
-#define NUM_STORAGE_RPC_SERVER_THREADS          24
-
-// only a limited number of active threads are allowed. This configuration is
-// effective only when LOG_ENABLE == true.
-#define ENABLE_ADMISSION_CONTROL        true
-#define MAX_NUM_ACTIVE_TXNS             16
-
-// WORKLOAD can be YCSB or TPCC
-#define WORKLOAD                        TPCC
+#define NUM_STORAGE_RPC_SERVER_THREADS  24
 
 // Statistics
 // ==========
@@ -24,11 +19,21 @@
 #define TIME_ENABLE                     true
 #define STATS_CP_INTERVAL               1000 // in ms
 
+// Execution Model
+// ==========
+// only a limited number of active threads are allowed. This configuration is
+// effective only when LOG_ENABLE == true.
+#define ENABLE_ADMISSION_CONTROL        true
+#define MAX_NUM_ACTIVE_TXNS             16
+#define NETWORK_DELAY                   0 // in us
+
+// WORKLOAD can be YCSB or TPCC
+#define WORKLOAD                        TPCC
+
 // Concurrency Control
 // ===================
 // Supported concurrency control algorithms: WAIT_DIE, NO_WAIT, TICTOC, F_ONE
 #define CC_ALG                          NO_WAIT
-
 #define ABORT_PENALTY                   10000000  // in nanoseconds
 
 // [ INDEX ]
@@ -90,8 +95,12 @@
 
 // Logging
 // =======
-#define LOG_ENABLE                      true
-#define CONTROLLED_LOCK_VIOLATION       true
+#define LOG_LOCAL                       false
+#define CONTROLLED_LOCK_VIOLATION       false
+#define LOG_REMOTE                      true
+#define LOG_TIMEOUT                     1000  // in us
+#define LOG_DEVICE                      LOG_DEVICE_REDIS
+#define LOG_DELAY                       0
 
 // Benchmark
 // =========
@@ -157,8 +166,10 @@
 #define MAX_MESSAGE_SIZE                16384
 #define RECV_BUFFER_SIZE                32768
 #define SEND_BUFFER_SIZE                32768
-
 #define MAX_CLOCK_SKEW                  0 // in us
+#define COMMIT_ALG                      ONE_PC
+#define DEBUG_LOG                       false
+#define WORKER_SERVER_SAME              false
 
 // Constant
 // ========
@@ -187,17 +198,8 @@
 #define ALWAYS_CHECK                    2    // always contact remote node
 #define READ_INTENSIVE                  3    // only read cached data that is read-intensive
 
-#define LOG_NODE                        false // Whether the node is storage node or not
-#define REMOTE_LOG                      true  // whether use remote log or not: in distributed 2pc/1pc it is always true
-#define LOG_TIMEOUT                     1000  // in us
-
 #define ONE_PC                          1
 #define TWO_PC                          2
-#define COMMIT_ALG                      ONE_PC
 
-#define NETWORK_DELAY                   0 // in us  
-#define LOG_DELAY                       0
-
-#define DEBUG_LOG                       false
-
-#define WORKER_SERVER_SAME              false
+#define LOG_DEVICE_NATIVE               1
+#define LOG_DEVICE_REDIS                2

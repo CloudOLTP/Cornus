@@ -6,7 +6,7 @@
 	"NUM_RPC_SERVER_THREADS": 20,
 	"NUM_STORAGE_RPC_SERVER_THREADS": 20,
 	"MAX_NUM_ACTIVE_TXNS": 28,
-    "LOG_ENABLE": "false",
+    "LOG_LOCAL": "false",
     "CONTROLLED_LOCK_VIOLATION": "false",
     "ENABLE_ADMISSION_CONTROL": "false",
     "COMMIT_ALG": ["ONE_PC"],
@@ -14,5 +14,5 @@
     "ZIPF_THETA": 0.9,
     "READ_PERC": 0,
     "PERC_REMOTE": 0.9,
-    "REMOTE_LOG": false
+    "LOG_REMOTE": false
 }

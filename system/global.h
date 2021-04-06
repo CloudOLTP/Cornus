@@ -56,7 +56,7 @@ typedef uint64_t ts_t; // time stamp type
 extern Stats *          glob_stats;
 extern Manager *        glob_manager;
 
-#if LOG_ENABLE || LOG_NODE
+#if LOG_LOCAL || LOG_NODE
 extern LogManager *     log_manager;
 #endif
 
@@ -206,6 +206,9 @@ extern uint32_t         g_num_output_threads;
 
 extern SundialRPCClient * rpc_client;
 extern SundialRPCServerImpl * rpc_server;
+#if LOG_DEVICE == LOG_DEVICE_REDIS
+extern RedisClient *      redis_client;
+#endif
 
 extern Transport *      transport;
 typedef boost::lockfree::queue<uint64_t, boost::lockfree::capacity<INOUT_QUEUE_SIZE>> InOutQueue;

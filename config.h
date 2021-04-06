@@ -90,8 +90,13 @@
 
 // Logging
 // =======
-#define LOG_ENABLE false
+#define LOG_LOCAL false
+#define LOG_REMOTE true
 #define CONTROLLED_LOCK_VIOLATION false
+#define LOG_NODE                        false // Whether the node is storage node or not
+#define LOG_TIMEOUT                     1000  // in us
+#define LOG_DEVICE                      LOG_DEVICE_REDIS
+#define LOG_DELAY                       0
 
 // Benchmark
 // =========
@@ -187,13 +192,11 @@
 #define ALWAYS_CHECK                    2    // always contact remote node
 #define READ_INTENSIVE                  3    // only read cached data that is read-intensive
 
-#define LOG_NODE                        false // Whether the node is storage node or not
-#define REMOTE_LOG False
-#define LOG_TIMEOUT                     1000  // in us
-
 #define ONE_PC                          1
 #define TWO_PC                          2
 #define COMMIT_ALG ONE_PC
 
 #define NETWORK_DELAY                   0 // in us  
-#define LOG_DELAY                       0
+
+#define LOG_DEVICE_NATIVE               1
+#define LOG_DEVICE_REDIS                2

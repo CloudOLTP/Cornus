@@ -47,10 +47,10 @@ void print_usage() {
 
 void parser(int argc, char * argv[]) {
     #if CONTROLLED_LOCK_VIOLATION
-    static_assert(LOG_ENABLE);
+    static_assert(LOG_LOCAL);
     #endif
     #if (ENABLE_ADMISSION_CONTROL) 
-    static_assert( LOG_ENABLE );
+    static_assert( LOG_LOCAL );
     #endif
     //if (DISTRIBUTED) assert(NUM_NODES > 1);
     M_ASSERT(INDEX_STRUCT != IDX_BTREE, "btree is not supported yet\n");

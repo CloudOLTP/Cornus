@@ -14,8 +14,9 @@ CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -Werror -O3
 
 LDFLAGS = -Wall -L. -L./libs -pthread -g -lrt -std=c++11 -O3 -ljemalloc
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-           -ldl
+           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed -ldl\
+           -lredis++ -lhiredis -pthread
+# last line is for redis
 
 CPPS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp))
 OBJS = $(CPPS:.cpp=.o)
