@@ -1,6 +1,7 @@
 //
 // Created by Zhihan Guo on 4/5/21.
 //
+#include <cpp_redis/cpp_redis>
 
 #include "redis_client.h"
 #include "txn.h"

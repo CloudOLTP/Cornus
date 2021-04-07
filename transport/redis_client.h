@@ -5,6 +5,8 @@
 #ifndef SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
 #define SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
 
+class cpp_redis;
+
 class RedisClient {
   public:
     RedisClient();
