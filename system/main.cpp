@@ -75,7 +75,9 @@ int main(int argc, char* argv[])
     parser(argc, argv);
     // get_node_id(); // for better debug experience
     cout << "[Sundial] start node " << g_node_id << endl;
+#if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
     g_storage_node_id = g_num_nodes_and_storage - 1 - g_node_id;
+#endif
 
     g_total_num_threads = g_num_worker_threads;
 
