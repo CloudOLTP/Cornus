@@ -79,6 +79,15 @@ def parse_arg(arg):
         job[key] = value
     return job
 
+def load_job(arg):
+    job_tmp = parse_arg(arg)
+    if "CONFIG" in job_tmp:
+        print("loading config from {} ...".format(job_tmp["CONFIG"]))
+        job = json.load(open(job_tmp["CONFIG"]))
+        job.update(job_tmp)
+    else:
+        job = job_tmp
+
 def collect_result(job):
     job = parse_output(job)
     stats = open("outputs/stats.json", 'a+')
@@ -86,13 +95,7 @@ def collect_result(job):
     stats.close()
 
 if __name__ == "__main__":
-    job_tmp = parse_arg(sys.argv[1:])
-    if "CONFIG" in job_tmp:
-        print("loading config from {} ...".format(job_tmp["CONFIG"]))
-        job = json.load(open(job_tmp["CONFIG"]))
-        job.update(job_tmp)
-    else:
-        job = job_tmp
+    job = load_job(sys.argv[1:])
     print(json.dumps(job)+"\n")
     if "DEBUG_MODE" not in job or job["DEBUG_MODE"] == "release":
         compile_and_run(job)

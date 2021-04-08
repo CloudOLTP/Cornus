@@ -1,7 +1,5 @@
 # a list of servers; each on a new line
-node-0.8nodes-2.spark-pg0.wisc.cloudlab.us:50051
-node-1.8nodes-2.spark-pg0.wisc.cloudlab.us:50051
-node-2.8nodes-2.spark-pg0.wisc.cloudlab.us:50051
-node-3.8nodes-2.spark-pg0.wisc.cloudlab.us:50051
+node-0.2nodes-2.spark-pg0.wisc.cloudlab.us:50051
+node-1.2nodes-2.spark-pg0.wisc.cloudlab.us:50051
 #l
 130.127.134.4:500051

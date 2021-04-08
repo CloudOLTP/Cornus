@@ -4,17 +4,21 @@
 # where NODE_ID specifies the index of current server matched in ifconfig.txt
 # and the rest can be configurations you wanna overwrite in config.h
 import os, sys, re, os.path
+import json
+from test import load_job
 
 ifconfig = "ifconfig.txt"
 
-def start_nodes(arg, curr_node, mode="release"):
+
+def start_nodes(arg, curr_node):
     f = open(ifconfig)
     num_nodes = 0
     log_node = "false"
+	job = load_job(arg) 
     for addr in f:
         if '#' in addr:
-            if addr[1] == '=' and addr[2] == 'l':
-                log_node = 'true'
+            if addr[1] == 'l' and "LOG_DEVICE" in job and jpb["LOG_DEVICE"] == "LOG_DEVICE_REDIS":
+                log_node = "true"
             continue
         if curr_node == num_nodes:
             num_nodes += 1
@@ -22,7 +26,9 @@ def start_nodes(arg, curr_node, mode="release"):
         # start server
         addr = addr.split(':')[0]
         os.system("ssh {} 'sudo pkill rundb'".format(addr))
-        cmd = "python3 test.py {} NODE_ID={} LOG_NODE={}".format(arg, num_nodes, log_node)
+		cmd = "python3 test.py NODE_ID={} LOG_NODE={}".format(num_nodes, log_node)
+		if "CONFIG" in job:
+			cmd += " CONFIG={}".format(job["CONFIG"])
         ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' &".format(addr, cmd))
         if ret != 0:
             err_msg = "error executing server"
