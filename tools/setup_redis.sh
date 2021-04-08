@@ -12,4 +12,4 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 # Build the library
 make
 # Install the library
-make install
+sudo make install
