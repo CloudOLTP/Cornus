@@ -30,8 +30,8 @@ SundialRPCClient::SundialRPCClient() {
         else {
             string url = line;
             if (node_id != g_node_id) {
-                _servers[num_nodes] = new SundialRPCClientStub(grpc::CreateChannel(url, grpc::InsecureChannelCredentials()));
-                cout << "[Sundial] init rpc client - " << num_nodes << " at " << url << endl;
+                _servers[node_id] = new SundialRPCClientStub(grpc::CreateChannel(url, grpc::InsecureChannelCredentials()));
+                cout << "[Sundial] init rpc client - " << node_id << " at " << url << endl;
             }
             node_id ++;
         }
