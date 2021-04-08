@@ -201,5 +201,5 @@
 #define ONE_PC                          1
 #define TWO_PC                          2
 
-#define LOG_DEVICE LOG_DEVICE_REDIS
-#define LOG_DEVICE LOG_DEVICE_REDIS
+#define LOG_DEVICE_REDIS 1
+#define LOG_DEVICE_NATIVE 2

@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
     parser(argc, argv);
     // get_node_id(); // for better debug experience
     cout << "[Sundial] start node " << g_node_id << endl;
-#if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
+#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
     g_storage_node_id = g_num_nodes_and_storage - 1 - g_node_id;
 #endif
 
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 #if DISTRIBUTED
     rpc_client = new SundialRPCClient();
     rpc_server = new SundialRPCServerImpl;
-#if LOG_DEVICE == LOG_DEVICE_REDIS
+#if LOG_DEVICE == LOG_DVC_REDIS
     // assume a shared logging but store different node's info to different key
     redis_client = new RedisClient();
 #endif
@@ -139,13 +139,14 @@ int main(int argc, char* argv[])
 #if DISTRIBUTED
     cout << "[Sundial] Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
-#if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
+#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
     for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
+    	cout << "[Sundial] contacting node-" << i << endl;
 #else
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
 #endif
         if (i == g_node_id) continue;
-    	cout << "[Sundial] contacting node-" << i << endl;
+    	//cout << "[Sundial] contacting node-" << i << endl;
         SundialRequest request;
         SundialResponse response;
         request.set_request_type( SundialRequest::SYS_REQ );
@@ -178,7 +179,7 @@ int main(int argc, char* argv[])
     SundialResponse response;
     request.set_request_type( SundialRequest::SYS_REQ );
     // Notify other nodes the completion of the current node.
-#if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
+#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
     for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
 #else
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
