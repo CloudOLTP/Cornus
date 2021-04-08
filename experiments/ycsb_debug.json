@@ -6,7 +6,7 @@
 	"MAX_NUM_ACTIVE_TXNS": 28,
     "LOG_LOCAL": "false",
     "LOG_REMOTE": "true",
-    "LOG_DEVICE": "LOG_DEVICE_REDIS",
+    "LOG_DEVICE": "LOG_DVC_REDIS",
     "CONTROLLED_LOCK_VIOLATION": "false",
     "ENABLE_ADMISSION_CONTROL": "false",
     "COMMIT_ALG": "ONE_PC",

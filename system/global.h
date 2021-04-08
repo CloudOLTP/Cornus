@@ -207,7 +207,7 @@ extern uint32_t         g_num_output_threads;
 
 extern SundialRPCClient * rpc_client;
 extern SundialRPCServerImpl * rpc_server;
-#if LOG_DEVICE == LOG_DEVICE_REDIS
+#if LOG_DEVICE == LOG_DVC_REDIS
 extern RedisClient *      redis_client;
 #endif
 

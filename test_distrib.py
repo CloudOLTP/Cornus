@@ -26,7 +26,9 @@ def start_nodes(arg, curr_node):
     for addr in f:
         if addr[0] == '#':
             continue
-        elif addr[0] == '=' and addr[1] == 'l' and eval_arg("LOG_DEVICE","LOG_DEVICE_REDIS", job, default=True): 
+        elif addr[0] == '=' and addr[1] == 'l' and eval_arg("LOG_DEVICE",
+                                                            "LOG_DVC_REDIS",
+                                                            job, default=True):
             log_node = "true"
             continue
         job["NODE_ID"] = num_nodes
@@ -39,7 +41,6 @@ def start_nodes(arg, curr_node):
             os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
             ret = os.system("{} &".format(cmd))
         else:
-            continue
             # start server remotely
             addr = addr.split(':')[0]
             os.system("ssh {} 'sudo pkill rundb'".format(addr))
