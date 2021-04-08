@@ -63,7 +63,7 @@ SundialRPCServerImpl::run() {
         //pthread_create(_thread_pool[i], NULL, HandleRpcs, NULL); 
         _thread_pool[i] = new std::thread(HandleRpcs, this);
     }
-    cout <<"sundial server initialized, lisentening on " << line << endl;
+    cout <<"[Sundial] rpc server initialized, lisentening on " << line << endl;
 }
 
 void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {

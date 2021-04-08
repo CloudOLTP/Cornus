@@ -13,7 +13,7 @@ RedisClient::RedisClient() {
     string line;
     bool checked_marker = false;
     while(getline(in, line)) {
-        if (line.size() >= 2 && line[0] == '#' && line[1] == 'l') {
+        if (line.size() >= 2 && line[0] == '=' && line[1] == 'l') {
             checked_marker = true;
             continue;
         } else if (line[0] == '#') {
@@ -23,6 +23,7 @@ RedisClient::RedisClient() {
             break;
         }
     }
+    std::cout << "[Sundial] connecting to redis server at " << line << std::endl;
 	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
 	size_t port;
 	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
@@ -33,6 +34,7 @@ RedisClient::RedisClient() {
 		LOG_TIMEOUT,
 		0,
 		0);
+    std::cout << "[Sundial] connected to redis server!" << std::endl;
 }
 
 

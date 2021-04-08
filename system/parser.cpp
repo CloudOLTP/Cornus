@@ -93,7 +93,6 @@ void parser(int argc, char * argv[]) {
                 g_run_time = atof( &argv[i][3] );
             else if (argv[i][2] == 'n') {
                 g_node_id = atoi( &argv[i][3] );
-	    	cout << g_node_id << endl;
 	    } else
                 exit(0);
         } else if (argv[i][1] == 'Y') {

@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 {
     parser(argc, argv);
     // get_node_id(); // for better debug experience
-    cout << "start node " << g_node_id << endl;
+    cout << "[Sundial] start node " << g_node_id << endl;
     glob_manager = new Manager;
     glob_manager->calibrate_cpu_frequency();
     char log_name[50];
@@ -51,12 +51,12 @@ int main(int argc, char* argv[])
     
     // make sure server is setup before moving on
     sleep(2);
-    cout << "Synchronization starts" << endl;
+    cout << "[Sundial] Synchronization starts" << endl;
 
     // Can start only if all other nodes have also finished initialization
     while (glob_manager->num_sync_requests_received() < g_num_nodes)
         usleep(1);
-    cout << "Synchronization done" << endl;
+    cout << "[Sundial] Synchronization done" << endl;
 
 
     while (glob_manager->num_sync_requests_received() < (g_num_nodes) * 2)
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 
     log_manager->stop_flush_thread();
     delete log_manager;
-    cout << "Complete." << endl;
+    cout << "[Sundial] Complete." << endl;
     glob_stats->profile_log();
 
     return 0;
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 {
     parser(argc, argv);
     // get_node_id(); // for better debug experience
-    cout << "start node " << g_node_id << endl;
+    cout << "[Sundial] start node " << g_node_id << endl;
     g_storage_node_id = g_num_nodes_and_storage - 1 - g_node_id;
 
     g_total_num_threads = g_num_worker_threads;
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 
     glob_stats = new Stats;
 
-    printf("mem_allocator initialized!\n");
+    printf("[Sundial] mem_allocator initialized!\n");
     workload * m_wl;
     switch (WORKLOAD) {
         case YCSB :
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 
     glob_manager->set_workload(m_wl);
     m_wl->init();
-    printf("workload initialized!\n");
+    printf("[Sundial] workload initialized!\n");
     warmup_finish = true;
     pthread_barrier_init( &global_barrier, NULL, g_total_num_threads);
     pthread_mutex_init( &global_lock, NULL);
@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
     // make sure server is setup before moving on
     sleep(5);
 #if DISTRIBUTED
-    cout << "Synchronization starts" << endl;
+    cout << "[Sundial] Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
 #if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
     for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
 
     while (glob_manager->num_sync_requests_received() < g_num_nodes - 1)
         usleep(1);
-    cout << "Synchronization done" << endl;
+    cout << "[Sundial] Synchronization done" << endl;
 #endif
     for (uint64_t i = 0; i < g_num_worker_threads - 1; i++)
         pthread_create(pthreads_worker[i], NULL, start_thread, (void *)worker_threads[i]);
