@@ -145,6 +145,7 @@ int main(int argc, char* argv[])
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
 #endif
         if (i == g_node_id) continue;
+    	cout << "[Sundial] contacting node-" << i << endl;
         SundialRequest request;
         SundialResponse response;
         request.set_request_type( SundialRequest::SYS_REQ );

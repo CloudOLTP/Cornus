@@ -5,8 +5,6 @@
 #include "txn.h"
 #include "txn_table.h"
 
-//void 
-//SundialRPCClient::run() {
 SundialRPCClient::SundialRPCClient() {
 #if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
     _servers = new SundialRPCClientStub * [g_num_nodes_and_storage];
@@ -14,7 +12,6 @@ SundialRPCClient::SundialRPCClient() {
     _servers = new SundialRPCClientStub * [g_num_nodes];
 #endif
     // get server names
-    //std::istringstream in(ifconfig_string);
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t node_id = 0;
