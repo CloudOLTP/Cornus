@@ -1,14 +1,21 @@
 # run all nodes in ifconfig.
 # example usage:
-# python3 test_distrib.py NODE_ID=0 DISTRIBUTED=true ....
+# python3 test_distrib.py CONFIG=experiments/[name].json NODE_ID=0 [optional args]
 # where NODE_ID specifies the index of current server matched in ifconfig.txt
 # and the rest can be configurations you wanna overwrite in config.h
 import os, sys, re, os.path
 import json
-from test import load_job
+from test import load_job, eval_arg
 
 ifconfig = "ifconfig.txt"
 
+def compress_job(job):
+    arg = ""
+    for key in job:
+        if key == "CONFIG":
+            continue
+        arg += "{}={} ".format(key, job[key])
+    return arg
 
 def start_nodes(arg, curr_node):
     f = open(ifconfig)
@@ -17,19 +24,20 @@ def start_nodes(arg, curr_node):
 	job = load_job(arg) 
     for addr in f:
         if '#' in addr:
-            if addr[1] == 'l' and "LOG_DEVICE" in job and jpb["LOG_DEVICE"] == "LOG_DEVICE_REDIS":
+            if addr[1] == 'l' and eval_arg("LOG_DEVICE","LOG_DEVICE_REDIS", default=True): 
                 log_node = "true"
             continue
-        if curr_node == num_nodes:
-            num_nodes += 1
-            continue
-        # start server
-        addr = addr.split(':')[0]
-        os.system("ssh {} 'sudo pkill rundb'".format(addr))
 		cmd = "python3 test.py NODE_ID={} LOG_NODE={}".format(num_nodes, log_node)
-		if "CONFIG" in job:
-			cmd += " CONFIG={}".format(job["CONFIG"])
-        ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' &".format(addr, cmd))
+        if curr_node == num_nodes:
+            # start server locally
+            os.system("sudo pkill rundb")
+            os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
+            ret = os.system("{} &".format(cmd))
+        else:
+            # start server remotely
+			addr = addr.split(':')[0]
+			os.system("ssh {} 'sudo pkill rundb'".format(addr))
+			ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' &".format(addr, cmd))
         if ret != 0:
             err_msg = "error executing server"
             job['ERROR'] = err_msg
@@ -37,11 +45,6 @@ def start_nodes(arg, curr_node):
         else:
             print("[LOG] start node {}".format(num_nodes))
         num_nodes += 1
-
-    # start own server
-    os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
-    print("[LOG] start node {}".format(curr_node))
-    os.system("python3 test.py {} DEBUG_MODE={} NODE_ID={}".format(arg, mode, curr_node))
 
 def kill_nodes(curr_node):
     f = open(ifconfig)

@@ -2,4 +2,4 @@
 node-0.Sundial-dev.nextgendb-PG0.clemson.cloudlab.us
 node-1.Sundial-dev.nextgendb-PG0.clemson.cloudlab.us
 #l
-130.127.134.4:500051
+130.127.134.4:6379
