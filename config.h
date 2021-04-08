@@ -2,14 +2,14 @@
 
 // System Setup
 // ==========
-#define LOG_NODE                        false // init as native log node
-#define DISTRIBUTED true
-#define NUM_NODES 1
+#define LOG_NODE false
+#define DISTRIBUTED                     false
+#define NUM_NODES                       1
 
 // number of server threads on each node
-#define NUM_WORKER_THREADS 16
-#define NUM_RPC_SERVER_THREADS 16
-#define NUM_STORAGE_RPC_SERVER_THREADS 20
+#define NUM_WORKER_THREADS              4096 //2048 //1024
+#define NUM_RPC_SERVER_THREADS          24
+#define NUM_STORAGE_RPC_SERVER_THREADS  24
 
 // Statistics
 // ==========
@@ -23,12 +23,12 @@
 // ==========
 // only a limited number of active threads are allowed. This configuration is
 // effective only when LOG_ENABLE == true.
-#define ENABLE_ADMISSION_CONTROL false
-#define MAX_NUM_ACTIVE_TXNS 28
+#define ENABLE_ADMISSION_CONTROL        true
+#define MAX_NUM_ACTIVE_TXNS             16
 #define NETWORK_DELAY                   0 // in us
 
 // WORKLOAD can be YCSB or TPCC
-#define WORKLOAD YCSB
+#define WORKLOAD                        TPCC
 
 // Concurrency Control
 // ===================
@@ -95,11 +95,11 @@
 
 // Logging
 // =======
-#define LOG_LOCAL false
-#define CONTROLLED_LOCK_VIOLATION false
-#define LOG_REMOTE true
+#define LOG_LOCAL                       false
+#define CONTROLLED_LOCK_VIOLATION       false
+#define LOG_REMOTE                      true
 #define LOG_TIMEOUT                     1000  // in us
-#define LOG_DEVICE LOG_DEVICE_REDIS
+#define LOG_DEVICE                      LOG_DEVICE_REDIS
 #define LOG_DELAY                       0
 
 // Benchmark
@@ -112,10 +112,10 @@
 // [YCSB]
 // Number of tuples per node
 #define SYNTH_TABLE_SIZE                (1024 * 10 * 1024)
-#define ZIPF_THETA 0
-#define READ_PERC 0.5
+#define ZIPF_THETA                      0.6
+#define READ_PERC                       0.9
 #define PERC_READONLY_DATA              0
-#define PERC_REMOTE 0
+#define PERC_REMOTE                     0
 #define SINGLE_PART_ONLY                false // access single partition only
 #define REQ_PER_QUERY                   16
 #define THINK_TIME                      0  // in us
@@ -167,7 +167,7 @@
 #define RECV_BUFFER_SIZE                32768
 #define SEND_BUFFER_SIZE                32768
 #define MAX_CLOCK_SKEW                  0 // in us
-#define COMMIT_ALG ONE_PC
+#define COMMIT_ALG                      ONE_PC
 #define DEBUG_LOG                       false
 #define WORKER_SERVER_SAME              false
 
@@ -201,5 +201,5 @@
 #define ONE_PC                          1
 #define TWO_PC                          2
 
-#define LOG_DEVICE LOG_DEVICE_REDIS
-#define LOG_DEVICE LOG_DEVICE_REDIS
+#define LOG_DEVICE_NATIVE               1
+#define LOG_DEVICE_REDIS                2

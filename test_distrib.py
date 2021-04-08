@@ -27,7 +27,8 @@ def start_nodes(arg, curr_node):
             if addr[1] == 'l' and eval_arg("LOG_DEVICE","LOG_DEVICE_REDIS", job, default=True): 
                 log_node = "true"
             continue
-        cmd = "python3 test.py NODE_ID={} LOG_NODE={}".format(num_nodes, log_node)
+        cmd = "python3 test.py {} NODE_ID={} LOG_NODE={}".format(compress_job(job), num_nodes, log_node)
+        print("[LOG] command {}".format(cmd))
         if curr_node == num_nodes:
             # start server locally
             os.system("sudo pkill rundb")

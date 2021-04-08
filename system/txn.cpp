@@ -25,6 +25,7 @@
 #include "row_lock.h"
 #endif
 #include "log.h"
+#include "redis_client.h"
 
 // TODO. cleanup the accesses related malloc code.
 
@@ -471,7 +472,7 @@ TxnManager::process_2pc_phase1()
         // TODO(zhihan): replace data with txn's log record
         string data = "[LSN] data";
         rpc_log_semaphore->incr();
-        redis_client->log_if_ne_data(get_node_id(), get_txn_id(), data);
+        redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
 #endif
     }
 #endif
@@ -723,7 +724,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 // TODO(zhihan): replace data with txn's log record
                 string data = "[LSN] data";
                 rpc_log_semaphore->incr();
-                redis_client->log_if_ne_data(get_node_id(), get_txn_id(), data);
+                redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
                 rpc_log_semaphore->wait();
 #endif
             }
@@ -746,7 +747,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 rpc_log_semaphore->wait();
             #endif
 #elif LOG_DEVICE == LOG_DEVICE_REDIS
-            redis_client->log_sync(get_node_id(), get_txn_id(), COMMITTED);
+            redis_client->log_sync(g_node_id, get_txn_id(), COMMITTED);
 #endif
 #endif
             break;
@@ -775,7 +776,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 #endif
 #elif LOG_DEVICE == LOG_DEVICE_REDIS
     State status = _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
-    redis_client->log_sync(get_node_id(), get_txn_id(), status);
+    redis_client->log_sync(g_node_id, get_txn_id(), status);
 #endif
 #endif
     dependency_semaphore->wait();
