@@ -21,13 +21,17 @@ def start_nodes(arg, curr_node):
     f = open(ifconfig)
     num_nodes = 0
     log_node = "false"
-    job = load_job(arg.split()) 
+    job = load_job(arg)
+    print(job)
     for addr in f:
-        if '#' in addr:
-            if addr[1] == 'l' and eval_arg("LOG_DEVICE","LOG_DEVICE_REDIS", job, default=True): 
-                log_node = "true"
+        if addr[0] == '#':
             continue
-        cmd = "python3 test.py {} NODE_ID={} LOG_NODE={}".format(compress_job(job), num_nodes, log_node)
+        elif addr[0] == '=' and addr[1] == 'l' and eval_arg("LOG_DEVICE","LOG_DEVICE_REDIS", job, default=True): 
+            log_node = "true"
+            continue
+        job["NODE_ID"] = num_nodes
+        job["LOG_NODE"] = log_node
+        cmd = "python3 test.py {}".format(compress_job(job))
         print("[LOG] command {}".format(cmd))
         if curr_node == num_nodes:
             # start server locally
@@ -35,6 +39,7 @@ def start_nodes(arg, curr_node):
             os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
             ret = os.system("{} &".format(cmd))
         else:
+            continue
             # start server remotely
             addr = addr.split(':')[0]
             os.system("ssh {} 'sudo pkill rundb'".format(addr))
@@ -61,8 +66,7 @@ def kill_nodes(curr_node):
 
 
 if __name__ == "__main__":
-    arg = sys.argv[1]
     script = "test.py"
-    start_nodes(arg, 0)
+    start_nodes(sys.argv[1:], 0)
         
     
