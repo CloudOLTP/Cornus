@@ -16,9 +16,9 @@ SundialRPCClient::SundialRPCClient() {
     string line;
     uint32_t node_id = 0;
 #if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    while ( node_id + 1 < g_num_nodes_and_storage && getline(in, line) ) {
+    while ( node_id  < g_num_nodes_and_storage && getline(in, line) ) {
 #else
-    while ( node_id + 1 < g_num_nodes && getline(in, line) ) {
+    while ( node_id  < g_num_nodes && getline(in, line) ) {
 #endif
         if (line[0] == '#')
             continue;

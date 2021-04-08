@@ -99,7 +99,7 @@
 #define CONTROLLED_LOCK_VIOLATION false
 #define LOG_REMOTE true
 #define LOG_TIMEOUT                     1000  // in us
-#define LOG_DEVICE LOG_DEVICE_REDIS
+#define LOG_DEVICE LOG_DVC_REDIS
 #define LOG_DELAY                       0
 
 // Benchmark
@@ -201,5 +201,5 @@
 #define ONE_PC                          1
 #define TWO_PC                          2
 
-#define LOG_DEVICE_REDIS 1
-#define LOG_DEVICE_NATIVE 2
+#define LOG_DVC_NATIVE                  1
+#define LOG_DVC_REDIS                   2
