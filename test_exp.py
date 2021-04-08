@@ -1,28 +1,28 @@
 # example usage
-# python3 test_exp.py experiments/test.json 0
+# python3 test_exp.py CONFIG=experiments/test.json NODE_ID=0 DEBUG_MODE=debug [optional args]
 # the first argument is the path to your exp settings, note that for any params with a list as 
 # the values meaning multiple exps will be issued under each value
 # the last argument is the index of current node corresponding to the ifconfig.txt
 import os, sys, re, os.path
 import subprocess, datetime, time, signal, json
 from test_distrib import start_nodes, kill_nodes
-from test import compile_and_run, parse_arg, try_compile, collect_result
+from test import compile_and_run, parse_arg, try_compile, collect_result, load_job, eval_arg
 
 script = "test_distrib.py"
 
 if __name__ == "__main__":
-    if len(sys.argv) > 3:
-        mode = sys.argv[3]
+    job = load_job(sys.argv[1])
+    assert("CONFIG" in job) 
+    exp_name = job["CONFIG"].split('/')[-1]
+    if "NODE_ID" in job: 
+        curr_node = int(job["NODE_ID"])
     else:
-        mode = "release"
-    job = json.load(open(sys.argv[1]))
-    exp_name = sys.argv[1].split('.')[0]
-    if '/' in exp_name:
-        exp_name = exp_name.split("/")[-1]
-        curr_node = int(sys.argv[2])
+        curr_node = 0 
     args = [""]
     for key in job:
         new_args = []
+        if key == "CONFIG":
+            continue
         if isinstance(job[key], list):
             for i, x in enumerate(job[key]):
                 for arg in args:
@@ -33,13 +33,11 @@ if __name__ == "__main__":
                 arg = arg + "{}={} ".format(key, job[key])
                 new_args.append(arg)
         args = new_args
-    #if os.path.exists("outputs/stats.json"):
-    #	os.remove("outputs/stats.json")
     for i, arg in enumerate(args):
         print("[LOG] issue exp {}/{}".format(i+1, len(args)))
         print("[LOG] arg = {}".format(arg))
         if script == "test_distrib.py":
-            ret = start_nodes(arg, curr_node, mode)
+            ret = start_nodes(arg, curr_node)
             if ret != 0:
                 continue
             print("[LOG] KILLING REMOTE SERVER ... ")
@@ -48,15 +46,8 @@ if __name__ == "__main__":
             os.system("ssh node-1 'sudo pkill rundb'")
             print("[LOG] FINISH EXECUTION ")
         else:
-            job = parse_arg(arg)
-            if mode == "compile":
-                try_compile(job)
-            elif mode == "debug":
-                compile_and_run(job)
-            elif mode == "release":
-                compile_and_run(job)
-                collect_result(job)
-    if mode == "release":
+            main(arg)
+    if eval_arg("MODE", "release", job):
         os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")
     f = open('ifconfig.txt')
@@ -72,4 +63,4 @@ if __name__ == "__main__":
         os.system("ssh {} 'cd Sundial/outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json'".format(addr, exp_name, exp_name))
         num_nodes += 1
     print("[LOG] FINISH collecting results")
-    os.system("python3 send_email.py {}".format(exp_name))
+    #os.system("python3 send_email.py {}".format(exp_name))

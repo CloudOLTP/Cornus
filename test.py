@@ -40,11 +40,6 @@ def run(job=None):
         app_flags += "-Gn0 "
     os.system("./rundb %s | tee temp.out" % app_flags)
 
-
-def compile_and_run(job) :
-    try_compile(job)
-    run('', job)
-
 def parse_output(job):
 	output = open("temp.out")
 	phase = 0
@@ -94,14 +89,27 @@ def collect_result(job):
     stats.write(json.dumps(job)+"\n")
     stats.close()
 
-if __name__ == "__main__":
-    job = load_job(sys.argv[1:])
-    print(json.dumps(job)+"\n")
-    if "DEBUG_MODE" not in job or job["DEBUG_MODE"] == "release":
-        compile_and_run(job)
-        collect_result(job)
-    elif job["DEBUG_MODE"] == "debug":
-        compile_and_run(job)
-    elif job["DEBUG_MODE"] == "compile":
-        try_compile(job)
+def eval_arg(arg, val, job, default=False):
+    if arg not in job:
+        return default
+    elif job[arg] == val:
+        return True
+    else:
+        return False
 
+def main(arg):
+    job = load_job(arg)
+    print(json.dumps(job)+"\n")
+    if eval_arg("MODE", "release", job, default=True): 
+        try_compile(job)
+        run(job)
+        collect_result(job)
+    elif job["MODE"] == "debug":
+        try_compile(job)
+        run(job)
+    elif job["MODE"] == "compile":
+        try_compile(job)
+    
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

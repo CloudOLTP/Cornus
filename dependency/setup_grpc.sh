@@ -5,7 +5,7 @@ sudo apt-get -y install clang-5.0 libc++-dev
 sudo apt update
 sudo apt -y install python3-pip
 pip3 install pandas
-cd ..
+cd ../..
 git clone https://github.com/grpc/grpc
 cd grpc
 git submodule update --init
