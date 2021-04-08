@@ -115,7 +115,7 @@
 #define ZIPF_THETA 0
 #define READ_PERC 0.5
 #define PERC_READONLY_DATA              0
-#define PERC_REMOTE 0
+#define PERC_REMOTE 0.5
 #define SINGLE_PART_ONLY                false // access single partition only
 #define REQ_PER_QUERY                   16
 #define THINK_TIME                      0  // in us

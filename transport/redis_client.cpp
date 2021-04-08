@@ -62,8 +62,8 @@ callback(cpp_redis::reply & response) {
 void
 RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
     auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1])
-        return tonumber(ARGV[2])
+        redis.call('set', KEYS[1], ARGV[1]);
+        return tonumber(ARGV[2]);
         )";
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {"data-" + id};
@@ -74,9 +74,10 @@ RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
 
 void
 RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
+    std::cout << "log_async" << std::endl;
     auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1])
-        return tonumber(ARGV[2])
+        redis.call('set', KEYS[1], ARGV[1]);
+        return tonumber(ARGV[2]);
         )";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
@@ -94,11 +95,13 @@ RedisClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     // key: "type(data/status)-node_id-txn_id"
     // TODO: change return type to match log_if_ne_data
     auto script = R"(
-        local status = tonumber(redis.call(KEYS[1]))
-        if (status != ARGV[1]) then return return tonumber(status)
-        else redis.call('set', KEYS[1], ARGV[2])
-        end
-        return tonumber(ARGV[3]))";
+        local status = tonumber(redis.call(KEYS[1]));
+        if (status != ARGV[1]) then return tonumber(status);
+        else 
+		redis.call('set', KEYS[1], ARGV[2]);
+        return tonumber(ARGV[3]);
+        end;
+    )";
     string key = "status" + std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {key};
     std::vector<std::string> args = {std::to_string(TxnManager::ABORTED),
@@ -112,13 +115,16 @@ void
 RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
+    std::cout << "log_if_ne_data" << std::endl;
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         local status = tonumber(redis.call(KEYS[2]))
-        if (status == ARGV[2]) then return tonumber(status) tonumber(ARGV[4])
-        else redis.call('set', KEYS[2], ARGV[3])
+        if status == tonumber(ARGV[2]) then 
+        return tonumber(status), tonumber(ARGV[4]) 
+        else 
+		redis.call('set', KEYS[2], ARGV[3]) 
         end
-        return tonumber(ARGV[3]) tonumber(ARGV[4]))";
+        return tonumber(ARGV[3]), tonumber(ARGV[4]);)";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"data-" + id, "status" + id};
@@ -138,9 +144,9 @@ data) {
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
-        return redis.call('set', KEYS[2], ARGV[2])
-        return tonumber(ARGV[3])
-        )";
+        redis.call('set', KEYS[2], ARGV[2])
+        return tonumber(ARGV[3]);
+    )";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"data-" + id, "status" + id};
