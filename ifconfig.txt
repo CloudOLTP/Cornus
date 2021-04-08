@@ -1,5 +1,5 @@
 # a list of servers; each on a new line
-node-0.Sundial-dev.nextgendb-PG0.clemson.cloudlab.us
+node-0.Sundial-dev.nextgendb-PG0.clemson.cloudlab.us:50051
 node-1.Sundial-dev.nextgendb-PG0.clemson.cloudlab.us
 #l
 130.127.134.4:6379

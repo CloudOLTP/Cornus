@@ -47,7 +47,7 @@ if __name__ == "__main__":
             print("[LOG] FINISH EXECUTION ")
         else:
             main(arg)
-    if eval_arg("MODE", "release", job):
+    if eval_arg("MODE", "release", job, default=True):
         os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")
     f = open('ifconfig.txt')

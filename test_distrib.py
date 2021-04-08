@@ -21,13 +21,13 @@ def start_nodes(arg, curr_node):
     f = open(ifconfig)
     num_nodes = 0
     log_node = "false"
-	job = load_job(arg) 
+    job = load_job(arg.split()) 
     for addr in f:
         if '#' in addr:
-            if addr[1] == 'l' and eval_arg("LOG_DEVICE","LOG_DEVICE_REDIS", default=True): 
+            if addr[1] == 'l' and eval_arg("LOG_DEVICE","LOG_DEVICE_REDIS", job, default=True): 
                 log_node = "true"
             continue
-		cmd = "python3 test.py NODE_ID={} LOG_NODE={}".format(num_nodes, log_node)
+        cmd = "python3 test.py NODE_ID={} LOG_NODE={}".format(num_nodes, log_node)
         if curr_node == num_nodes:
             # start server locally
             os.system("sudo pkill rundb")
@@ -35,9 +35,9 @@ def start_nodes(arg, curr_node):
             ret = os.system("{} &".format(cmd))
         else:
             # start server remotely
-			addr = addr.split(':')[0]
-			os.system("ssh {} 'sudo pkill rundb'".format(addr))
-			ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' &".format(addr, cmd))
+            addr = addr.split(':')[0]
+            os.system("ssh {} 'sudo pkill rundb'".format(addr))
+            ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' &".format(addr, cmd))
         if ret != 0:
             err_msg = "error executing server"
             job['ERROR'] = err_msg
