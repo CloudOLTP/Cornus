@@ -82,6 +82,7 @@ def load_job(arg):
         job.update(job_tmp)
     else:
         job = job_tmp
+    return job
 
 def collect_result(job):
     job = parse_output(job)
