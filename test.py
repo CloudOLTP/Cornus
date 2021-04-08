@@ -32,7 +32,7 @@ def try_compile(job):
     else:
         os.system("rm -f temp.out")
 
-def run(test = '', job=None):
+def run(job=None):
     app_flags = ""
     if "NODE_ID" in job:
         app_flags += "-Gn{} ".format(job['NODE_ID'])
@@ -84,7 +84,13 @@ def collect_result(job):
     stats.close()
 
 if __name__ == "__main__":
-    job = parse_arg(sys.argv[1:])
+    job_tmp = parse_arg(sys.argv[1:])
+    if "CONFIG" in job:
+        print("loading config from {} ...".format(job_tmp["CONFIG"]))
+        job = json.load(open(job_tmp["CONFIG"]))
+        job.update(job_tmp)
+    else:
+        job = job_tmp
     print(json.dumps(job)+"\n")
     if "DEBUG_MODE" not in job or job["DEBUG_MODE"] == "release":
         compile_and_run(job)
