@@ -77,7 +77,7 @@ Manager::calibrate_cpu_frequency()
     int64_t runtime = end_t - start_t;
 
     g_cpu_freq = 1.0 * (endtime - starttime) * g_cpu_freq / runtime;
-    cout << "the CPU freqency is " << g_cpu_freq << endl;
+    cout << "[Sundial] the CPU freqency is " << g_cpu_freq << endl;
 }
 
 ts_t

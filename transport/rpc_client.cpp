@@ -17,20 +17,23 @@ SundialRPCClient::SundialRPCClient() {
     //std::istringstream in(ifconfig_string);
     std::ifstream in(ifconfig_file);
     string line;
-    uint32_t num_nodes = 0;
+    uint32_t node_id = 0;
 #if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_NATIVE
-    while ( num_nodes < g_num_nodes_and_storage && getline(in, line) ) {
+    while ( node_id + 1 < g_num_nodes_and_storage && getline(in, line) ) {
 #else
-    while ( num_nodes < g_num_nodes && getline(in, line) ) {
+    while ( node_id + 1 < g_num_nodes && getline(in, line) ) {
 #endif
         if (line[0] == '#')
             continue;
+        else if (line[0] == '=' && line[1] == 'l')
+            break;
         else {
             string url = line;
-            if (num_nodes != g_node_id) {
+            if (node_id != g_node_id) {
                 _servers[num_nodes] = new SundialRPCClientStub(grpc::CreateChannel(url, grpc::InsecureChannelCredentials()));
+                cout << "[Sundial] init rpc client - " << num_nodes << " at " << url << endl;
             }
-            num_nodes ++;
+            node_id ++;
         }
     }
     cout << "[Sundial] rpc client is initialized!" << endl;
