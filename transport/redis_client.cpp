@@ -38,9 +38,10 @@ RedisClient::RedisClient() {
 
 void 
 callback(cpp_redis::reply & response) {
-    // TODO: implement callback func for different log request
-	// based on reply type
-    	
+	// TODO(zhihan): since termination protocol is not implemented yet
+	// current callback only needs to decrease txn's rpc_log_semaphore		
+	// TODO(zhihan): need to find out if txn info is in response...
+	std::cout << response.as_string() << std::endl;
 }
 
 void
