@@ -18,7 +18,7 @@ SundialRPCClient::SundialRPCClient() {
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t num_nodes = 0;
-#if LOG_REMOTE
+#if LOG_REMOTE && LOG_DEVICE == LOG_DEVICE_REDIS
     while ( num_nodes < g_num_nodes_and_storage && getline(in, line) ) {
 #else
     while ( num_nodes < g_num_nodes && getline(in, line) ) {
