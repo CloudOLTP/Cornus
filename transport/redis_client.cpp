@@ -1,47 +1,60 @@
 //
 // Created by Zhihan Guo on 4/5/21.
 //
-#include <cpp_redis/cpp_redis>
+#include <sstream>
 
 #include "redis_client.h"
 #include "txn.h"
 
-using namespace sw::redis;
+void callback(cpp_redis::reply & response);
 
 RedisClient::RedisClient() {
     std::ifstream in(ifconfig_file);
     string line;
     bool checked_marker = false;
-    while(get_line(in, line)) {
-        if (line.size >= 2 && line[0] == "#" && line[1] == "l") {
+    while(getline(in, line)) {
+        if (line.size() >= 2 && line[0] == '#' && line[1] == 'l') {
             checked_marker = true;
             continue;
-        } else if (line[0] == "#") {
+        } else if (line[0] == '#') {
             continue;
         }
         if (checked_marker) {
             break;
         }
     }
-    assert(line);
-    client.connect(host=line.substr(0, line.find(":")),
-        port=line.substr(line.find(":") + 1, line.size()),
-        timeout_msecs = LOG_TIMEOUT / 1000);
+	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
+	size_t port;
+	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
+	iss >> port;
+    client.connect(line.substr(0, line.find(":")),
+        port,
+		nullptr,
+		LOG_TIMEOUT,
+		0,
+		0);
+}
+
+
+void 
+callback(cpp_redis::reply & response) {
+    // TODO: implement callback func for different log request
+	// based on reply type
+    	
 }
 
 void
 RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
-    string key = "data" + to_string(node_id) + "-" + to_string(txn_id);
-    client.set(key, to_string(status), callback);
-    client.sync_commit()
+    string key = "data" + std::to_string(node_id) + "-" + std::to_string(txn_id);
+    client.set(key, std::to_string(status), &callback);
+    client.sync_commit();
 }
 
 void
 RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
-    // TODO: implement callback func
-    string key = "data" + to_string(node_id) + "-" + to_string(txn_id);
-    client.set(key, to_string(status), callback);
-    client.commit()
+    string key = "data" + std::to_string(node_id) + "-" + std::to_string(txn_id);
+    client.set(key, std::to_string(status), callback);
+    client.commit();
 }
 
 // used for termination protocol, req is always LOG_ABORT
@@ -56,10 +69,10 @@ RedisClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
         else redis.call('set', KEYS[1], ARGV[2])
         end
         return tonumber(ARGV[3]))";
-    string key = "status" + to_string(node_id) + "-" + to_string(txn_id);
+    string key = "status" + std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {key};
-    std::vector<std::string> args = {to_string(TxnManager::ABORTED),
-                                     to_string(TxnManager::ABORTED)};
+    std::vector<std::string> args = {std::to_string(TxnManager::ABORTED),
+                                     std::to_string(TxnManager::ABORTED)};
     client.eval(script, keys, args, callback);
     client.commit();
 }
@@ -76,11 +89,11 @@ RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
         else redis.call('set', KEYS[2], ARGV[3])
         end
         return tonumber(ARGV[3]))";
-    string id = to_string(node_id) + "-" + to_string(txn_id);
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {"data-" + id, "status" + id};
     std::vector<std::string> args = {data,
-                                     to_string(TxnManager::ABORTED),
-                                     to_string(TxnManager::PREPARED)};
+                                     std::to_string(TxnManager::ABORTED),
+                                     std::to_string(TxnManager::PREPARED)};
     client.eval(script, keys, args, callback);
     client.commit();
 }
@@ -96,10 +109,10 @@ data) {
         redis.call('set', KEYS[1], ARGV[1])
         redis.call('set', KEYS[2], ARGV[2])
         )";
-    string id = to_string(node_id) + "-" + to_string(txn_id);
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {"data-" + id, "status" + id};
     std::vector<std::string> args = {data,
-                                     to_string(status)};
+                                     std::to_string(status)};
     client.eval(script, keys, args, callback);
     client.sync_commit();
 }

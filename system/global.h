@@ -48,6 +48,7 @@ class WorkerThread;
 class LogManager;
 class SundialRPCClient;
 class SundialRPCServerImpl;
+class RedisClient;
 
 typedef uint64_t ts_t; // time stamp type
 

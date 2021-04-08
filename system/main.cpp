@@ -1,3 +1,7 @@
+
+#include <string>
+#include <fstream>
+
 #include "global.h"
 #include "ycsb.h"
 #include "ycsb_query.h"
@@ -6,20 +10,16 @@
 #include "manager.h"
 #include "query.h"
 #include "txn_table.h"
-#include <string>
-#include <fstream>
-
 #if LOG_LOCAL
 #include "logging_thread.h"
 #include "log.h"
 #endif
-
 #if LOG_NODE
 #include "log.h"
 #endif
-
-#include "transport/rpc_server.h"
-#include "transport/rpc_client.h"
+#include "rpc_server.h"
+#include "rpc_client.h"
+#include "redis_client.h"
 
 void * start_thread(void *);
 void * start_rpc_server(void *);

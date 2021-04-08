@@ -36,6 +36,8 @@ def run(job=None):
     app_flags = ""
     if "NODE_ID" in job:
         app_flags += "-Gn{} ".format(job['NODE_ID'])
+    else:
+        app_flags += "-Gn0 "
     os.system("./rundb %s | tee temp.out" % app_flags)
 
 
@@ -85,7 +87,7 @@ def collect_result(job):
 
 if __name__ == "__main__":
     job_tmp = parse_arg(sys.argv[1:])
-    if "CONFIG" in job:
+    if "CONFIG" in job_tmp:
         print("loading config from {} ...".format(job_tmp["CONFIG"]))
         job = json.load(open(job_tmp["CONFIG"]))
         job.update(job_tmp)

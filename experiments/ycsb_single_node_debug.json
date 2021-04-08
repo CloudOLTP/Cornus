@@ -1,5 +1,4 @@
 {
-    "i": [0],
 	"DISTRIBUTED": "true",
 	"NUM_NODES": 1,
 	"NUM_WORKER_THREADS": 16,
@@ -11,9 +10,10 @@
     "LOG_DEVICE": "LOG_DEVICE_REDIS",
     "CONTROLLED_LOCK_VIOLATION": "false",
     "ENABLE_ADMISSION_CONTROL": "false",
-    "COMMIT_ALG": ["ONE_PC"],
+    "COMMIT_ALG": "ONE_PC",
     "WORKLOAD": "YCSB",
     "ZIPF_THETA": 0,
     "READ_PERC": 0.5,
-    "PERC_REMOTE": 0
+    "PERC_REMOTE": 0,
+	"DEBUG_MODE": "compile"
 }

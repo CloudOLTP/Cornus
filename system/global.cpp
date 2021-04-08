@@ -5,6 +5,7 @@
 #include "log.h"
 #include "rpc_client.h"
 #include "rpc_server.h"
+#include "redis_client.h"
 
 Stats *             glob_stats;
 Manager *           glob_manager;
@@ -88,6 +89,7 @@ uint32_t        g_num_output_threads    = NUM_OUTPUT_THREADS;
 
 SundialRPCClient *  rpc_client;
 SundialRPCServerImpl * rpc_server;
+RedisClient *       redis_client;
 
 Transport *     transport;
 InOutQueue **   input_queues;

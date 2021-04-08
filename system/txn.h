@@ -73,7 +73,7 @@ public:
         switch(rc) {
             case ABORT: return ABORTED;
             case COMMIT: return COMMITTED;
-            default: assert(false); return 0;
+            default: assert(false); return RUNNING;
         }
     };
 
