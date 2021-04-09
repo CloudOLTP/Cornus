@@ -105,14 +105,14 @@
 // Benchmark
 // =========
 // max number of rows touched per transaction
-#define RUN_TIME                       10 // in second
+#define RUN_TIME 30
 #define MAX_TUPLE_SIZE                  1024 // in bytes
 #define INIT_PARALLELISM                8
 
 // [YCSB]
 // Number of tuples per node
 #define SYNTH_TABLE_SIZE                (1024 * 10 * 1024)
-#define ZIPF_THETA 0
+#define ZIPF_THETA 1.3
 #define READ_PERC 0.5
 #define PERC_READONLY_DATA              0
 #define PERC_REMOTE 0.5
