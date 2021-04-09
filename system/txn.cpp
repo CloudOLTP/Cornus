@@ -574,11 +574,11 @@ TxnManager::process_2pc_phase2(RC rc)
     send_log_request(g_storage_node_id, type);
     #if ASYNC_RPC
         rpc_log_semaphore->wait();
-        _cc_manager->cleanup(rc); // release lock after receive log resp
     #endif
 #elif LOG_DEVICE == LOG_DVC_REDIS
     redis_client->log_sync(g_node_id, get_txn_id(), rc_to_state(rc));
 #endif
+    _cc_manager->cleanup(rc); // release lock after receive log resp
 #endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // No need to run this phase if the remote sub-txn has already committed
@@ -723,9 +723,13 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 #elif LOG_DEVICE == LOG_DVC_REDIS
                 // TODO(zhihan): replace data with txn's log record
                 string data = "[LSN] data";
+#if COMMIT_ALG == ONE_PC
                 rpc_log_semaphore->incr();
                 redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
                 rpc_log_semaphore->wait();
+#else
+				redis_client->log_sync_data(g_node_id, get_txn_id(), data);
+#endif
 #endif
             }
 #endif

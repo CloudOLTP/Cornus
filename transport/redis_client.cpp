@@ -36,14 +36,8 @@ RedisClient::RedisClient() {
       		std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
 		}
 	});
-    /*
-    client.connect(line.substr(0, line.find(":")),
-        port,
-		nullptr,
-		LOG_TIMEOUT,
-		0,
-		0);
-    */
+    client.flushall(sync_callback);
+    client.sync_commit();
     std::cout << "[Sundial] connected to redis server!" << std::endl;
 }
 

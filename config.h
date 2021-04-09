@@ -167,7 +167,7 @@
 #define RECV_BUFFER_SIZE                32768
 #define SEND_BUFFER_SIZE                32768
 #define MAX_CLOCK_SKEW                  0 // in us
-#define COMMIT_ALG ONE_PC
+#define COMMIT_ALG TWO_PC
 #define DEBUG_LOG                       false
 #define WORKER_SERVER_SAME              false
 
