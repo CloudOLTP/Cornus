@@ -22,7 +22,6 @@ def start_nodes(arg, curr_node):
     num_nodes = 0
     log_node = "false"
     job = load_job(arg)
-    print(job)
     for addr in f:
         if addr[0] == '#':
             continue
@@ -35,7 +34,6 @@ def start_nodes(arg, curr_node):
         job["NODE_ID"] = num_nodes
         job["LOG_NODE"] = log_node
         cmd = "python3 test.py {}".format(compress_job(job))
-        print("[LOG] command {}".format(cmd))
         if curr_node != num_nodes:
             # start server remotely
             addr = addr.split(':')[0]
@@ -49,9 +47,12 @@ def start_nodes(arg, curr_node):
                 print("[LOG] start node {}".format(num_nodes))
         num_nodes += 1
 	# start server locally
-	os.system("sudo pkill rundb")
-	os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
-	ret = os.system(cmd)
+    job["NODE_ID"] = curr_node
+    job["LOG_NODE"] = False
+    cmd = "python3 test.py {}".format(compress_job(job))
+    os.system("sudo pkill rundb")
+    os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
+    ret = os.system(cmd)
     return ret
 
 def kill_nodes(curr_node):

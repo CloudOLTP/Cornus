@@ -2,7 +2,7 @@
 
 // System Setup
 // ==========
-#define LOG_NODE false
+#define LOG_NODE False
 #define DISTRIBUTED true
 #define NUM_NODES 2
 

@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
     pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
     
     // make sure server is setup before moving on
-    sleep(2);
+    sleep(5);
     cout << "[Sundial] Synchronization starts" << endl;
 
     // Can start only if all other nodes have also finished initialization
