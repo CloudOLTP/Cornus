@@ -8,3 +8,4 @@ config.h
 rundb
 __pycache__
 .vscode
+outputs/*.json
