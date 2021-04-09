@@ -86,7 +86,6 @@ RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
 
 void
 RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
-    std::cout << "log_async" << std::endl;
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         return tonumber(ARGV[2])
@@ -128,7 +127,6 @@ void
 RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
-    std::cout << "log_if_ne_data" << std::endl;
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         local status = tonumber(redis.call('get', KEYS[2]))
