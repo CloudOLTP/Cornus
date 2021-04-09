@@ -728,7 +728,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
                 rpc_log_semaphore->wait();
 #else
-				redis_client->log_sync_data(g_node_id, get_txn_id(), data);
+				redis_client->log_sync_data(g_node_id, get_txn_id(), PREPARED, data);
 #endif
 #endif
             }
