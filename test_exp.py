@@ -6,12 +6,12 @@
 import os, sys, re, os.path
 import subprocess, datetime, time, signal, json
 from test_distrib import start_nodes, kill_nodes
-from test import compile_and_run, parse_arg, try_compile, collect_result, load_job, eval_arg
+from test import parse_arg, try_compile, collect_result, load_job, eval_arg
 
 script = "test_distrib.py"
 
 if __name__ == "__main__":
-    job = load_job(sys.argv[1])
+    job = load_job(sys.argv[1:])
     assert("CONFIG" in job) 
     exp_name = job["CONFIG"].split('/')[-1]
     if "NODE_ID" in job: 
@@ -37,13 +37,12 @@ if __name__ == "__main__":
         print("[LOG] issue exp {}/{}".format(i+1, len(args)))
         print("[LOG] arg = {}".format(arg))
         if script == "test_distrib.py":
-            ret = start_nodes(arg, curr_node)
+            ret = start_nodes(arg.split(), curr_node)
             if ret != 0:
                 continue
-            print("[LOG] KILLING REMOTE SERVER ... ")
+            print("[LOG] KILLING CURRENT SERVER ... ")
             # kill the remote servers
             kill_nodes(curr_node)
-            os.system("ssh node-1 'sudo pkill rundb'")
             print("[LOG] FINISH EXECUTION ")
         else:
             main(arg)
@@ -55,6 +54,8 @@ if __name__ == "__main__":
     for addr in f:
         if '#' in addr:
             continue
+        if "=l" in addr:
+            break
         if curr_node == num_nodes:
             num_nodes += 1
             continue

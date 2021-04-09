@@ -1,8 +1,8 @@
 {
 	"DISTRIBUTED": "true",
 	"NUM_NODES": 2,
-	"NUM_WORKER_THREADS": 1,
-	"NUM_RPC_SERVER_THREADS": 1,
+	"NUM_WORKER_THREADS": 16,
+	"NUM_RPC_SERVER_THREADS": 16,
 	"MAX_NUM_ACTIVE_TXNS": 28,
     "LOG_LOCAL": "false",
     "LOG_REMOTE": "true",
@@ -13,6 +13,5 @@
     "WORKLOAD": "YCSB",
     "ZIPF_THETA": 0,
     "READ_PERC": 0.5,
-    "PERC_REMOTE": 0.5,
-    "MODE": "compile"
+    "PERC_REMOTE": 0.5
 }
