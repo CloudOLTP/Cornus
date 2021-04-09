@@ -13,7 +13,7 @@ script = "test_distrib.py"
 if __name__ == "__main__":
     job = load_job(sys.argv[1:])
     assert("CONFIG" in job) 
-    exp_name = job["CONFIG"].split('/')[-1]
+    exp_name = job["CONFIG"].split('/')[-1].split('.')[0]
     if "NODE_ID" in job: 
         curr_node = int(job["NODE_ID"])
     else:

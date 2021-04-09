@@ -38,7 +38,7 @@ def start_nodes(arg, curr_node):
             # start server remotely
             addr = addr.split(':')[0]
             os.system("ssh {} 'sudo pkill rundb'".format(addr))
-            ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {} &' ".format(addr, cmd))
+            ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' & ".format(addr, cmd))
             if ret != 0:
                 err_msg = "error executing server"
                 job['ERROR'] = err_msg
@@ -53,6 +53,7 @@ def start_nodes(arg, curr_node):
     os.system("sudo pkill rundb")
     os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
     ret = os.system(cmd)
+    f.close()
     return ret
 
 def kill_nodes(curr_node):

@@ -100,7 +100,6 @@ def eval_arg(arg, val, job, default=False):
 
 def main(arg):
     job = load_job(arg)
-    print(json.dumps(job)+"\n")
     if eval_arg("MODE", "release", job, default=True): 
         try_compile(job)
         run(job)
