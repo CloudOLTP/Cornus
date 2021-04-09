@@ -5,8 +5,10 @@
 
 #include "redis_client.h"
 #include "txn.h"
+#include "txn_table.h"
 
-void callback(cpp_redis::reply & response);
+void async_callback(cpp_redis::reply & response);
+void ne_callback(cpp_redis::reply & response);
 void sync_callback(cpp_redis::reply & response);
 
 RedisClient::RedisClient() {
@@ -51,19 +53,29 @@ sync_callback(cpp_redis::reply & response) {
 }
 
 void 
-callback(cpp_redis::reply & response) {
+async_callback(cpp_redis::reply & response) {
+    assert(response.is_integer());
+    TxnManager * txn = txn_table->get_txn(response.as_integer());
+    // mark as returned. 
+    txn->rpc_log_semaphore->decr();
+}
+
+void 
+ne_callback(cpp_redis::reply & response) {
 	// TODO(zhihan): since termination protocol is not implemented yet
 	// current callback only needs to decrease txn's rpc_log_semaphore		
-    std::cout << "finished log_async_data " << std::endl;
-    if (response.is_integer())
-    	std::cout << response.as_integer() << std::endl;
+    assert(response.is_array());
+    // TODO(zhihan): handle returned status to abort transaction if needed
+    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer());
+    // mark as returned. 
+    txn->rpc_log_semaphore->decr();
 }
 
 void
 RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
     auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1]);
-        return tonumber(ARGV[2]);
+        redis.call('set', KEYS[1], ARGV[1])
+        return tonumber(ARGV[2])
         )";
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {"data-" + id};
@@ -76,14 +88,14 @@ void
 RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     std::cout << "log_async" << std::endl;
     auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1]);
-        return tonumber(ARGV[2]);
+        redis.call('set', KEYS[1], ARGV[1])
+        return tonumber(ARGV[2])
         )";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"data-" + id};
     std::vector<std::string> args = {std::to_string(status), tid};
-    client.eval(script, keys, args, sync_callback);
+    client.eval(script, keys, args, async_callback);
     client.commit();
 }
 
@@ -95,18 +107,19 @@ RedisClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     // key: "type(data/status)-node_id-txn_id"
     // TODO: change return type to match log_if_ne_data
     auto script = R"(
-        local status = tonumber(redis.call(KEYS[1]));
-        if (status != ARGV[1]) then return tonumber(status);
+        local status = tonumber(redis.call('get', KEYS[1]))
+        if (status != ARGV[1]) then 
+		return {status, tonumber(ARGV[2])}
         else 
-		redis.call('set', KEYS[1], ARGV[2]);
-        return tonumber(ARGV[3]);
-        end;
+		redis.call('set', KEYS[1], ARGV[1])
+        return {tonumber(ARGV[1]), tonumber(ARGV[2])}
+        end
     )";
+    string tid = std::to_string(txn_id);
     string key = "status" + std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {key};
-    std::vector<std::string> args = {std::to_string(TxnManager::ABORTED),
-                                     std::to_string(TxnManager::ABORTED)};
-    client.eval(script, keys, args, callback);
+    std::vector<std::string> args = {std::to_string(TxnManager::ABORTED), tid};
+    client.eval(script, keys, args, ne_callback);
     client.commit();
 }
 
@@ -118,20 +131,20 @@ RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     std::cout << "log_if_ne_data" << std::endl;
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
-        local status = tonumber(redis.call(KEYS[2]))
+        local status = tonumber(redis.call('get', KEYS[2]))
         if status == tonumber(ARGV[2]) then 
-        return tonumber(status), tonumber(ARGV[4]) 
+        return {status, tonumber(ARGV[4])}
         else 
 		redis.call('set', KEYS[2], ARGV[3]) 
         end
-        return tonumber(ARGV[3]), tonumber(ARGV[4]);)";
+        return {tonumber(ARGV[3]), tonumber(ARGV[4])};)";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"data-" + id, "status" + id};
     std::vector<std::string> args = {data,
                                      std::to_string(TxnManager::ABORTED),
                                      std::to_string(TxnManager::PREPARED), tid};
-    client.eval(script, keys, args, callback);
+    client.eval(script, keys, args, ne_callback);
     client.commit();
 }
 
@@ -145,7 +158,7 @@ data) {
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         redis.call('set', KEYS[2], ARGV[2])
-        return tonumber(ARGV[3]);
+        return tonumber(ARGV[3])
     )";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
