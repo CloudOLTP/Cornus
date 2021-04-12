@@ -161,3 +161,24 @@ data) {
     client.eval(script, keys, args, sync_callback);
     client.sync_commit();
 }
+
+void
+RedisClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
+                           string & data) {
+    // log format - key-value
+    // key: "type(data/status)-node_id-txn_id"
+    auto script = R"(
+        redis.call('set', KEYS[1], ARGV[1])
+        redis.call('set', KEYS[2], ARGV[2])
+        return tonumber(ARGV[3])
+    )";
+    string tid = std::to_string(txn_id);
+    string id = std::to_string(node_id) + "-" + tid;
+    std::vector<std::string> keys = {"data-" + id, "status" + id};
+    std::vector<std::string> args = {data,
+                                     std::to_string(status),
+                                     tid};
+    client.eval(script, keys, args, async_callback);
+    client.commit();
+}
+

@@ -472,7 +472,11 @@ TxnManager::process_2pc_phase1()
         // TODO(zhihan): replace data with txn's log record
         string data = "[LSN] data";
         rpc_log_semaphore->incr();
+#if COMMIT_ALG == ONE_PC
         redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+#else
+        redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
+#endif
 #endif
     }
 #endif
@@ -572,11 +576,11 @@ TxnManager::process_2pc_phase2(RC rc)
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
     send_log_request(g_storage_node_id, type);
-    #if ASYNC_RPC
-        rpc_log_semaphore->wait();
-    #endif
+    rpc_log_semaphore->wait();
 #elif LOG_DEVICE == LOG_DVC_REDIS
-    redis_client->log_sync(g_node_id, get_txn_id(), rc_to_state(rc));
+    rpc_log_semaphore->incr();
+    redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
+    rpc_log_semaphore->wait();
 #endif
     _cc_manager->cleanup(rc); // release lock after receive log resp
 #endif
@@ -621,7 +625,7 @@ TxnManager::process_2pc_phase2(RC rc)
     #if !LOG_REMOTE
         _cc_manager->cleanup(rc);
     #endif
-#if ASYNC_RPC
+
     #if LOG_REMOTE && COMMIT_ALG == ONE_PC
         rpc_log_semaphore->wait(); 
         _cc_manager->cleanup(rc); // release lock after receive log resp
@@ -633,7 +637,7 @@ TxnManager::process_2pc_phase2(RC rc)
         assert (response.response_type() == SundialResponse::ACK);
         it->second->state = (rc == COMMIT)? COMMITTED : ABORTED;
     }
-#endif
+
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     return rc;
 }
@@ -717,20 +721,18 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 // log prepare msg
 #if LOG_DEVICE == LOG_DVC_NATIVE
                 send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
-                #if ASYNC_RPC
-                    rpc_log_semaphore->wait();
-                #endif
 #elif LOG_DEVICE == LOG_DVC_REDIS
                 // TODO(zhihan): replace data with txn's log record
                 string data = "[LSN] data";
-#if COMMIT_ALG == ONE_PC
                 rpc_log_semaphore->incr();
+#if COMMIT_ALG == ONE_PC
                 redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
-                rpc_log_semaphore->wait();
 #else
-				redis_client->log_sync_data(g_node_id, get_txn_id(), PREPARED, data);
+				redis_client->log_async_data(g_node_id, get_txn_id(),
+				    PREPARED, data);
 #endif
 #endif
+				rpc_log_semaphore->wait();
             }
 #endif
             else if (num_tuples == 0) {
@@ -747,11 +749,11 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 #if LOG_REMOTE
 #if LOG_DEVICE == LOG_DVC_NATIVE
             send_log_request(g_storage_node_id, SundialRequest::LOG_COMMIT_REQ);
-            #if ASYNC_RPC
-                rpc_log_semaphore->wait();
-            #endif
+            rpc_log_semaphore->wait();
 #elif LOG_DEVICE == LOG_DVC_REDIS
-            redis_client->log_sync(g_node_id, get_txn_id(), COMMITTED);
+            rpc_log_semaphore->incr();
+            redis_client->log_async(g_node_id, get_txn_id(), COMMITTED);
+            rpc_log_semaphore->wait();
 #endif
 #endif
             break;
@@ -775,13 +777,12 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
         SundialRequest::COMMIT_REQ)? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
     send_log_request(g_storage_node_id, log_type);
-#if ASYNC_RPC
-    rpc_log_semaphore->wait();
-#endif
 #elif LOG_DEVICE == LOG_DVC_REDIS
     State status = _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
-    redis_client->log_sync(g_node_id, get_txn_id(), status);
+    rpc_log_semaphore->incr();
+    redis_client->log_async(g_node_id, get_txn_id(), status);
 #endif
+    rpc_log_semaphore->wait();
 #endif
     dependency_semaphore->wait();
     rc = (request->request_type() == SundialRequest::COMMIT_REQ)? COMMIT : ABORT;

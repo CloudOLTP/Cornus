@@ -15,8 +15,10 @@ class RedisClient {
     void log_async(uint64_t node_id, uint64_t txn_id, int status);
     void log_if_ne(uint64_t node_id, uint64_t txn_id);
     void log_if_ne_data(uint64_t node_id, uint64_t txn_id, std::string & data);
-    void log_sync_data(uint64_t node_id, uint64_t txn_id, int status, std::string &
-    data);
+    void log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
+        std::string & data);
+    void log_async_data(uint64_t node_id, uint64_t txn_id, int status,
+        std::string & data);
   private:
     cpp_redis::client client;
 };
