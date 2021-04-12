@@ -101,6 +101,7 @@
 #define LOG_TIMEOUT                     1000  // in us
 #define LOG_DEVICE LOG_DVC_REDIS
 #define LOG_DELAY                       0
+#define LOG_SIZE_PER_WRITE              32 // in bytes
 
 // Benchmark
 // =========

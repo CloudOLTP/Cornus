@@ -50,6 +50,11 @@ StoreProcedure::txn_abort()
     //remote_requests.clear();
 }
 
+void 
+StoreProcedure::incr_local_write() {
+	_txn->num_local_write++;
+}
+
 /*
 RC
 StoreProcedure::process_remote_req(uint32_t size, char * data, uint32_t &resp_size, char * &resp_data)

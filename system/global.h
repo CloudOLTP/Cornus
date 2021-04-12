@@ -205,12 +205,13 @@ extern uint32_t         g_storage_node_id;
 extern uint32_t         g_num_input_threads;
 extern uint32_t         g_num_output_threads;
 
+extern  uint32_t        g_log_sz;
+
 extern SundialRPCClient * rpc_client;
 extern SundialRPCServerImpl * rpc_server;
 #if LOG_DEVICE == LOG_DVC_REDIS
 extern RedisClient *      redis_client;
 #endif
-extern                  g_log_sz;
 
 extern Transport *      transport;
 typedef boost::lockfree::queue<uint64_t, boost::lockfree::capacity<INOUT_QUEUE_SIZE>> InOutQueue;

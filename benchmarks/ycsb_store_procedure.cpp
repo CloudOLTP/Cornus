@@ -136,9 +136,4 @@ YCSBStoreProcedure::txn_abort()
     _phase = 0;
 }
 
-void
-YCSBStoreProcedure::incr_local_write() {
-    _txn->num_local_write++;
-}
-
 #endif

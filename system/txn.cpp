@@ -710,7 +710,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 #endif
 				rpc_log_semaphore->wait();
                 // profile: avg time on logging a sync vote
-                INC_FLOAT_STATS(time_debug2, get_sys_clock() - start_time2);
+                INC_FLOAT_STATS(time_debug2, get_sys_clock() - start_time);
                 INC_INT_STATS(int_debug2, 1);
             }
 #endif
