@@ -87,6 +87,8 @@ uint32_t        g_storage_node_id;
 uint32_t        g_num_input_threads     = NUM_INPUT_THREADS;
 uint32_t        g_num_output_threads    = NUM_OUTPUT_THREADS;
 
+uint32_t        g_log_sz                = LOG_SIZE_PER_WRITE;
+
 SundialRPCClient *  rpc_client;
 SundialRPCServerImpl * rpc_server;
 RedisClient *       redis_client;

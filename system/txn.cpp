@@ -40,6 +40,7 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     _txn_restart_time = _txn_start_time;
     _lock_wait_time = 0;
     _net_wait_time = 0;
+    num_local_write = 0;
 
     _is_sub_txn = false;
     _is_single_partition = true;
@@ -148,6 +149,7 @@ TxnManager::restart() {
     _is_single_partition = true;
     _is_read_only = true;
     _is_remote_abort = false;
+    num_local_write = 0;
 
     _txn_restart_time = get_sys_clock();
     _store_procedure->init();
@@ -264,7 +266,8 @@ TxnManager::process_commit_phase_singlepart(RC rc)
             rpc_log_semaphore->wait();
         #endif
 #else
-       string data = "placehoder";
+       string data = "[LSN] placehold:" + string('d', num_local_write *
+                g_log_sz * 8);
        redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
            data);
 #endif
@@ -356,7 +359,6 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
 RC
 TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> > &remote_requests)
 {
-    // printf("[node-%u] txn-%lu send remote read on %lu to node-%lu\n", g_node_id, get_txn_id(), key, node_id);
     _is_single_partition = false;
     for (auto it = remote_requests.begin(); it != remote_requests.end(); it ++) {
         uint64_t node_id = it->first;
@@ -383,10 +385,8 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             rpc_client->sendRequest(it->first, it->second->request, it->second->response);
         #endif
     }
-        
 
-#if ASYNC_RPC
-        rpc_semaphore->wait();
+    rpc_semaphore->wait();
     RC rc = RCOK;
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         SundialResponse &response = it->second->response;
@@ -401,20 +401,6 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
         }
     }
     return rc;
-#else
-    // handle RPC response
-    assert(response.response_type() == SundialResponse::RESP_OK
-           || response.response_type() ==  SundialResponse::RESP_ABORT);
-    if (response.response_type() == SundialResponse::RESP_OK) {
-        ((LockManager *)_cc_manager)->process_remote_read_response(node_id, access_type, response);
-        return RCOK;
-    } else {
-        _remote_nodes_involved[node_id]->state = ABORTED;
-        _is_remote_abort = true;
-        return ABORT;
-    }
-#endif
-    
 }
 
 RC
@@ -469,8 +455,8 @@ TxnManager::process_2pc_phase1()
         SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
         send_log_request(g_storage_node_id, type);
 #elif LOG_DEVICE == LOG_DVC_REDIS
-        // TODO(zhihan): replace data with txn's log record
-        string data = "[LSN] data";
+        string data = "[LSN] placehold:" + string('d', num_local_write *
+                g_log_sz * 8);
         rpc_log_semaphore->incr();
 #if COMMIT_ALG == ONE_PC
         redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
@@ -491,37 +477,26 @@ TxnManager::process_2pc_phase1()
         request.set_txn_id( get_txn_id() );
         request.set_request_type( SundialRequest::PREPARE_REQ);
         ((LockManager *)_cc_manager)->build_prepare_req( it->first, request );
-#if ASYNC_RPC
         rpc_semaphore->incr();
         rpc_client->sendRequestAsync(this, it->first, request, response);
-#else
-        rpc_client->sendRequest(it->first, request, response);
-        // TODO. for now, assume prepare always succeeds
-        assert (response.response_type() == SundialResponse::PREPARED_OK
-                || response.response_type() == SundialResponse::PREPARED_OK_RO);
-        if (response.response_type() == SundialResponse::PREPARED_OK)
-            _remote_nodes_involved[it->first]->state = COMMITTING;
-        else
-            // the remote sub-txn is readonly and has released locks.
-            // For CLV, this means the remote sub-txn does not depend on any
-            // weak locks.
-            _remote_nodes_involved[it->first]->state = COMMITTED;
-#endif
     }
     INC_FLOAT_STATS(time_debug5, get_sys_clock() - start_time3);
     // wait for log prepare to return
 #if LOG_LOCAL
     log_semaphore->wait();
 #endif
-#if ASYNC_RPC
+
     uint64_t start_time2 = get_sys_clock();
     rpc_semaphore->wait();
+    // profile: avg time on waiting for votes to return in coordinator-prepare.
     INC_FLOAT_STATS(time_debug4, get_sys_clock() - start_time2);
     INC_INT_STATS(int_debug4, 1);
+
     uint64_t start_time = get_sys_clock();
     if (!is_read_only()) {
         rpc_log_semaphore->wait();
     }
+    // profile: avg time on waiting for log semaphore in coordinator-prepare.
     INC_FLOAT_STATS(time_debug3, get_sys_clock() - start_time);
     INC_INT_STATS(int_debug3, 1);
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
@@ -537,7 +512,7 @@ TxnManager::process_2pc_phase1()
         else
             it->second->state = COMMITTED;
     }
-#endif
+
     return COMMIT;
 }
 
@@ -719,11 +694,12 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 #if LOG_REMOTE
             if (num_tuples != 0) {
                 // log prepare msg
+                uint64_t start_time = get_sys_clock();
 #if LOG_DEVICE == LOG_DVC_NATIVE
                 send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
 #elif LOG_DEVICE == LOG_DVC_REDIS
-                // TODO(zhihan): replace data with txn's log record
-                string data = "[LSN] data";
+                string data = "[LSN] placehold:" + string('d', num_tuples *
+                g_log_sz * 8);
                 rpc_log_semaphore->incr();
 #if COMMIT_ALG == ONE_PC
                 redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
@@ -733,6 +709,9 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 #endif
 #endif
 				rpc_log_semaphore->wait();
+                // profile: avg time on logging a sync vote
+                INC_FLOAT_STATS(time_debug2, get_sys_clock() - start_time2);
+                INC_INT_STATS(int_debug2, 1);
             }
 #endif
             else if (num_tuples == 0) {
@@ -746,19 +725,10 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
             response->set_response_type( SundialResponse::PREPARED_OK );
             return rc;
         case SundialRequest::COMMIT_REQ :
-#if LOG_REMOTE
-#if LOG_DEVICE == LOG_DVC_NATIVE
-            send_log_request(g_storage_node_id, SundialRequest::LOG_COMMIT_REQ);
-            rpc_log_semaphore->wait();
-#elif LOG_DEVICE == LOG_DVC_REDIS
-            rpc_log_semaphore->incr();
-            redis_client->log_async(g_node_id, get_txn_id(), COMMITTED);
-            rpc_log_semaphore->wait();
-#endif
-#endif
+            rc = COMMIT;
             break;
         case SundialRequest::ABORT_REQ :
-
+            rc = ABORT;
             break;
         default:
             assert(false);

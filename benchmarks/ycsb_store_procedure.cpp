@@ -68,32 +68,25 @@ YCSBStoreProcedure::execute()
             printf("!!!two same key in a query\n");
         uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
         if (home_node != g_node_id) {
-            #if ASYNC_RPC
-                if (remote_requests.find(home_node) == remote_requests.end())
-                    remote_requests.insert(std::pair<uint64_t, vector<RemoteRequestInfo *> > (home_node, vector<RemoteRequestInfo *>()));
-                // TODO. Ideally, we should send SQL or some other intermediate representation of the query over.
-                // For now, we just send the message using the following format (RemoteQuery)
-                //        | key | index_id | type | [optional] cc_specific_data |
-                RemoteRequestInfo * remote_request = new RemoteRequestInfo;
-                remote_request->access_type = req->rtype;
-                remote_request->index_id = 0;
-                remote_request->key = req->key;
-                remote_request->table_id = 0;
-                remote_requests[home_node].push_back(remote_request);
-            #else
-                rc = _txn->send_remote_read_request(home_node, req->key, 0, 0, req->rtype);
-                if (rc == ABORT) return rc;
-            #endif
+            if (remote_requests.find(home_node) == remote_requests.end())
+                remote_requests.insert(std::pair<uint64_t, vector<RemoteRequestInfo *> > (home_node, vector<RemoteRequestInfo *>()));
+            // TODO. Ideally, we should send SQL or some other intermediate representation of the query over.
+            // For now, we just send the message using the following format (RemoteQuery)
+            //        | key | index_id | type | [optional] cc_specific_data |
+            RemoteRequestInfo * remote_request = new RemoteRequestInfo;
+            remote_request->access_type = req->rtype;
+            remote_request->index_id = 0;
+            remote_request->key = req->key;
+            remote_request->table_id = 0;
+            remote_requests[home_node].push_back(remote_request);
             // has_remote_req = true;
         }
     }
     // send remote package, if abort return abort
-    #if ASYNC_RPC
-        if (remote_requests.size() > 0) {
-            rc = _txn->send_remote_package(remote_requests);
-            if (rc == ABORT) return rc;
-        }
-    #endif
+    if (remote_requests.size() > 0) {
+        rc = _txn->send_remote_package(remote_requests);
+        if (rc == ABORT) return rc;
+    }
 
     // if (has_remote_req)
     //     return LOCAL_MISS;
@@ -116,20 +109,21 @@ YCSBStoreProcedure::execute()
     //     return RCOK;
 
     // Phase 2: after all data is acquired, finish the rest of the transaction.
-        // all the data is here. Do computation and commit.
-        for (uint32_t i = 0; i < query->get_request_count(); i ++) {
-            RequestYCSB * req = &requests[i];
-            char * data = get_cc_manager()->get_data(req->key, 0);
+    // all the data is here. Do computation and commit.
+    for (uint32_t i = 0; i < query->get_request_count(); i ++) {
+        RequestYCSB * req = &requests[i];
+        char * data = get_cc_manager()->get_data(req->key, 0);
 
-            if (req->rtype == RD) {
-                for (int fid = 0; fid < 10; fid ++)
-                    __attribute__((unused)) uint64_t fval = *(uint64_t *)(&data[fid * 100]);
-            } else {
-                assert(req->rtype == WR);
-                for (int fid = 1; fid < 10; fid ++)
-                    *(uint64_t *)(&data[fid * 100]) = _txn->get_txn_id();
-            }
+        if (req->rtype == RD) {
+            for (int fid = 0; fid < 10; fid ++)
+                __attribute__((unused)) uint64_t fval = *(uint64_t *)(&data[fid * 100]);
+        } else {
+            assert(req->rtype == WR);
+            incr_local_write();
+            for (int fid = 1; fid < 10; fid ++)
+                *(uint64_t *)(&data[fid * 100]) = _txn->get_txn_id();
         }
+    }
 #endif
     return COMMIT;
 }
@@ -140,6 +134,11 @@ YCSBStoreProcedure::txn_abort()
     StoreProcedure::txn_abort();
     _curr_query_id = 0;
     _phase = 0;
+}
+
+void
+YCSBStoreProcedure::incr_local_write() {
+    _txn->num_local_write++;
 }
 
 #endif

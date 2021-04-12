@@ -35,11 +35,15 @@ public:
     std::map<uint64_t, vector<RemoteRequestInfo *>> remote_requests;
     //map<uint32_t, UnstructuredBuffer> remote_requests;
     //bool is_single_partition() { return _is_single_partition; }
+
+    void incr_local_write();
+
 protected:
 #define LOAD_VALUE(type, var, schema, data, col) \
     type var = *(type *)row_t::get_value(schema, col, data);
 #define STORE_VALUE(var, schema, data, col) \
-    row_t::set_value(schema, col, data, (char *)&var);
+    row_t::set_value(schema, col, data, (char *)&var); \
+    incr_local_write();
 
 #define GET_DATA(key, index, type) {{ \
     set<row_t *> * rows = NULL; \

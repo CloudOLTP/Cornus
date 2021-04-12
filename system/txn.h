@@ -85,9 +85,10 @@ public:
     // Stats
     // =====
     void              update_stats();
+    uint64_t          num_local_write;
 
     // Debug
-    void              print_state()       { };
+    void              print_state()       {};
 
 private:
     // TODO. for now, a txn is mapped to a single thread.
@@ -130,10 +131,6 @@ private:
     uint64_t          _log_ready_time;
     uint64_t          _precommit_finish_time;
     uint64_t          _finish_time;
-
-    //uint64_t          _lock_wait_start_time;
     uint64_t          _lock_wait_time;
-
-    //uint64_t          _net_wait_start_time;
     uint64_t          _net_wait_time;
 };

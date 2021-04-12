@@ -208,6 +208,8 @@ void Stats::output(std::ostream * os)
     STAT_SUM(uint64_t, sum_prepare_size, _req_msg_size[SundialRequest::PREPARE_REQ]);
 
     STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
+    STAT_SUM(uint64_t, total_remote_prepare, _int_stats[STAT_int_debug2]);
+    STAT_SUM(double, total_log_vote, _float_stats[STAT_time_debug2]);
     STAT_SUM(double, total_wait_log, _float_stats[STAT_time_debug3]);
     STAT_SUM(double, total_send_prepare, _float_stats[STAT_time_debug5]);
     STAT_SUM(double, total_wait_vote, _float_stats[STAT_time_debug4]);
@@ -216,8 +218,12 @@ void Stats::output(std::ostream * os)
     out << "    " << setw(30) << left << "average_prepare_resp_cnt:" << total_prepare_resp_cnt * 1.0 / total_prepare << endl;
     out << "    " << setw(30) << left << "average_prepare_resp_size:" << total_prepare_resp_size * 1.0 / total_prepare << endl;
     out << "    " << setw(30) << left << "average_send_prepare:" << total_send_prepare / total_prepare / BILLION * 1000000 << endl;
-    out << "    " << setw(30) << left << "average_wait_log:" << total_wait_log / total_prepare / BILLION * 1000000 << endl;
-    out << "    " << setw(30) << left << "average_wait_vote:" << total_wait_vote / total_prepare / BILLION * 1000000 << endl;
+    out << "    " << setw(30) << left << "average_wait_log_co_prepare:" <<
+    total_wait_log / total_prepare / BILLION * 1000000 << endl;
+    out << "    " << setw(30) << left << "average_wait_vote_co:" <<
+    total_wait_vote / total_prepare / BILLION * 1000000 << endl;
+    out << "    " << setw(30) << left << "average_log_vote_pa:" <<
+    total_log_vote / total_remote_prepare / BILLION * 1000000 << endl;
 
 
     out << "    " << setw(30) << left << "average_dist_latency:" << avg_dist_latency / BILLION << endl;

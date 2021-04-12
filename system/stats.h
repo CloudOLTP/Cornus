@@ -210,18 +210,8 @@ public:
         "average_latency",
         "dist_txn_latency",
 
-        //"time_read_input_queue",
         "time_process_txn",
-        //"time_commit_process",
         "time_idle",
-        //"time_wait_for_lock",
-        //"time_wait_for_restart",
-        //"time_process_remote_req",
-        //"time_idle",
-
-        //"time_waiting_for_job",
-        //"time_wait_buffer",
-        //"time_abort_queue",
         "time_write_output_queue",
 
         // Logging
@@ -240,7 +230,7 @@ public:
         "time_write_queue",
         "time_input_idle",
 
-        // Logging thread
+        // Logging thread used for local log
         "logging_send_time",
         "logging_commit_time",
 
