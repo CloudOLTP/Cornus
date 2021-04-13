@@ -45,3 +45,5 @@ if __name__ == "__main__":
 	df_concat = pd.concat(df_list, ignore_index=True)
 	df_concat.to_csv("../outputs/" + exp_name+"_concat.csv", index=False)
 	os.system("rm *.csv")
+    # clean outputs
+	os.system("rm ../outputs/{}.csv".format(exp_name))

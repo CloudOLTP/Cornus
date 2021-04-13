@@ -7,8 +7,8 @@
 #define NUM_NODES 2
 
 // number of server threads on each node
-#define NUM_WORKER_THREADS 16
-#define NUM_RPC_SERVER_THREADS 16
+#define NUM_WORKER_THREADS 32
+#define NUM_RPC_SERVER_THREADS NUM_WORKER_THREADS
 #define NUM_STORAGE_RPC_SERVER_THREADS  24
 
 // Statistics
@@ -113,7 +113,7 @@
 // [YCSB]
 // Number of tuples per node
 #define SYNTH_TABLE_SIZE                (1024 * 10 * 1024)
-#define ZIPF_THETA 1.3
+#define ZIPF_THETA 0.99
 #define READ_PERC 0.5
 #define PERC_READONLY_DATA              0
 #define PERC_REMOTE 0.5
