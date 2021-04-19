@@ -157,7 +157,7 @@ inline uint64_t get_server_clock() {
     unsigned hi, lo;
     __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
     uint64_t ret = ( (uint64_t)lo)|( ((uint64_t)hi)<<32 );
-    ret = (uint64_t) ((double)ret / g_cpu_freq); // nano second
+    ret = (uint64_t) ((double)ret / g_cpu_freq);
 #else
     timespec * tp = new timespec;
     clock_gettime(CLOCK_REALTIME, tp);
