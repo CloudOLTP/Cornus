@@ -11,9 +11,9 @@
     "ENABLE_ADMISSION_CONTROL": "false",
     "COMMIT_ALG": ["ONE_PC", "TWO_PC"],
     "WORKLOAD": "YCSB",
-    "ZIPF_THETA": [0, 0.3, 0.5, 0.7, 0.9],
+    "ZIPF_THETA": [0, 0.3, 0.5, 0.7],
     "READ_PERC": 0.5,
     "RUN_TIME": 30,
-    "PERC_REMOTE": [0.1],
+    "PERC_REMOTE": [0.01],
     "i": [0, 1, 2]
 }
