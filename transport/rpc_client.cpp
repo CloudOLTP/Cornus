@@ -54,8 +54,7 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
         // The tag in this example is the memory location of the call object
         AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
         if (!call->status.ok()) {
-            printf("[REQ] client rec response fail: (%d) %s\n",
-                call->status.error_code(), call->status.error_message().c_str());
+            printf("[REQ] client rec response fail: (%d) %s\n", call->status.error_code(), call->status.error_message().c_str());
             assert(false);
         }
         // handle return value for non-system response
@@ -71,8 +70,7 @@ SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request, Sundial
     ClientContext context;
     Status status = _servers[node_id]->contactRemote(&context, request, &response);
     if (!status.ok()) {
-        printf("[REQ] client sendRequest fail: (%d) %s\n",
-            status.error_code(), status.error_message().c_str());
+        printf("[REQ] client sendRequest fail: (%d) %s\n", status.error_code(), status.error_message().c_str());
         assert(false);
     }
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
@@ -86,6 +84,8 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     assert(node_id != g_node_id);
     // call object to store rpc data
     AsyncClientCall* call = new AsyncClientCall;;
+    //printf("[REQ] client send to node %ld. type=%s\n", node_id,
+    //       SundialRequest::RequestType_Name(request.request_type()).c_str());
     assert(node_id != g_node_id);
     // RACE CONDITION: should assign thd id to server thread
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;
@@ -94,8 +94,7 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     
     // StartCall initiates the RPC call
     // TODO(zhihan): set timeout
-    // std::chrono::time_point<std::chrono::system_clock>
-    // _deadline = std::chrono::system_clock::now() + std::chrono::milliseconds(3100);
+    // std::chrono::time_point<std::chrono::system_clock> _deadline = std::chrono::system_clock::now() + std::chrono::milliseconds(3100);
     // call->context.set_deadline(_deadline);
     call->response_reader->StartCall();
     call->reply = &response;
