@@ -540,7 +540,8 @@ TxnManager::process_2pc_phase2(RC rc)
         return rc;
     }
 
-#if LOG_REMOTE && COMMIT_ALG == TWO_PC
+#if LOG_REMOTE
+#if COMMIT_ALG == TWO_PC
     // 2pc: persistent decision
     uint64_t starttime = get_sys_clock();
 #if LOG_DEVICE == LOG_DVC_NATIVE
@@ -556,7 +557,17 @@ TxnManager::process_2pc_phase2(RC rc)
     // profile: time spent on a sync log
     INC_FLOAT_STATS(time_debug4, get_sys_clock() - starttime);
     INC_INT_STATS(int_debug4, 1);
-    _cc_manager->cleanup(rc); // release lock after receive log resp
+#elif COMMIT_ALG == ONE_PC
+    #if LOG_DEVICE == LOG_DVC_NATIVE
+    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+            SundialRequest::LOG_ABORT_REQ;
+    send_log_request(g_storage_node_id, type);
+    #elif LOG_DEVICE == LOG_DVC_REDIS
+    rpc_log_semaphore->incr();
+    redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
+    #endif
+    INC_INT_STATS(int_debug4, 1);
+#endif
 #endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // No need to run this phase if the remote sub-txn has already committed
@@ -574,30 +585,19 @@ TxnManager::process_2pc_phase2(RC rc)
         rpc_client->sendRequestAsync(this, it->first, request, response);
     }
 
-#if LOG_REMOTE && COMMIT_ALG == ONE_PC
-    #if LOG_DEVICE == LOG_DVC_NATIVE
-    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-            SundialRequest::LOG_ABORT_REQ;
-    send_log_request(g_storage_node_id, type);
-    #elif LOG_DEVICE == LOG_DVC_REDIS
-    rpc_log_semaphore->incr();
-    redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
-    #endif
-#endif
-    
     _finish_time = get_sys_clock();
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
     dependency_semaphore->wait();
+#if !LOG_REMOTE
     log_semaphore->wait();
-    #if !LOG_REMOTE
-        _cc_manager->cleanup(rc);
+    _cc_manager->cleanup(rc);
+#else
+    #if COMMIT_ALG == ONE_PC
+        rpc_log_semaphore->wait();
     #endif
-
-    #if LOG_REMOTE && COMMIT_ALG == ONE_PC
-        rpc_log_semaphore->wait(); 
-        _cc_manager->cleanup(rc); // release lock after receive log resp
-    #endif
+    _cc_manager->cleanup(rc); // release lock after receive log resp
+#endif
     rpc_semaphore->wait();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         if (it->second->state == ABORTED || it->second->state == COMMITTED) continue;
