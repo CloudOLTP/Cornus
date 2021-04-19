@@ -72,7 +72,7 @@ RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
         return tonumber(ARGV[2])
         )";
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
-    std::vector<std::string> keys = {"data-" + id};
+    std::vector<std::string> keys = {"status-" + id};
     std::vector<std::string> args = {std::to_string(status), std::to_string(txn_id)};
     client.eval(script, keys, args, sync_callback);
     client.sync_commit();
@@ -86,7 +86,7 @@ RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
         )";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
-    std::vector<std::string> keys = {"data-" + id};
+    std::vector<std::string> keys = {"status-" + id};
     std::vector<std::string> args = {std::to_string(status), tid};
     client.eval(script, keys, args, async_callback);
     client.commit();
