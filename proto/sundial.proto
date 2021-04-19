@@ -35,7 +35,6 @@ message SundialRequest {
     repeated TupleData      tuple_data    = 4;
     uint64                  log_data_size = 5;
     bytes                   log_data      = 6;
-    uint64                  node_id       = 7;
 }
 
 message SundialResponse {
@@ -62,7 +61,6 @@ message SundialResponse {
     uint64                  txn_id        = 1;
     ResponseType            response_type = 2;
     repeated TupleData      tuple_data    = 3;
-    uint64                  node_id       = 4;
 }
 
 

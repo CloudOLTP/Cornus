@@ -56,12 +56,11 @@ async_callback(cpp_redis::reply & response) {
 
 void 
 ne_callback(cpp_redis::reply & response) {
+	// TODO(zhihan): since termination protocol is not implemented yet
+	// current callback only needs to decrease txn's rpc_log_semaphore		
     assert(response.is_array());
-    TxnManager::State state = response.as_array()[0].as_integer();
+    // TODO(zhihan): handle returned status to abort transaction if needed
     TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer());
-    // status can only be aborted/prepared/committed
-    if (state == TxnManager::ABORTED)
-        txn->set_txn_state(TxnManager::ABORTED);
     // mark as returned. 
     txn->rpc_log_semaphore->decr();
 }

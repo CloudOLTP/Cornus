@@ -80,9 +80,6 @@ public:
 private:
     RC process_2pc_phase1();
     RC process_2pc_phase2(RC rc);
-    // Single-part transactions
-    // ========================
-    RC process_commit_phase_singlepart(RC rc);
 
 public:
     // Stats
@@ -99,22 +96,29 @@ private:
     StoreProcedure *  _store_procedure;
     CCManager *       _cc_manager;
 
-    volatile State    _txn_state;
+    State             _txn_state;
     bool              _is_single_partition;
     bool              _is_read_only;
     bool              _is_remote_abort;
     // txn_id format.
     // | per thread monotonically increasing ID   |  thread ID   |   Node ID |
     uint64_t          _txn_id;
+
+
+    // Single-part transactions
+    // ========================
+    RC process_commit_phase_singlepart(RC rc);
+
+
     bool              _is_sub_txn;
     struct RemoteNodeInfo {
-        volatile State state;
-        bool is_readonly;
+        State state;
         // At any point in time, a remote node has at most 1 request and 1
         // response.
         SundialRequest request;
         SundialResponse response;
     };
+    std::map<uint32_t, RemoteNodeInfo *> _remote_nodes_involved;
     // used for native remote log
     std::map<uint32_t, RemoteNodeInfo *> _log_nodes_involved;
 
@@ -129,7 +133,4 @@ private:
     uint64_t          _finish_time;
     uint64_t          _lock_wait_time;
     uint64_t          _net_wait_time;
-
-  public:
-    std::map<uint32_t, RemoteNodeInfo *> _remote_nodes_involved;
 };
