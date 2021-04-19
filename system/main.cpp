@@ -73,7 +73,6 @@ int main(int argc, char* argv[])
 int main(int argc, char* argv[])
 {
     parser(argc, argv);
-    // get_node_id(); // for better debug experience
     cout << "[Sundial] start node " << g_node_id << endl;
 #if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
     g_storage_node_id = g_num_nodes_and_storage - 1 - g_node_id;
@@ -136,6 +135,8 @@ int main(int argc, char* argv[])
 
     // make sure server is setup before moving on
     sleep(5);
+    uint64_t starttime;
+    uint64_t endtime;
 #if DISTRIBUTED
     cout << "[Sundial] Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
@@ -150,7 +151,12 @@ int main(int argc, char* argv[])
         SundialRequest request;
         SundialResponse response;
         request.set_request_type( SundialRequest::SYS_REQ );
+        starttime = get_sys_clock();
         rpc_client->sendRequest(i, request, response);
+        endtime = get_sys_clock() - start_time;
+        INC_FLOAT_STATS(time_debug5, endtime);
+        cout << "[Sundial] network roundtrip to node " << i << ": " <<
+        endtime / 1000 << " us" << endl;
     }
     // Can start only if all other nodes have also finished initialization
 
@@ -168,7 +174,7 @@ int main(int argc, char* argv[])
 #endif
     assert(next_thread_id == g_total_num_threads);
 
-    uint64_t starttime = get_server_clock();
+    starttime = get_server_clock();
     start_thread((void *)(worker_threads[g_num_worker_threads - 1]));
 
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)
@@ -195,7 +201,7 @@ int main(int argc, char* argv[])
     pthread_join(*pthreads_logging, NULL);
 #endif
     assert( txn_table->get_size() == 0 );
-    uint64_t endtime = get_server_clock();
+    endtime = get_server_clock();
     cout << "Complete. Total RunTime = " << 1.0 * (endtime - starttime) / BILLION << endl;
     if (STATS_ENABLE)
         glob_stats->print();

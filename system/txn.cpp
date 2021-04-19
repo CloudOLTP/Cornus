@@ -467,7 +467,6 @@ TxnManager::process_2pc_phase1()
     }
 #endif
     // send prepare request to participants
-    uint64_t start_time3 = get_sys_clock();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         assert(it->second->state == RUNNING);
         SundialRequest &request = it->second->request;
@@ -480,25 +479,20 @@ TxnManager::process_2pc_phase1()
         rpc_semaphore->incr();
         rpc_client->sendRequestAsync(this, it->first, request, response);
     }
-    INC_FLOAT_STATS(time_debug5, get_sys_clock() - start_time3);
+
     // wait for log prepare to return
 #if LOG_LOCAL
     log_semaphore->wait();
 #endif
 
-    uint64_t start_time2 = get_sys_clock();
     rpc_semaphore->wait();
-    // profile: avg time on waiting for votes to return in coordinator-prepare.
-    INC_FLOAT_STATS(time_debug4, get_sys_clock() - start_time2);
-    INC_INT_STATS(int_debug4, 1);
 
-    uint64_t start_time = get_sys_clock();
     if (!is_read_only()) {
         rpc_log_semaphore->wait();
     }
-    // profile: avg time on waiting for log semaphore in coordinator-prepare.
-    INC_FLOAT_STATS(time_debug3, get_sys_clock() - start_time);
+    // profile: # prepare phase
     INC_INT_STATS(int_debug3, 1);
+
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         assert(it->second->state == RUNNING);
         SundialResponse &response = it->second->response;
@@ -519,7 +513,6 @@ TxnManager::process_2pc_phase1()
 RC
 TxnManager::process_2pc_phase2(RC rc)
 {
-    // printf("[node-%u] txn-%lu enter phase 2\n", g_node_id, get_txn_id());
     assert(rc == COMMIT || rc == ABORT);
     _txn_state = (rc == COMMIT)? COMMITTING : ABORTING;
     // TODO. for CLV this logging is optional. Here we use a conservative
@@ -546,7 +539,10 @@ TxnManager::process_2pc_phase2(RC rc)
         _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
         return rc;
     }
+
 #if LOG_REMOTE && COMMIT_ALG == TWO_PC
+    // 2pc: persistent decision
+    uint64_t stattime = get_sys_clock();
 #if LOG_DEVICE == LOG_DVC_NATIVE
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
@@ -557,6 +553,9 @@ TxnManager::process_2pc_phase2(RC rc)
     redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
     rpc_log_semaphore->wait();
 #endif
+    // profile: time spent on a sync log
+    INC_FLOAT_STATS(time_debug4, get_sys_clock() - start_time);
+    INC_INT_STATS(int_debug4, 1);
     _cc_manager->cleanup(rc); // release lock after receive log resp
 #endif
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
@@ -571,14 +570,8 @@ TxnManager::process_2pc_phase2(RC rc)
         SundialRequest::RequestType type = (rc == COMMIT)?
             SundialRequest::COMMIT_REQ : SundialRequest::ABORT_REQ;
         request.set_request_type( type );
-#if ASYNC_RPC
         rpc_semaphore->incr();
         rpc_client->sendRequestAsync(this, it->first, request, response);
-#else
-        rpc_client->sendRequest(it->first, request, response);
-        assert (response.response_type() == SundialResponse::ACK);
-        _remote_nodes_involved[it->first]->state = (rc == COMMIT)? COMMITTED : ABORTED;
-#endif
     }
 
 #if LOG_REMOTE && COMMIT_ALG == ONE_PC
