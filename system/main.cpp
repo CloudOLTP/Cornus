@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
         request.set_request_type( SundialRequest::SYS_REQ );
         starttime = get_sys_clock();
         rpc_client->sendRequest(i, request, response);
-        endtime = get_sys_clock() - start_time;
+        endtime = get_sys_clock() - starttime;
         INC_FLOAT_STATS(time_debug5, endtime);
         cout << "[Sundial] network roundtrip to node " << i << ": " <<
         endtime / 1000 << " us" << endl;

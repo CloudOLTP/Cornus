@@ -209,7 +209,7 @@ void Stats::output(std::ostream * os)
     STAT_SUM(double, total_log_vote, _float_stats[STAT_time_debug2]);
     STAT_SUM(uint64_t, total_commit, _int_stats[STAT_int_debug4]);
     STAT_SUM(double, total_log_commit, _float_stats[STAT_time_debug4]);
-    STAT_SUM(double, total_node_communicate, _float_stats[STAT_time_debug5);
+    STAT_SUM(double, total_node_communicate, _float_stats[STAT_time_debug5]);
     out << "    " << setw(30) << left << "average_prepare_req_cnt:" <<
     sum_prepare_count * 1.0 / total_prepare << endl;
     out << "    " << setw(30) << left << "average_prepare_req_size:" <<
