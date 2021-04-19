@@ -542,7 +542,7 @@ TxnManager::process_2pc_phase2(RC rc)
 
 #if LOG_REMOTE && COMMIT_ALG == TWO_PC
     // 2pc: persistent decision
-    uint64_t stattime = get_sys_clock();
+    uint64_t starttime = get_sys_clock();
 #if LOG_DEVICE == LOG_DVC_NATIVE
     SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
             SundialRequest::LOG_ABORT_REQ;
@@ -554,7 +554,7 @@ TxnManager::process_2pc_phase2(RC rc)
     rpc_log_semaphore->wait();
 #endif
     // profile: time spent on a sync log
-    INC_FLOAT_STATS(time_debug4, get_sys_clock() - start_time);
+    INC_FLOAT_STATS(time_debug4, get_sys_clock() - starttime);
     INC_INT_STATS(int_debug4, 1);
     _cc_manager->cleanup(rc); // release lock after receive log resp
 #endif
@@ -687,7 +687,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 #if LOG_REMOTE
             if (num_tuples != 0) {
                 // log prepare msg
-                uint64_t start_time = get_sys_clock();
+                uint64_t starttime = get_sys_clock();
 #if LOG_DEVICE == LOG_DVC_NATIVE
                 send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
 #elif LOG_DEVICE == LOG_DVC_REDIS
@@ -703,7 +703,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
 #endif
 				rpc_log_semaphore->wait();
                 // profile: avg time on logging a sync vote
-                INC_FLOAT_STATS(time_debug2, get_sys_clock() - start_time);
+                INC_FLOAT_STATS(time_debug2, get_sys_clock() - starttime);
                 INC_INT_STATS(int_debug2, 1);
             }
 #endif
