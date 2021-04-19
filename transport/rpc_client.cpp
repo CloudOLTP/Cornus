@@ -5,6 +5,11 @@
 #include "txn.h"
 #include "txn_table.h"
 
+#define IS_LOG_RESPONSE(type)  \
+     (type == SundialResponse::RESP_LOG_YES \
+            || type == SundialResponse::RESP_LOG_ABORT \
+            || type== SundialResponse::RESP_LOG_COMMIT)
+
 SundialRPCClient::SundialRPCClient() {
 #if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
     _servers = new SundialRPCClientStub * [g_num_nodes_and_storage];
@@ -96,7 +101,7 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     call->response_reader->Finish(call->reply, &(call->status), (void*)call);
 }
 
-
+// only called by commit protocol, read request will send synchronous request
 void
 SundialRPCClient::sendRequestDone(SundialResponse * response)
 {
@@ -111,4 +116,22 @@ SundialRPCClient::sendRequestDone(SundialResponse * response)
     } else {
         txn->rpc_semaphore->decr();
     }
+    // update txn status if return is abort
+    // SundialResponse::RESP_LOG_ABORT is checked only for self-implemented
+    // remote log manager
+    if (response->response_type() == SundialResponse::PREPARED_ABORT ||
+    response->response_type() == SundialResponse::RESP_LOG_ABORT ||
+    response->response_type() == SundialResponse::RESP_ABORT) {
+        txn->set_txn_state(TxnManager::ABORTED);
+        txn->_remote_nodes_involved[response->node_id()]->state =
+            TxnManager::ABORTED;
+    } else if (response->response_type() == SundialResponse::PREPARED_OK) {
+        txn->_remote_nodes_involved[response->node_id()]->state =
+            TxnManager::PREPARED;
+    } else if (response->response_type() == SundialResponse::PREPARED_OK_RO) {
+        txn->_remote_nodes_involved[response->node_id()]->state =
+            TxnManager::COMMITTED;
+    }
+    // set corresponding remote node status
+}
 }
