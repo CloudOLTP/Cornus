@@ -109,38 +109,39 @@ void Stats::output(std::ostream * os)
 {
     std::ostream &out = *os;
 
-    /*if (g_warmup_time > 0) {
-        // subtract the stats in the warmup period
-        uint32_t cp = int(1000 * g_warmup_time / STATS_CP_INTERVAL) - 1;
-        Stats * base = _checkpoints[cp];
-        for (uint32_t i = 0; i < g_total_num_threads; i++) {
-            for    (uint32_t n = 0; n < NUM_FLOAT_STATS; n++)
-                _stats[i]->_float_stats[n] -= base->_stats[i]->_float_stats[n];
-            if (i < g_num_worker_threads)
-                _stats[i]->_float_stats[STAT_run_time] = g_run_time * BILLION;
-            for    (uint32_t n = 0; n < NUM_INT_STATS; n++)
-                _stats[i]->_int_stats[n] -= base->_stats[i]->_int_stats[n];
-
-           for (uint32_t n = 0; n < SundialRequest::NUM_REQ_TYPES; n++) {
-                _stats[i]->_req_msg_count[n] -= base->_stats[i]->_req_msg_count[n];
-                _stats[i]->_req_msg_size[n] -= base->_stats[i]->_req_msg_size[n];
-           }
-           for (uint32_t n = 0; n < SundialResponse::NUM_RESP_TYPES; n++) {
-                _stats[i]->_resp_msg_count[n] -= base->_stats[i]->_resp_msg_count[n];
-                _stats[i]->_resp_msg_size[n] -= base->_stats[i]->_resp_msg_size[n];
-           }
-        }
-    }*/
+//    if (g_warmup_time > 0) {
+//        // subtract the stats in the warmup period
+//        uint32_t cp = int(1000 * g_warmup_time / STATS_CP_INTERVAL) - 1;
+//        Stats * base = _checkpoints[cp];
+//        for (uint32_t i = 0; i < g_total_num_threads; i++) {
+//            for    (uint32_t n = 0; n < NUM_FLOAT_STATS; n++)
+//                _stats[i]->_float_stats[n] -= base->_stats[i]->_float_stats[n];
+//            if (i < g_num_worker_threads)
+//                _stats[i]->_float_stats[STAT_run_time] = g_run_time * BILLION;
+//            for    (uint32_t n = 0; n < NUM_INT_STATS; n++)
+//                _stats[i]->_int_stats[n] -= base->_stats[i]->_int_stats[n];
+//
+//           for (uint32_t n = 0; n < SundialRequest::NUM_REQ_TYPES; n++) {
+//                _stats[i]->_req_msg_count[n] -= base->_stats[i]->_req_msg_count[n];
+//                _stats[i]->_req_msg_size[n] -= base->_stats[i]->_req_msg_size[n];
+//           }
+//           for (uint32_t n = 0; n < SundialResponse::NUM_RESP_TYPES; n++) {
+//                _stats[i]->_resp_msg_count[n] -= base->_stats[i]->_resp_msg_count[n];
+//                _stats[i]->_resp_msg_size[n] -= base->_stats[i]->_resp_msg_size[n];
+//           }
+//        }
+//    }
 
     STAT_SUM(uint64_t, total_num_single_part_txns, _int_stats[STAT_num_single_part_txn]);
     STAT_SUM(uint64_t, total_num_multi_part_txns, _int_stats[STAT_num_multi_part_txn]);
     STAT_SUM(uint64_t, total_num_commits, _int_stats[STAT_num_commits]);
     STAT_SUM(double, total_run_time, _float_stats[STAT_run_time]);
+
     // profile communication cost
-    STAT_SUM(uint64_t, total_remote_req, _int_stats[STAT_int_debug1]);
-    STAT_SUM(double, total_remote_req_cost, _float_stats[STAT_time_debug1]);
-    total_remote_req_cost = total_remote_req_cost / total_remote_req * 1000000  / BILLION ; // in us.
-    printf("avg remote cost: %lf\n", total_remote_req_cost);
+//    STAT_SUM(uint64_t, total_remote_req, _int_stats[STAT_int_debug1]);
+//    STAT_SUM(double, total_remote_req_cost, _float_stats[STAT_time_debug1]);
+//    total_remote_req_cost = total_remote_req_cost / total_remote_req  / 1000;
+//    printf("avg remote cost: %lf\n", total_remote_req_cost); // in us.
 
     assert(total_num_commits > 0);
     out << "=Worker Thread=" << endl;
@@ -171,10 +172,6 @@ void Stats::output(std::ostream * os)
             suffix = " (in us) ";
         }
         out << "    " << setw(30) << left << statsFloatName[i] + suffix + ':' << total / BILLION << endl;
-        /*out << " (";
-        for (uint32_t tid = 0; tid < g_total_num_threads; tid ++)
-            out << _stats[tid]->_float_stats[i] / BILLION << ',';
-        out << ')' << endl;*/
     }
 
     out << endl;
@@ -210,20 +207,23 @@ void Stats::output(std::ostream * os)
     STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
     STAT_SUM(uint64_t, total_remote_prepare, _int_stats[STAT_int_debug2]);
     STAT_SUM(double, total_log_vote, _float_stats[STAT_time_debug2]);
-    STAT_SUM(double, total_wait_log, _float_stats[STAT_time_debug3]);
-    STAT_SUM(double, total_send_prepare, _float_stats[STAT_time_debug5]);
-    STAT_SUM(double, total_wait_vote, _float_stats[STAT_time_debug4]);
-    out << "    " << setw(30) << left << "average_prepare_req_cnt:" << sum_prepare_count * 1.0 / total_prepare << endl;
-    out << "    " << setw(30) << left << "average_prepare_req_size:" << sum_prepare_size * 1.0 / total_prepare << endl;
-    out << "    " << setw(30) << left << "average_prepare_resp_cnt:" << total_prepare_resp_cnt * 1.0 / total_prepare << endl;
-    out << "    " << setw(30) << left << "average_prepare_resp_size:" << total_prepare_resp_size * 1.0 / total_prepare << endl;
-    out << "    " << setw(30) << left << "average_send_prepare:" << total_send_prepare / total_prepare / BILLION * 1000000 << endl;
-    out << "    " << setw(30) << left << "average_wait_log_co_prepare:" <<
-    total_wait_log / total_prepare / BILLION * 1000000 << endl;
-    out << "    " << setw(30) << left << "average_wait_vote_co:" <<
-    total_wait_vote / total_prepare / BILLION * 1000000 << endl;
+    STAT_SUM(uint64_t, total_commit, _int_stats[STAT_int_debug4]);
+    STAT_SUM(double, total_log_commit, _float_stats[STAT_time_debug4]);
+    STAT_SUM(double, total_node_communicate, _float_stats[STAT_time_debug5]);
+    out << "    " << setw(30) << left << "average_prepare_req_cnt:" <<
+    sum_prepare_count * 1.0 / total_prepare << endl;
+    out << "    " << setw(30) << left << "average_prepare_req_size:" <<
+    sum_prepare_size * 1.0 / total_prepare << endl;
+    out << "    " << setw(30) << left << "average_prepare_resp_cnt:" <<
+    total_prepare_resp_cnt * 1.0 / total_prepare << endl;
+    out << "    " << setw(30) << left << "average_prepare_resp_size:" <<
+    total_prepare_resp_size * 1.0 / total_prepare << endl;
     out << "    " << setw(30) << left << "average_log_vote_pa:" <<
-    total_log_vote / total_remote_prepare / BILLION * 1000000 << endl;
+    total_log_vote / total_remote_prepare / 1000 << endl;
+    out << "    " << setw(30) << left << "average_log_commit_co:" <<
+    total_log_commit / total_commit / 1000 << endl;
+    out << "    " << setw(30) << left << "average_node_communicate:" <<
+    total_node_communicate / (g_num_nodes - 1) / 1000 << endl;
 
 
     out << "    " << setw(30) << left << "average_dist_latency:" << avg_dist_latency / BILLION << endl;
@@ -259,10 +259,6 @@ void Stats::output(std::ostream * os)
             total += _stats[tid]->_int_stats[i];
         }
         out << "    " << setw(30) << left << statsIntName[i] + ':'<< total << endl;
-        /*out << " (";
-        for (uint32_t tid = 0; tid < g_total_num_threads; tid ++)
-            out << _stats[tid]->_int_stats[i] << ',';
-        out << ')' << endl;*/
 
     }
 #if WORKLOAD == TPCC
@@ -361,14 +357,6 @@ void Stats::output(std::ostream * os)
             }
             out << value / BILLION << ',';
         }
-        /*for (uint32_t n = 0; n < Message::NUM_MSG_TYPES; n++) {
-            uint64_t value = 0;
-            // for input thread
-            value += _checkpoints[i]->_stats[g_total_num_threads - 2]->_msg_count[n];
-            if (i > 0)
-                value -= _checkpoints[i - 1]->_stats[g_total_num_threads - 2]->_msg_count[n];
-            out << value << ',';
-        }*/
         out << endl;
     }
 }

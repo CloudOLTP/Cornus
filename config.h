@@ -7,8 +7,8 @@
 #define NUM_NODES 2
 
 // number of server threads on each node
-#define NUM_WORKER_THREADS 32
-#define NUM_RPC_SERVER_THREADS NUM_WORKER_THREADS
+#define NUM_WORKER_THREADS 16
+#define NUM_RPC_SERVER_THREADS 16
 #define NUM_STORAGE_RPC_SERVER_THREADS  24
 
 // Statistics
@@ -106,14 +106,14 @@
 // Benchmark
 // =========
 // max number of rows touched per transaction
-#define RUN_TIME 30
+#define RUN_TIME                       10 // in second
 #define MAX_TUPLE_SIZE                  1024 // in bytes
 #define INIT_PARALLELISM                8
 
 // [YCSB]
 // Number of tuples per node
 #define SYNTH_TABLE_SIZE                (1024 * 10 * 1024)
-#define ZIPF_THETA 0.99
+#define ZIPF_THETA 0
 #define READ_PERC 0.5
 #define PERC_READONLY_DATA              0
 #define PERC_REMOTE 0.5
@@ -168,7 +168,7 @@
 #define RECV_BUFFER_SIZE                32768
 #define SEND_BUFFER_SIZE                32768
 #define MAX_CLOCK_SKEW                  0 // in us
-#define COMMIT_ALG TWO_PC
+#define COMMIT_ALG ONE_PC
 #define DEBUG_LOG                       false
 #define WORKER_SERVER_SAME              false
 

@@ -9,7 +9,7 @@
     "LOG_DEVICE": "LOG_DVC_REDIS",
     "CONTROLLED_LOCK_VIOLATION": "false",
     "ENABLE_ADMISSION_CONTROL": "false",
-    "COMMIT_ALG": "TWO_PC",
+    "COMMIT_ALG": "ONE_PC",
     "WORKLOAD": "YCSB",
     "ZIPF_THETA": 0,
     "READ_PERC": 0.5,
