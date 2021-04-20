@@ -554,7 +554,7 @@ TxnManager::process_2pc_phase2(RC rc)
     redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
     rpc_log_semaphore->wait();
 #endif
-    _finish_time = get_sys_clock();
+    //_finish_time = get_sys_clock();
     // profile: time spent on a sync log
     INC_FLOAT_STATS(time_debug4, get_sys_clock() - starttime);
     INC_INT_STATS(int_debug4, 1);
@@ -567,8 +567,8 @@ TxnManager::process_2pc_phase2(RC rc)
     rpc_log_semaphore->incr();
     redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
     #endif
-    _finish_time = get_sys_clock();
-    rpc_log_semaphore->wait(); 
+    //_finish_time = get_sys_clock();
+    //rpc_log_semaphore->wait(); 
     INC_INT_STATS(int_debug4, 1);
 #endif
 #endif
@@ -588,15 +588,14 @@ TxnManager::process_2pc_phase2(RC rc)
         rpc_client->sendRequestAsync(this, it->first, request, response);
     }
 
-	// debug: commented this out to see for 1pc
-    //_finish_time = get_sys_clock();
+    _finish_time = get_sys_clock();
+#if LOG_REMOTE && COMMIT_ALG == ONE_PC
+    rpc_log_semaphore->wait(); 
+#endif
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
     dependency_semaphore->wait();
     log_semaphore->wait();
-#if LOG_REMOTE && COMMIT_ALG == ONE_PC
-    //rpc_log_semaphore->wait(); 
-#endif
     _cc_manager->cleanup(rc); // release lock after receive log resp
     rpc_semaphore->wait();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
