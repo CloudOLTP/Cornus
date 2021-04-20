@@ -459,8 +459,7 @@ TxnManager::process_2pc_phase1()
                 g_log_sz * 8);
         rpc_log_semaphore->incr();
 #if COMMIT_ALG == ONE_PC
-        //redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
-        redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
+        redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
 #else
         redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
 #endif
@@ -697,8 +696,7 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 g_log_sz * 8);
                 rpc_log_semaphore->incr();
 #if COMMIT_ALG == ONE_PC
-                //redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
-				redis_client->log_async_data(g_node_id, get_txn_id(),
+                redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
 #else
 				redis_client->log_async_data(g_node_id, get_txn_id(),
 				    PREPARED, data);
