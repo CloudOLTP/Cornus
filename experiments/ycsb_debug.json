@@ -13,5 +13,5 @@
     "WORKLOAD": "YCSB",
     "ZIPF_THETA": 0,
     "READ_PERC": 0.5,
-    "PERC_REMOTE": 0.5
+    "PERC_REMOTE": 0.1
 }

@@ -24,7 +24,7 @@
 // only a limited number of active threads are allowed. This configuration is
 // effective only when LOG_ENABLE == true.
 #define ENABLE_ADMISSION_CONTROL false
-#define MAX_NUM_ACTIVE_TXNS 32
+#define MAX_NUM_ACTIVE_TXNS 16
 #define NETWORK_DELAY                   0 // in us
 
 // WORKLOAD can be YCSB or TPCC
@@ -106,7 +106,7 @@
 // Benchmark
 // =========
 // max number of rows touched per transaction
-#define RUN_TIME 30
+#define RUN_TIME                       10 // in second
 #define MAX_TUPLE_SIZE                  1024 // in bytes
 #define INIT_PARALLELISM                8
 
@@ -116,7 +116,7 @@
 #define ZIPF_THETA 0.7
 #define READ_PERC 0.5
 #define PERC_READONLY_DATA              0
-#define PERC_REMOTE 0.01
+#define PERC_REMOTE 0.1
 #define SINGLE_PART_ONLY                false // access single partition only
 #define REQ_PER_QUERY                   16
 #define THINK_TIME                      0  // in us

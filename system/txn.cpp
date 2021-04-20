@@ -459,7 +459,8 @@ TxnManager::process_2pc_phase1()
                 g_log_sz * 8);
         rpc_log_semaphore->incr();
 #if COMMIT_ALG == ONE_PC
-        redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+        //redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+        redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
 #else
         redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
 #endif
@@ -565,6 +566,7 @@ TxnManager::process_2pc_phase2(RC rc)
     #elif LOG_DEVICE == LOG_DVC_REDIS
     rpc_log_semaphore->incr();
     redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
+    rpc_log_semaphore->wait(); // debug
     #endif
     INC_INT_STATS(int_debug4, 1);
 #endif
@@ -594,7 +596,7 @@ TxnManager::process_2pc_phase2(RC rc)
     _cc_manager->cleanup(rc);
 #else
     #if COMMIT_ALG == ONE_PC
-        rpc_log_semaphore->wait();
+        //rpc_log_semaphore->wait(); //debug
     #endif
     _cc_manager->cleanup(rc); // release lock after receive log resp
 #endif
@@ -695,7 +697,8 @@ TxnManager::process_remote_request(const SundialRequest* request, SundialRespons
                 g_log_sz * 8);
                 rpc_log_semaphore->incr();
 #if COMMIT_ALG == ONE_PC
-                redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+                //redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+				redis_client->log_async_data(g_node_id, get_txn_id(),
 #else
 				redis_client->log_async_data(g_node_id, get_txn_id(),
 				    PREPARED, data);
