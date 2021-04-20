@@ -565,7 +565,6 @@ TxnManager::process_2pc_phase2(RC rc)
     #elif LOG_DEVICE == LOG_DVC_REDIS
     rpc_log_semaphore->incr();
     redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
-    rpc_log_semaphore->wait(); // debug
     #endif
     INC_INT_STATS(int_debug4, 1);
 #endif
@@ -590,15 +589,11 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
     dependency_semaphore->wait();
-#if !LOG_REMOTE
     log_semaphore->wait();
-    _cc_manager->cleanup(rc);
-#else
-    #if COMMIT_ALG == ONE_PC
-        //rpc_log_semaphore->wait(); //debug
-    #endif
-    _cc_manager->cleanup(rc); // release lock after receive log resp
+#if LOG_REMOTE && COMMIT_ALG == ONE_PC
+    rpc_log_semaphore->wait(); //debug
 #endif
+    _cc_manager->cleanup(rc); // release lock after receive log resp
     rpc_semaphore->wait();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         if (it->second->state == ABORTED || it->second->state == COMMITTED) continue;
