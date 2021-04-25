@@ -24,7 +24,7 @@
 // only a limited number of active threads are allowed. This configuration is
 // effective only when LOG_ENABLE == true.
 #define ENABLE_ADMISSION_CONTROL false
-#define MAX_NUM_ACTIVE_TXNS 28
+#define MAX_NUM_ACTIVE_TXNS 16
 #define NETWORK_DELAY                   0 // in us
 
 // WORKLOAD can be YCSB or TPCC
@@ -113,10 +113,10 @@
 // [YCSB]
 // Number of tuples per node
 #define SYNTH_TABLE_SIZE                (1024 * 10 * 1024)
-#define ZIPF_THETA 0
+#define ZIPF_THETA 0.7
 #define READ_PERC 0.5
 #define PERC_READONLY_DATA              0
-#define PERC_REMOTE 0.5
+#define PERC_REMOTE 0.1
 #define SINGLE_PART_ONLY                false // access single partition only
 #define REQ_PER_QUERY                   16
 #define THINK_TIME                      0  // in us
