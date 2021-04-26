@@ -220,7 +220,6 @@ extern InOutQueue **    output_queues;
 extern WorkerThread **  worker_threads;
 extern uint32_t         g_txn_table_size;
 extern TxnTable *       txn_table;
-extern WorkerThread **  worker_threads;
 
 extern FreeQueue *      free_queue_txn_man;
 

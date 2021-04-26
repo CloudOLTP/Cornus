@@ -20,7 +20,7 @@ public:
     TxnManager * get_txn(uint64_t txn_id);
     void remove_txn(uint64_t txn_id);
     uint32_t get_size();
-    
+
 private:
     struct Node {
         TxnManager * txn;
