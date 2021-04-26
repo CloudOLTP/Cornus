@@ -204,9 +204,31 @@ Manager::wakeup_next_thread()
 
 void
 Manager::failure_protocol() {
-    // Go through txn list, If _txn_state == Running/Prepared,
-    // send TERMINATE_REQ along with participant list
-    // case 1: some or none prepare request is sent successfully, no one knows
+    // Go through txn list, If _txn_state == Running
+    // send TERMINATE_REQ
+    for (uint32_t i = 0; i < g_num_nodes; i++) {
+        TxnManager * txn = _all_txns[i];
+        if (txn->get_txn_state() == TxnManager::RUNNING ||
+        txn->get_txn_state() == TxnManager::PREPARED) {
+            for (auto it = txn->_remote_nodes_involved.begin(); it !=
+            txn->_remote_nodes_involved.end(); it ++) {
+                if (it->second->is_read_only)
+                    continue;
+                if (it->second->state == TxnManager::RUNNING ||
+                it->second->state == TxnManager::PREPARED) {
+                    SundialRequest &request = it->second->request;
+                    SundialResponse &response = it->second->response;
+                    request.Clear();
+                    response.Clear();
+                    request.set_txn_id( txn->get_txn_id() );
+                    request.set_request_type( SundialRequest::TERMINATE_REQ);
+                    request.set_node_id( it->first );
+                    rpc_client->sendRequestAsync(txn, it->first, request,
+                        response);
+                }
+            }
+        }
+    }
 
 
 }

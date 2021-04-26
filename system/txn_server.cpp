@@ -51,7 +51,16 @@ TxnManager::process_remote_request(const SundialRequest* request,
     switch(request->request_type()) {
         case SundialRequest::READ_REQ :
             response->set_request_type( SundialResponse::READ_REQ);
-            return process_read_request(request, response);
+            rc = process_read_request(request, response);
+            if (rc == ABORT) {
+                pthread_mutex_lock(&_latch);
+                if(_txn_state != ABORTED) {
+                    _txn_state = ABORTED;
+                    _cc_manager->cleanup(ABORT);
+                }
+                pthread_mutex_unlock(&_latch);
+            }
+            return rc;
         case SundialRequest::PREPARE_REQ :
             pthread_mutex_lock(&_latch);
             response->set_request_type( SundialResponse::PREPARE_REQ);
@@ -62,8 +71,20 @@ TxnManager::process_remote_request(const SundialRequest* request,
             response->set_request_type( SundialResponse::TERMINATE_REQ);
             pthread_mutex_lock(&_latch);
             if (_txn_state == RUNNING) {
-                // TODO: what if prepare msg arrived later than this one? 
+                // self has not voted yes, the txn cannot be committed, log
+                // abort directly.
                 // cleanup and return
+#if LOG_REMOTE
+                #if LOG_DEVICE == LOG_DVC_NATIVE
+                send_log_request(g_storage_node_id, SundialRequest::LOG_ABORT_REQ);
+                #elif LOG_DEVICE == LOG_DVC_REDIS
+                if (redis_client->log_sync(g_node_id, get_txn_id(), ABORTED)
+                == FAIL) {
+                    pthread_mutex_unlock(&_latch);
+                    return FAIL;
+                }
+                #endif
+#endif
                 _cc_manager->cleanup(rc);
                 _finish_time = get_sys_clock();
                 _txn_state = ABORTED;
@@ -80,16 +101,20 @@ TxnManager::process_remote_request(const SundialRequest* request,
             pthread_mutex_lock(&_latch);
             rc = COMMIT;
             // cleaned up by terminate req
-            if (_txn_state != PREPARED)
+            if (_txn_state != PREPARED) {
+                pthread_mutex_unlock(&_latch);
                 return rc;
+            }
             response->set_request_type( SundialResponse::COMMIT_REQ);
             break;
         case SundialRequest::ABORT_REQ :
             pthread_mutex_lock(&_latch);
             rc = ABORT;
             // cleaned up by terminate req
-            if (_txn_state != PREPARED)
+            if (_txn_state != PREPARED) {
+                pthread_mutex_unlock(&_latch);
                 return rc;
+            }
             response->set_request_type( SundialResponse::ABORT_REQ);
             break;
         default:
@@ -118,6 +143,7 @@ TxnManager::process_remote_request(const SundialRequest* request,
     State status = (rc == COMMIT)? COMMITTED : ABORTED;
     rpc_log_semaphore->incr();
     if (redis_client->log_async(g_node_id, get_txn_id(), status) == FAIL) {
+        pthread_mutex_unlock(&_latch);
         return FAIL;
     }
     #endif
@@ -177,6 +203,8 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         if (node_id == g_node_id)
             continue;
         _remote_nodes_involved[node_id] = new RemoteNodeInfo;
+        // prepare request ensure all the nodes attached are rw
+        _remote_nodes_involved[node_id]->is_readonly = false;
     }
 
 #if LOG_LOCAL
@@ -274,9 +302,7 @@ TxnManager::process_read_request(const SundialRequest* request,
 
     if (rc == ABORT) {
         response->set_response_type( SundialResponse::RESP_ABORT );
-        _cc_manager->cleanup(ABORT);
     } else {
-        assert(rc == ABORT);
         response->set_response_type(SundialResponse::RESP_OK);
     }
     return rc;

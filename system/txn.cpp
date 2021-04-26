@@ -195,6 +195,8 @@ TxnManager::termination_protocol() {
     // received msg from failed node, need to learn the decision or force abort
     // possible return values: COMMIT, ABORT, FAIL(self is down)
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
+        if (it->second->is_read_only)
+            continue;
         rpc_log_semaphore->incr();
         if (redis_client->log_if_ne(it->first, get_txn_id()) == FAIL) {
             // self if fail, stop working and return

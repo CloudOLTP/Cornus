@@ -83,7 +83,8 @@ RC
 SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
                                    SundialRequest &request, SundialResponse &response)
 {
-    if (!glob_manager->active)
+    if (!glob_manager->active && (request->request_type() !=
+    SundialRequest::TERMINATE_REQ))
         return FAIL;
     assert(node_id != g_node_id);
     // call object to store rpc data

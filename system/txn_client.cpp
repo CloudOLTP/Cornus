@@ -162,29 +162,39 @@ TxnManager::process_2pc_phase1()
 #if COMMIT_ALG == ONE_PC
         if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
         FAIL) {
-            rpc_log_semaphore->decr();
             return FAIL;
         }
 #else
         if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
             data) == FAIL) {
-            rpc_log_semaphore->decr();
             return FAIL;
         }
 #endif
 #endif
     }
 #endif
+
     // send prepare request to participants
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
-        if(it->second->state == FAILED)
-            continue;
+        // if any failed or aborted, txn must abort, cannot enter this function
+        assert(itr->second->state == RUNNING);
         SundialRequest &request = it->second->request;
         SundialResponse &response = it->second->response;
         request.Clear();
         response.Clear();
         request.set_txn_id( get_txn_id() );
         request.set_request_type( SundialRequest::PREPARE_REQ);
+        request.set_node_id( it->first );
+        // XXX(zhihan): attach participant list
+        SundialRequest::NodeData * participant = request.add_nodes();
+        participant->set_nid(g_node_id);
+        for (auto itr = _remote_nodes_involved.begin(); itr !=
+            _remote_nodes_involved.end(); itr ++) {
+            if (itr->second->is_readonly)
+                continue;
+            participant = request.add_nodes();
+            participant->set_nid(it->first);
+        }
         ((LockManager *)_cc_manager)->build_prepare_req( it->first, request );
         rpc_semaphore->incr();
         if (rpc_client->sendRequestAsync(this, it->first, request, response)
@@ -249,8 +259,7 @@ TxnManager::handle_prepare_resp(SundialResponse* response) {
             _remote_nodes_involved[response->node_id()]->second->state =
                 FAILED;
             // should not overwrite abort decision
-            if (_decision == COMMIT)
-                _decision = FAIL;
+            ATOM_CAS(_decision, COMMIT, FAIL);
             break;
         default:
             assert(false);
@@ -274,7 +283,7 @@ TxnManager::process_2pc_phase2(RC rc)
 
     bool remote_readonly = true;
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
-        if (!(it->second->response->is_readonly)) {
+        if (!(it->second->is_readonly)) {
             remote_readonly = false;
             break;
         }
