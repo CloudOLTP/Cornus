@@ -209,6 +209,8 @@ Manager::failure_protocol() {
     for (uint32_t i = 0; i < g_num_worker_threads; i++) {
         WorkerThread * thd = worker_threads[i];
         TxnManager * txn = thd->get_native_txn();
+        if (!txn)
+            continue;
         if (txn->get_txn_state() == TxnManager::RUNNING ||
         txn->get_txn_state() == TxnManager::PREPARED) {
             for (auto it = txn->_remote_nodes_involved.begin(); it !=
