@@ -79,19 +79,14 @@ YCSBStoreProcedure::execute()
             remote_request->key = req->key;
             remote_request->table_id = 0;
             remote_requests[home_node].push_back(remote_request);
-            // has_remote_req = true;
         }
     }
     // send remote package, if abort return abort
     if (remote_requests.size() > 0) {
         rc = _txn->send_remote_package(remote_requests);
         if (rc == ABORT) return rc;
+        else if (rc == FAIL) return rc;
     }
-
-    // if (has_remote_req)
-    //     return LOCAL_MISS;
-    // else
-    //     remote_requests.clear();
 
     // Phase 1: grab permission of local accesses.
     // access local rows.

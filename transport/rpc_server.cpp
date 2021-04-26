@@ -95,14 +95,7 @@ SundialRPCServerImpl::contactRemote(ServerContext* context, const SundialRequest
 void
 SundialRPCServerImpl::processContactRemote(ServerContext* context, const SundialRequest* request, 
         SundialResponse* response) {
-    // uint64_t begin = get_sys_clock();
-    //     while (true) {
-    //         PAUSE100
-    //         uint64_t end = get_sys_clock();
-    //         double gap = (end - begin) * 1000000 / BILLION; // in us
-    //         if (gap >= NETWORK_DELAY)
-    //             break;
-    //     }
+
     usleep(NETWORK_DELAY);
     if (request->request_type() == SundialRequest::SYS_REQ) {
         // At the beginning of run, (g_num_nodes - 1) sync requests are received
@@ -147,7 +140,10 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         txn_table->add_txn( txn_man );
     } 
     // the transaction handles the RPC call
-    txn_man->process_remote_request(request, response);
+    if (txn_man->process_remote_request(request, response) == FAIL ||
+    !glob_manager->active) {
+        response->set_response_type(SundialResponse::RESP_FAIL);
+    }
     response->set_txn_id(txn_id);
 
     // if the sub-transaction is no longer required, remove from txn_table
@@ -161,7 +157,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 }
 
 
-SundialRPCServerImpl::CallData::CallData(SundialRPC::AsyncService* service, ServerCompletionQueue* cq) : service_(service), cq_(cq), responder_(&ctx_), status_(CREATE) {
+SundialRPCServerImpl::CallData::CallData(SundialRPC::AsyncService* service,
+    ServerCompletionQueue* cq) : service_(service), cq_(cq),
+    responder_(&ctx_), status_(CREATE) {
     Proceed();
 }
 

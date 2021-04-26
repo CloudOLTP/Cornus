@@ -9,6 +9,7 @@ __thread uint64_t Manager::_thread_id;
 __thread uint64_t Manager::_max_cts = 1;
 
 Manager::Manager() {
+    _starttime = 0;
     timestamp = (uint64_t *) _mm_malloc(sizeof(uint64_t), 64);
     *timestamp = 1;
     _last_min_ts_time = 0;
@@ -27,6 +28,7 @@ Manager::Manager() {
     _worker_pool_mutex = new pthread_mutex_t;
     pthread_mutex_init(_worker_pool_mutex, NULL);
     _unused_quota = 0;
+    active = true;
     //_worker_threads = new WorkerThread * [g_num_worker_threads];
     //_wakeup_thread = g_max_num_active_txns;
 }
@@ -200,43 +202,11 @@ Manager::wakeup_next_thread()
     }
 }
 
-/*uint64_t
-Manager::get_current_time()
-{
-    uint64_t ts = get_sys_clock() * g_num_nodes + g_node_id;
-    _early_per_thread[GET_THD_ID] = ts;
-    uint64_t min = (uint64_t)-1;
-    for (uint64_t i = 0; i < g_num_worker_threads; i++)
-        if (_early_per_thread[i] < min)
-            min = _early_per_thread[i];
-    uint64_t old_min = _min_ts;
-    bool success = false;
-    while ( min > old_min ) {
-        success = ATOM_CAS( _min_ts, old_min, min );
-        if (!success) old_min = _min_ts;
-    }
-    if (g_num_nodes == 1)
-        _global_gc_min_ts = _min_ts;
-    return ts;
-}
-
 void
-Manager::set_gc_ts(uint64_t ts)
-{
-    _early_per_thread[GET_THD_ID] = ts;
-}
+Manager::failure_protocol() {
+    // Go through txn list, If _txn_state == Running/Prepared,
+    // send TERMINATE_REQ along with participant list
+    // case 1: some or none prepare request is sent successfully, no one knows
 
-void
-Manager::update_global_gc_ts(uint32_t node_id, uint64_t ts)
-{
-    _gc_ts_per_node[g_node_id] = _min_ts;
-    _gc_ts_per_node[node_id] = ts;
-    uint64_t min = (uint64_t)-1;
-    for (uint32_t i = 0; i < g_num_nodes; i++) {
-        if (_gc_ts_per_node[i] < min)
-            min = _gc_ts_per_node[i];
-    }
-    assert(_global_gc_min_ts <= min);
-    _global_gc_min_ts = min;
+
 }
-*/

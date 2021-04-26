@@ -65,22 +65,21 @@ public:
 #else
     { return _num_sync_received == (g_num_nodes - 1) * 2; }
 #endif
-
     void                    receive_sync_request();
     uint32_t                num_sync_requests_received() { return _num_sync_received; }
 
     // Thread pool
     bool                    add_to_thread_pool(WorkerThread * worker);
     void                    wakeup_next_thread();
-    /*
-    void                    register_worker_thread(uint64_t thread_id, WorkerThread * thread)
-    { _worker_threads[thread_id] = thread; }
 
-    WorkerThread *          get_worker_thread(uint64_t thread_id) {
-        return _worker_threads[thread_id];
-    }
-    uint64_t        next_wakeup_thread();
-    */
+    // execution time in seconds
+    double                  get_execution_time() {return (get_sys_clock() -
+    _starttime) / BILLION};
+
+    // Handle Failure
+    void                    failure_protocol();
+    volatile bool           active;
+
 private:
     pthread_mutex_t         ts_mutex;
     uint64_t *              timestamp;
@@ -110,6 +109,8 @@ private:
     pthread_mutex_t *       _worker_pool_mutex;
     uint64_t                _unused_quota;
     std::stack<WorkerThread *> _ready_workers;
-    //WorkerThread ** _worker_threads;
-    //uint64_t        _wakeup_thread;
+
+    // global stats
+    uint64_t                _starttime; // global start time
+
 };

@@ -103,6 +103,11 @@
 #define LOG_DELAY                       0
 #define LOG_SIZE_PER_WRITE              32 // in bytes
 
+// Failure Setup
+#define FAILURE_ENABLE                  true
+#define FAILURE_TIMEPOINT               10 // in seconds
+#define FAILURE_NODE                    0
+
 // Benchmark
 // =========
 // max number of rows touched per transaction

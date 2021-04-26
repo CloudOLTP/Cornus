@@ -108,3 +108,5 @@ uint32_t        g_dummy_size            = 0;
 string ifconfig_string =
   "localhost:10000\n"
   "localhost:10001";
+
+uint32_t g_failure_pt = FAILURE_TIMEPOINT;

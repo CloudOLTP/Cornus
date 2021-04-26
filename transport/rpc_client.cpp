@@ -16,10 +16,11 @@ SundialRPCClient::SundialRPCClient() {
     string line;
     uint32_t node_id = 0;
 #if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    while ( node_id  < g_num_nodes_and_storage && getline(in, line) ) {
+    while ( node_id  < g_num_nodes_and_storage && getline(in, line) )
 #else
-    while ( node_id  < g_num_nodes && getline(in, line) ) {
+    while ( node_id  < g_num_nodes && getline(in, line) )
 #endif
+    {
         if (line[0] == '#')
             continue;
         else if (line[0] == '=' && line[1] == 'l')
@@ -27,7 +28,8 @@ SundialRPCClient::SundialRPCClient() {
         else {
             string url = line;
             if (node_id != g_node_id) {
-                _servers[node_id] = new SundialRPCClientStub(grpc::CreateChannel(url, grpc::InsecureChannelCredentials()));
+                _servers[node_id] = new SundialRPCClientStub(grpc::CreateChannel(url,
+                    grpc::InsecureChannelCredentials()));
                 cout << "[Sundial] init rpc client - " << node_id << " at " << url << endl;
             }
             node_id ++;
@@ -40,7 +42,7 @@ SundialRPCClient::SundialRPCClient() {
     // use a single cq for different channels. 
 }
 
-void 
+void
 SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
     void* got_tag;
     bool ok = false;
@@ -50,7 +52,7 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
         AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
         if (!call->status.ok()) {
             printf("[REQ] client rec response fail: (%d) %s\n",
-                call->status.error_code(), call->status.error_message().c_str());
+                   call->status.error_code(), call->status.error_message().c_str());
             assert(false);
         }
         // handle return value for non-system response
@@ -61,23 +63,28 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
     }
 }
 
-void
-SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request, SundialResponse &response) {
+RC
+SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
+    SundialResponse &response) {
+    if (!glob_manager->active)
+        return FAIL;
     ClientContext context;
     Status status = _servers[node_id]->contactRemote(&context, request, &response);
     if (!status.ok()) {
         printf("[REQ] client sendRequest fail: (%d) %s\n",
-            status.error_code(), status.error_message().c_str());
+               status.error_code(), status.error_message().c_str());
         assert(false);
     }
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response.response_type() ] += response.SpaceUsedLong();
 }
 
-void
+RC
 SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
                                    SundialRequest &request, SundialResponse &response)
-{    
+{
+    if (!glob_manager->active)
+        return FAIL;
     assert(node_id != g_node_id);
     // call object to store rpc data
     AsyncClientCall* call = new AsyncClientCall;;
@@ -86,12 +93,8 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_req_msg_size[ request.request_type() ] += request.SpaceUsedLong();
     call->response_reader = _servers[node_id]->stub_->PrepareAsynccontactRemote(&call->context, request, &cq);
-    
+
     // StartCall initiates the RPC call
-    // TODO(zhihan): set timeout
-    // std::chrono::time_point<std::chrono::system_clock>
-    // _deadline = std::chrono::system_clock::now() + std::chrono::milliseconds(3100);
-    // call->context.set_deadline(_deadline);
     call->response_reader->StartCall();
     call->reply = &response;
     call->response_reader->Finish(call->reply, &(call->status), (void*)call);
@@ -103,13 +106,26 @@ SundialRPCClient::sendRequestDone(SundialResponse * response)
 {
     uint64_t txn_id = response->txn_id();
     TxnManager * txn = txn_table->get_txn(txn_id);
-    glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response->response_type() ] ++;
+    glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response->response_type() ]++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response->response_type() ] += response->SpaceUsedLong();
-    // mark as returned. 
+
+    switch (response->request_type()) {
+        case SundialResponse::READ_REQ :
+            break;
+        case SundialResponse::PREPARE_REQ : txn->handle_prepare_resp(response);
+            break;
+        case SundialResponse::TERMINATE_REQ:
+            return;
+        default:
+            break;
+    }
+
+#if LOG_DEVICE == LOG_DEV_NATIVE
     if (IS_LOG_RESPONSE(response->response_type())) {
         // not decrease semaphore for log resp
         txn->rpc_log_semaphore->decr();
-    } else {
+    } else
+#endif
         txn->rpc_semaphore->decr();
-    }
+
 }
