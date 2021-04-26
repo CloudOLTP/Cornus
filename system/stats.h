@@ -60,6 +60,10 @@ enum StatsFloat {
     STAT_multi_part_abort,
     STAT_multi_part_cleanup_phase,
 
+    // termination time
+    STAT_terminate_time_co;
+    STAT_terminate_time_pa;
+
     STAT_log_ready_time,
     STAT_dependency_ready_time,
 
@@ -72,9 +76,12 @@ enum StatsFloat {
 
     // debug stats
     STAT_time_debug1,
+    // log vote
     STAT_time_debug2,
     STAT_time_debug3,
+    // log commit
     STAT_time_debug4,
+    // node communication
     STAT_time_debug5,
     STAT_time_debug6,
     STAT_time_debug7,
@@ -95,6 +102,10 @@ enum StatsInt {
     STAT_num_aborts_terminate,
     STAT_num_aborts_local,
     STAT_num_aborts_remote,
+
+    // Txn affected by failure (running termination protocol)
+    STATE_num_affected_txn_co,
+    STATE_num_affected_txn_pa,
 
     // Logging
     STAT_log_num,
@@ -128,8 +139,11 @@ enum StatsInt {
     STAT_num_rw_check,
 
     STAT_int_debug1,
+    // remote prepare
     STAT_int_debug2,
+    // prepare
     STAT_int_debug3,
+    // commit
     STAT_int_debug4,
     STAT_int_debug5,
     STAT_int_debug6,
@@ -160,6 +174,7 @@ public:
 #if COLLECT_LATENCY
     vector<double> all_latency;
     vector<double> dist_latency;
+    vector<double> term_latency;
 #endif
     uint64_t * _req_msg_count;
     uint64_t * _req_msg_size;
@@ -335,6 +350,7 @@ public:
 private:
     vector<double> _aggregate_latency;
     vector<double> _aggregate_dist_latency;
+    vector<double> _aggregate_term_latency;
     vector<Stats *> _checkpoints;
     uint32_t        _num_cp;
 };

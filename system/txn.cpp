@@ -41,6 +41,7 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     _txn_restart_time = _txn_start_time;
     _lock_wait_time = 0;
     _net_wait_time = 0;
+    _terminate_time = 0;
     num_local_write = 0;
 
     _is_sub_txn = false;
@@ -118,11 +119,20 @@ TxnManager::update_stats()
             latency = _finish_time - _txn_start_time;
             uint64_t total_time = get_sys_clock() - _txn_start_time;
             #if COLLECT_LATENCY
-                INC_FLOAT_STATS(dist_txn_latency, latency);
-                INC_FLOAT_STATS(time_debug7, total_time);
-                vector<double> &all = glob_stats->_stats[GET_THD_ID]->dist_latency;
-                all.push_back(latency);
+            INC_FLOAT_STATS(dist_txn_latency, latency);
+            INC_FLOAT_STATS(time_debug7, total_time);
+            vector<double> &all = glob_stats->_stats[GET_THD_ID]->dist_latency;
+            all.push_back(latency);
             #endif
+#if FAILURE_ENABLE
+            if (_terminate_time != 0) {
+                INC_FLOAT_STATS(terminate_time_co, _finish_time - _terminate_time);
+                INC_INT_STATS(num_affected_txn_co, 1);
+                vector<double> &all =
+                    glob_stats->_stats[GET_THD_ID]->term_latency;
+                all.push_back(_finish_time - _terminate_time);
+            }
+#endif
         }
 #if COLLECT_LATENCY
         INC_FLOAT_STATS(txn_latency, latency);
@@ -169,6 +179,7 @@ TxnManager::start()
 {
     RC rc = RCOK;
     _txn_state = RUNNING;
+    _terminate_time = 0;
     // running transaction on the host node
     rc = _store_procedure->execute();
     // Handle single-partition transactions, skip if self failed
@@ -194,6 +205,7 @@ RC
 TxnManager::termination_protocol() {
     // received msg from failed node, need to learn the decision or force abort
     // possible return values: COMMIT, ABORT, FAIL(self is down)
+    _terminate_time = get_sys_clock();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         if (it->second->is_read_only)
             continue;

@@ -40,6 +40,7 @@ TxnManager::process_remote_request(const SundialRequest* request,
 {
     RC rc = RCOK;
     uint32_t num_tuples;
+    _terminate_time = 0;
 #if LOG_LOCAL
     std::string record;
     char * log_record = NULL;
@@ -153,6 +154,15 @@ TxnManager::process_remote_request(const SundialRequest* request,
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     _cc_manager->cleanup(rc); // release lock after log is received
     _finish_time = get_sys_clock();
+#if FAILURE_ENABLE
+    if (_terminate_time != 0) {
+        INC_FLOAT_STATS(terminate_time_pa, _finish_time - _terminate_time);
+        INC_INT_STATS(num_affected_txn_pa, 1);
+        vector<double> &all =
+                    glob_stats->_stats[GET_THD_ID]->term_latency;
+        all.push_back(_finish_time - _terminate_time);
+    }
+#endif
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log
     // optimization)

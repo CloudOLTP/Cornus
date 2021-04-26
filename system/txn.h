@@ -144,6 +144,7 @@ private:
     uint64_t          _finish_time;
     uint64_t          _lock_wait_time;
     uint64_t          _net_wait_time;
+    uint64_t          _terminate_time;
 
   public:
     std::map<uint32_t, RemoteNodeInfo *> _remote_nodes_involved;

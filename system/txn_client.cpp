@@ -112,8 +112,9 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 #else
        string data = "[LSN] placehold:" + string('d', num_local_write *
                 g_log_sz * 8);
-       redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
-           data);
+       if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
+           data) == FAIL)
+           return FAIL;
 #endif
     }
 #endif
@@ -228,12 +229,14 @@ TxnManager::process_2pc_phase1()
     }
     // wait for vote
     rpc_semaphore->wait();
+#if FAILURE_ENABLE
     // if all active vote yes but has failed node, run termination protocol
     if (_decision == FAIL) {
         // new decision is updated in termination protocol
         if (termination_protocol() == FAIL)
             return FAIL; // self is down
     }
+#endif
     _txn_state = PREPARED;
     return _decision;
 }
