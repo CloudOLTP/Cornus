@@ -53,7 +53,7 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     dependency_semaphore = new SemaphoreSync();
     rpc_semaphore = new SemaphoreSync();
     rpc_log_semaphore = new SemaphoreSync();
-    pthread_mutex_init(&_latch, NULL)
+    pthread_mutex_init(&_latch, NULL);
 }
 
 TxnManager::~TxnManager()
@@ -207,7 +207,7 @@ TxnManager::termination_protocol() {
     // possible return values: COMMIT, ABORT, FAIL(self is down)
     _terminate_time = get_sys_clock();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
-        if (it->second->is_read_only)
+        if (it->second->is_readonly)
             continue;
         rpc_log_semaphore->incr();
         if (redis_client->log_if_ne(it->first, get_txn_id()) == FAIL) {

@@ -6,6 +6,7 @@
 #include "redis_client.h"
 #include "txn.h"
 #include "txn_table.h"
+#include "manager.h"
 
 void async_callback(cpp_redis::reply & response);
 void ne_callback(cpp_redis::reply & response);
@@ -58,7 +59,7 @@ async_callback(cpp_redis::reply & response) {
 void 
 ne_callback(cpp_redis::reply & response) {
     assert(response.is_array());
-    TxnManager::State state = response.as_array()[0].as_integer();
+    TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
     TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer());
     // status can only be aborted/prepared
     if (state == TxnManager::ABORTED)
@@ -71,7 +72,7 @@ ne_callback(cpp_redis::reply & response) {
 void
 tp_callback(cpp_redis::reply & response) {
     assert(response.is_array());
-    TxnManager::State state = response.as_array()[0].as_integer();
+    TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
     TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer());
     // default is commit, only need to set abort or committed
     if (state == TxnManager::ABORTED) {

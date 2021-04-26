@@ -39,7 +39,6 @@ TxnManager::process_remote_request(const SundialRequest* request,
     SundialResponse* response)
 {
     RC rc = RCOK;
-    uint32_t num_tuples;
     _terminate_time = 0;
 #if LOG_LOCAL
     std::string record;
@@ -186,7 +185,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     // is already aborted by terminate request
     if (_txn_state != RUNNING) {
         response->set_response_type( SundialResponse::PREPARED_ABORT );
-        return ABORTED;
+        return ABORT;
     }
 
     RC rc = RCOK;
@@ -208,7 +207,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 
     // set up all nodes involved (including sender, excluding self)
     // so that termination protocol will not where to find
-    for (uint64_t i = 0; i < request->nodes_size(); i++) {
+    for (int i = 0; i < request->nodes_size(); i++) {
         uint64_t node_id = request->nodes(i).nid();
         if (node_id == g_node_id)
             continue;

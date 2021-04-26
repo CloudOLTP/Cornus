@@ -212,11 +212,11 @@ void Stats::output(std::ostream * os)
     STAT_SUM(double, total_node_communicate, _float_stats[STAT_time_debug5]);
 
     STAT_SUM(uint64_t, total_affected_txn_co,
-        _int_stats[STAT_int_num_affected_txn_co]);
+        _int_stats[STAT_num_affected_txn_co]);
     STAT_SUM(uint64_t, total_affected_txn_pa,
-        _int_stats[STAT_int_num_affected_txn_pa]);
-    STAT_SUM(double, total_terminate_time_co, _float_stats[STAT_time_terminate_time_co]);
-    STAT_SUM(double, total_terminate_time_pa, _float_stats[STAT_time_terminate_time_pa]);
+        _int_stats[STAT_num_affected_txn_pa]);
+    STAT_SUM(double, total_terminate_time_co, _float_stats[STAT_terminate_time_co]);
+    STAT_SUM(double, total_terminate_time_pa, _float_stats[STAT_terminate_time_pa]);
     uint64_t total_affected_txn = total_affected_txn_co + total_affected_txn_pa;
 
     out << "    " << setw(30) << left << "average_prepare_req_cnt:" <<
@@ -264,18 +264,18 @@ void Stats::output(std::ostream * os)
     }
     // print terminate latency distribution
     out << "    " << setw(30) << left << "median_term_latency:"
-        << _aggregate_term_latency[(uint64_t)(total_num_commits * 0.50)] /
+        << _aggregate_term_latency[(uint64_t)(total_affected_txn * 0.50)] /
         BILLION << endl;
     out << "    " << setw(30) << left << "25%_term_latency:"
-        << _aggregate_term_latency[(uint64_t)(total_num_commits * 0.25)] /
+        << _aggregate_term_latency[(uint64_t)(total_affected_txn * 0.25)] /
         BILLION << endl;
     out << "    " << setw(30) << left << "75%_term_latency:"
-        << _aggregate_term_latency[(uint64_t)(total_num_commits * 0.75)] /
+        << _aggregate_term_latency[(uint64_t)(total_affected_txn * 0.75)] /
         BILLION << endl;
     out << "    " << setw(30) << left << "99%_term_latency:"
-        << _aggregate_term_latency[(uint64_t)(total_num_commits * 0.99)] / BILLION << endl;
+        << _aggregate_term_latency[(uint64_t)(total_affected_txn * 0.99)] / BILLION << endl;
     out << "    " << setw(30) << left << "max_term_latency:"
-        << _aggregate_term_latency[total_num_commits - 1] / BILLION << endl;
+        << _aggregate_term_latency[total_affected_txn - 1] / BILLION << endl;
     out << "    " << setw(30) << left << "min_term_latency:"
         << _aggregate_term_latency[0] / BILLION << endl;
     out << endl;

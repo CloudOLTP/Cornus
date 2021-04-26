@@ -74,7 +74,7 @@ public:
 
     // execution time in seconds
     double                  get_execution_time() {return (get_sys_clock() -
-    _starttime) / BILLION};
+    _starttime) / BILLION; };
 
     // Handle Failure
     void                    failure_protocol();

@@ -8,6 +8,8 @@
 #include <cpp_redis/cpp_redis>
 #include <string>
 
+#include "helper.h"
+
 class RedisClient {
   public:
     RedisClient();

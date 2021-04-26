@@ -225,5 +225,5 @@ extern FreeQueue *      free_queue_txn_man;
 
 extern string           ifconfig_string;
 
-extern uint32_t         g_failure_point;
+extern uint32_t         g_failure_pt;
 

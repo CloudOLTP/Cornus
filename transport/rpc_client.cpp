@@ -77,13 +77,14 @@ SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
     }
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response.response_type() ] += response.SpaceUsedLong();
+	return RCOK;
 }
 
 RC
 SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
                                    SundialRequest &request, SundialResponse &response)
 {
-    if (!glob_manager->active && (request->request_type() !=
+    if (!glob_manager->active && (request.request_type() !=
     SundialRequest::TERMINATE_REQ))
         return FAIL;
     assert(node_id != g_node_id);
@@ -99,6 +100,7 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     call->response_reader->StartCall();
     call->reply = &response;
     call->response_reader->Finish(call->reply, &(call->status), (void*)call);
+	return RCOK;
 }
 
 

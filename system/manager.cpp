@@ -212,7 +212,7 @@ Manager::failure_protocol() {
         txn->get_txn_state() == TxnManager::PREPARED) {
             for (auto it = txn->_remote_nodes_involved.begin(); it !=
             txn->_remote_nodes_involved.end(); it ++) {
-                if (it->second->is_read_only)
+                if (it->second->is_readonly)
                     continue;
                 if (it->second->state == TxnManager::RUNNING ||
                 it->second->state == TxnManager::PREPARED) {

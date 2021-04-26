@@ -35,13 +35,9 @@
 RC
 TxnManager::process_commit_phase_singlepart(RC rc)
 {
-    if (rc == COMMIT) {
-        _txn_state = COMMITTING;
-    } else if (rc == ABORT) {
-        _txn_state = ABORTING;
+    if (rc == ABORT) {
         _store_procedure->txn_abort();
-    } else
-        assert(false);
+	}
 #if LOG_LOCAL
     // TODO. Changed from design A to design B
     // [Design A] the worker thread is detached from the transaction once the log
@@ -178,7 +174,7 @@ TxnManager::process_2pc_phase1()
     // send prepare request to participants
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // if any failed or aborted, txn must abort, cannot enter this function
-        assert(itr->second->state == RUNNING);
+        assert(it->second->state == RUNNING);
         SundialRequest &request = it->second->request;
         SundialResponse &response = it->second->response;
         request.Clear();
@@ -211,9 +207,9 @@ TxnManager::process_2pc_phase1()
 
     // check if current node should crash
 #if FAILURE_ENABLE
-    if (glob_manager->get_execution_time() > g_failure_point &&
+    if (glob_manager->get_execution_time() > g_failure_pt &&
     g_node_id == FAILURE_NODE) {
-        if (ATOM_CAS(manager->active, true, false)) {
+        if (ATOM_CAS(glob_manager->active, true, false)) {
             glob_manager->failure_protocol();
         }
         return FAIL;
@@ -245,21 +241,21 @@ void
 TxnManager::handle_prepare_resp(SundialResponse* response) {
     switch (response->response_type()) {
         case SundialResponse::PREPARED_OK:
-            _remote_nodes_involved[response->node_id()]->second->state =
+            _remote_nodes_involved[response->node_id()]->state =
                 PREPARED;
             break;
         case SundialResponse::PREPARED_OK_RO:
-            _remote_nodes_involved[response->node_id()]->second->state =
+            _remote_nodes_involved[response->node_id()]->state =
                 COMMITTED;
             break;
         case SundialResponse::PREPARED_ABORT:
-            _remote_nodes_involved[response->node_id()]->second->state =
+            _remote_nodes_involved[response->node_id()]->state =
                 ABORTED;
             _decision = ABORT;
             break;
         case SundialResponse::RESP_FAIL:
             // remote node is down, run termination protocol
-            _remote_nodes_involved[response->node_id()]->second->state =
+            _remote_nodes_involved[response->node_id()]->state =
                 FAILED;
             // should not overwrite abort decision
             ATOM_CAS(_decision, COMMIT, FAIL);
@@ -409,17 +405,16 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
     if (response.response_type() == SundialResponse::RESP_OK) {
         ((LockManager *)_cc_manager)->process_remote_read_response(node_id, access_type, response);
         return RCOK;
-    } else if (reponse.response_type() == SundialResponse::RESP_ABORT) {
+    } else if (response.response_type() == SundialResponse::RESP_ABORT) {
         _remote_nodes_involved[node_id]->state = ABORTED;
         _is_remote_abort = true;
         return ABORT;
     } else {
-        assert(reponse.response_type() == SundialResponse::RESP_FAIL);
-        _remote_nodes_involved[it->first]->state = FAILED;
+        assert(response.response_type() == SundialResponse::RESP_FAIL);
+        _remote_nodes_involved[node_id]->state = FAILED;
         _is_remote_abort = true;
-        rc = ABORT;
+        return ABORT;
     }
-
 }
 
 RC
@@ -442,9 +437,9 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             read_request->set_key((*it2)->key);
             read_request->set_index_id((*it2)->index_id);
             read_request->set_access_type((*it2)->access_type);
+        	if ((*it2)->access_type != RD)
+            	_remote_nodes_involved[node_id]->is_readonly = false;
         }
-        if (access_type != RD)
-            _remote_nodes_involved[node_id]->is_readonly = false;
     }
 
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
@@ -467,7 +462,7 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             _is_remote_abort = true;
             rc = ABORT;
         } else {
-            assert(reponse.response_type() == SundialResponse::RESP_FAIL);
+            assert(response.response_type() == SundialResponse::RESP_FAIL);
             _remote_nodes_involved[it->first]->state = FAILED;
             _is_remote_abort = true;
             rc = ABORT;

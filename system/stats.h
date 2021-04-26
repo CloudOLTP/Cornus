@@ -61,8 +61,8 @@ enum StatsFloat {
     STAT_multi_part_cleanup_phase,
 
     // termination time
-    STAT_terminate_time_co;
-    STAT_terminate_time_pa;
+    STAT_terminate_time_co,
+    STAT_terminate_time_pa,
 
     STAT_log_ready_time,
     STAT_dependency_ready_time,
@@ -104,8 +104,8 @@ enum StatsInt {
     STAT_num_aborts_remote,
 
     // Txn affected by failure (running termination protocol)
-    STATE_num_affected_txn_co,
-    STATE_num_affected_txn_pa,
+    STAT_num_affected_txn_co,
+    STAT_num_affected_txn_pa,
 
     // Logging
     STAT_log_num,
@@ -262,6 +262,10 @@ public:
         "multi_part_commit_phase",
         "multi_part_abort",
         "multi_part_cleanup_phase",
+    
+		// termination time
+    	"terminate_time_co",
+    	"terminate_time_pa",
 
         "log_ready_time",
         "dependency_ready_time",
@@ -296,6 +300,10 @@ public:
         "num_aborts_terminate",
         "num_aborts_local",
         "num_aborts_remote",
+    
+		// Txn affected by failure (running termination protocol)
+    	"num_affected_txn_co",
+   		"num_affected_txn_pa",
 
         // Logging
         "log_num",
