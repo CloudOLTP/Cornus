@@ -206,8 +206,9 @@ void
 Manager::failure_protocol() {
     // Go through txn list, If _txn_state == Running
     // send TERMINATE_REQ
-    for (uint32_t i = 0; i < g_num_nodes; i++) {
-        TxnManager * txn = _all_txns[i];
+    for (uint32_t i = 0; i < g_num_worker_threads; i++) {
+        WorkerThread * thd = worker_threads[i];
+        TxnManager * txn = thd->get_native_txn();
         if (txn->get_txn_state() == TxnManager::RUNNING ||
         txn->get_txn_state() == TxnManager::PREPARED) {
             for (auto it = txn->_remote_nodes_involved.begin(); it !=

@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
     // Thread numbering:
     //    worker_threads | input_thread | output_thread | logging_thread
     uint32_t next_thread_id = 0;
-    WorkerThread ** worker_threads = new WorkerThread * [g_num_worker_threads];
+    worker_threads = new WorkerThread * [g_num_worker_threads];
     pthread_t ** pthreads_worker = new pthread_t * [g_num_worker_threads];
     for (uint32_t i = 0; i < g_num_worker_threads; i++) {
         worker_threads[i] = new WorkerThread(next_thread_id ++);

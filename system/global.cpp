@@ -101,6 +101,7 @@ WorkerThread ** worker_threads;
 // TODO. tune this table size
 uint32_t        g_txn_table_size        = NUM_WORKER_THREADS * 10; // TODO:
 TxnTable *      txn_table;
+WorkerThread ** worker_threads;
 
 FreeQueue *     free_queue_txn_man;
 uint32_t        g_dummy_size            = 0;

@@ -108,18 +108,13 @@ RC WorkerThread::run() {
             delete _native_txn;
             _native_txn = NULL;
         } else { // should restart
-            assert( _native_txn->get_txn_state() == TxnManager::ABORTED);
+            assert(_native_txn->get_txn_state() == TxnManager::ABORTED);
             uint64_t sleep_time = g_abort_penalty * glob_manager->rand_double(); // in nanoseconds
             usleep(sleep_time / 1000);
         }
     }
     glob_manager->worker_thread_done();
     INC_FLOAT_STATS(run_time, get_sys_clock() - init_time);
-    //if (get_thd_id() == 0) {
-    //    uint32_t size = txn_table->get_size();
-    //    cout << "number of active transactions: " << size << endl;
-    //}
-    //delete system_txn_man;
     return RCOK;
 }
 
