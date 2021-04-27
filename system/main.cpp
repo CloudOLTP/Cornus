@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 #if LOG_LOCAL
     pthread_join(*pthreads_logging, NULL);
 #endif
-    assert( txn_table->get_size() == 0 );
+    //assert( txn_table->get_size() == 0 );
     endtime = get_server_clock();
     cout << "Complete. Total RunTime = " << 1.0 * (endtime - starttime) / BILLION << endl;
     if (STATS_ENABLE)
