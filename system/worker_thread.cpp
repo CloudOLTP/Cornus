@@ -56,8 +56,10 @@ RC WorkerThread::run() {
 
     // Main loop
     while (get_sys_clock() - init_time < g_run_time * BILLION || _native_txn) {
-        if (!glob_manager->active)
+        if (!glob_manager->active) {
+            glob_manager->worker_thread_done();
             return FAIL;
+        }
         if (GET_THD_ID == 0 && get_sys_clock() - last_stats_cp_time > STATS_CP_INTERVAL * 1000 * 1000) {
             glob_stats->checkpoint();
             last_stats_cp_time += STATS_CP_INTERVAL * 1000000;
