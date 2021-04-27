@@ -145,7 +145,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         response->set_response_type(SundialResponse::RESP_FAIL);
     }
     response->set_txn_id(txn_id);
-
+    response->set_node_id(g_node_id);
     // if the sub-transaction is no longer required, remove from txn_table
     if (response->response_type() == SundialResponse::RESP_ABORT
         || response->response_type() == SundialResponse::PREPARED_OK_RO
