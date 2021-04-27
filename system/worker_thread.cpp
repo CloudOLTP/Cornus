@@ -55,7 +55,8 @@ RC WorkerThread::run() {
     __attribute__((unused)) uint64_t last_idle_time = get_sys_clock();
 
     // Main loop
-    while (get_sys_clock() - init_time < g_run_time * BILLION || _native_txn) {
+//while (get_sys_clock() - init_time < g_run_time * BILLION || _native_txn) {
+    while (get_sys_clock() - init_time < g_run_time * BILLION) {
         if (!glob_manager->active) {
             glob_manager->worker_thread_done();
             return FAIL;
