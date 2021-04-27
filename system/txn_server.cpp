@@ -85,7 +85,7 @@ TxnManager::process_remote_request(const SundialRequest* request,
                 }
                 #endif
 #endif
-                _cc_manager->cleanup(rc);
+                _cc_manager->cleanup(ABORT);
                 _finish_time = get_sys_clock();
                 _txn_state = ABORTED;
                 pthread_mutex_unlock(&_latch);

@@ -198,6 +198,8 @@ TxnManager::start()
     }
     if (rc != FAIL)
         update_stats();
+    else
+        _txn_state = ABORTED;
     return rc;
 }
 
