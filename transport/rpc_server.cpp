@@ -133,11 +133,18 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     TxnManager * txn_man = txn_table->get_txn(txn_id);
     // If no TxnManager exists for the requesting transaction, create one.
     if (txn_man == NULL) {
-        //printf("adding txnID=%ld into txn_table\n", txn_id);
-        assert( request->request_type() == SundialRequest::READ_REQ );
-        txn_man = new TxnManager();
-        txn_man->set_txn_id( txn_id );
-        txn_table->add_txn( txn_man );
+        if (request->request_type() == SundialRequest::TERMINATE_REQ) {
+            // txn already cleaned up
+            response->set_txn_id(txn_id);
+            response->set_node_id(g_node_id);
+            response->set_response_type(SYS_RESP);
+            return
+        } else {
+            assert(request->request_type() == SundialRequest::READ_REQ);
+            txn_man = new TxnManager();
+            txn_man->set_txn_id(txn_id);
+            txn_table->add_txn(txn_man);
+        }
     } 
     // the transaction handles the RPC call
     if (txn_man->process_remote_request(request, response) == FAIL ||
@@ -146,6 +153,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     }
     response->set_txn_id(txn_id);
     response->set_node_id(g_node_id);
+
     // if the sub-transaction is no longer required, remove from txn_table
     if (response->response_type() == SundialResponse::RESP_ABORT
         || response->response_type() == SundialResponse::PREPARED_OK_RO
