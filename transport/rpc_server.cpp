@@ -138,7 +138,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             response->set_txn_id(txn_id);
             response->set_node_id(g_node_id);
             response->set_response_type(SundialResponse::SYS_RESP);
-            return
+            return;
         } else {
             assert(request->request_type() == SundialRequest::READ_REQ);
             txn_man = new TxnManager();
