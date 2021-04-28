@@ -44,11 +44,13 @@ extern double g_cpu_freq;
     timespec time {0, t}; \
     nanosleep(&time, NULL); }
 
+/*
 // DEBUG print
 // ===========
 #define DEBUG_PRINT(...) \
     if (false) \
         printf(__VA_ARGS__);
+*/
 
 // ASSERT Helper
 // =============

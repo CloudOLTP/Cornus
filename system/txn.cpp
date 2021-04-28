@@ -209,16 +209,14 @@ TxnManager::start()
         }
     }
     if (rc != FAIL) {
-        if (rc == COMMIT)
 #if DEBUG_PRINT
+        if (rc == COMMIT)
             printf("[node-%u, txn-%lu] txn commit\n", g_node_id, _txn_id);
-#endif
         else {
             assert(rc == ABORT);
-#if DEBUG_PRINT
             printf("[node-%u, txn-%lu] txn aborted\n", g_node_id, _txn_id);
-#endif
         }
+#endif
         update_stats();
     } else {
 #if DEBUG_PRINT
