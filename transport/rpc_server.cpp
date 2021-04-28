@@ -123,7 +123,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 
     uint64_t txn_id = request->txn_id();
     TxnManager * txn_man = txn_table->get_txn(txn_id);
-    printf("[node-%u, txn-%lu] received request-%d", g_node_id, txn_id,
+    printf("[node-%u, txn-%lu] received request-%d\n", g_node_id, txn_id,
         request->request_type());
     // If no TxnManager exists for the requesting transaction, create one.
     if (txn_man == NULL) {
@@ -143,7 +143,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     // the transaction handles the RPC call
     if (txn_man->process_remote_request(request, response) == FAIL ||
     !glob_manager->active) {
-        printf("[node-%u, txn-%lu] reply failure response", g_node_id, txn_id);
+        printf("[node-%u, txn-%lu] reply failure response\n", g_node_id,
+            txn_id);
         response->set_response_type(SundialResponse::RESP_FAIL);
     }
     response->set_txn_id(txn_id);

@@ -178,7 +178,7 @@ RC
 TxnManager::start()
 {
     // DEBUG(zhihan)
-    printf("[node-%u, txn-%lu] start txn", g_node_id, _txn_id);
+    printf("[node-%u, txn-%lu] start txn\n", g_node_id, _txn_id);
     RC rc = RCOK;
     _txn_state = RUNNING;
     _terminate_time = 0;
@@ -186,32 +186,32 @@ TxnManager::start()
     rc = _store_procedure->execute();
     // Handle single-partition transactions, skip if self failed
     if (is_single_partition()) {
-        printf("[node-%u, txn-%lu] process single part", g_node_id, _txn_id);
+        printf("[node-%u, txn-%lu] process single part\n", g_node_id, _txn_id);
         _commit_start_time = get_sys_clock();
         rc = process_commit_phase_singlepart(rc);
     } else {
         if (rc == COMMIT) {
-            printf("[node-%u, txn-%lu] prepare phase", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] prepare phase\n", g_node_id, _txn_id);
             _prepare_start_time = get_sys_clock();
             rc = process_2pc_phase1();
         }
         if (rc != FAIL) {
-            printf("[node-%u, txn-%lu] commit phase", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] commit phase\n", g_node_id, _txn_id);
             _commit_start_time = get_sys_clock();
             rc = process_2pc_phase2(rc);
         }
     }
     if (rc != FAIL) {
         if (rc == COMMIT)
-            printf("[node-%u, txn-%lu] txn commit", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] txn commit\n", g_node_id, _txn_id);
         else {
             assert(rc == ABORT);
-            printf("[node-%u, txn-%lu] txn aborted", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] txn aborted\n", g_node_id, _txn_id);
         }
         update_stats();
     } else {
-        printf("[node-%u, txn-%lu] txn abort, detected self failure", g_node_id,
-            _txn_id);
+        printf("[node-%u, txn-%lu] txn abort, detected self failure\n",
+        g_node_id, _txn_id);
         _txn_state = ABORTED;
     }
     return rc;

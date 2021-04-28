@@ -50,7 +50,7 @@ TxnManager::process_remote_request(const SundialRequest* request,
     // concurrent with terminate
     switch(request->request_type()) {
         case SundialRequest::READ_REQ :
-            printf("[node-%u, txn-%lu] read request", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] read request\n", g_node_id, _txn_id);
             response->set_request_type( SundialResponse::READ_REQ);
             rc = process_read_request(request, response);
             if (rc == ABORT) {
@@ -63,14 +63,15 @@ TxnManager::process_remote_request(const SundialRequest* request,
             }
             return rc;
         case SundialRequest::PREPARE_REQ :
-            printf("[node-%u, txn-%lu] prepare request", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] prepare request\n", g_node_id, _txn_id);
             pthread_mutex_lock(&_latch);
             response->set_request_type( SundialResponse::PREPARE_REQ);
             rc = process_prepare_request(request, response);
             pthread_mutex_unlock(&_latch);
             return rc;
         case SundialRequest::TERMINATE_REQ:
-            printf("[node-%u, txn-%lu] terminate request", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] terminate request\n", g_node_id,
+                _txn_id);
             response->set_request_type( SundialResponse::TERMINATE_REQ);
             pthread_mutex_lock(&_latch);
             if (_txn_state == RUNNING) {
@@ -101,7 +102,7 @@ TxnManager::process_remote_request(const SundialRequest* request,
                 break;
             }
         case SundialRequest::COMMIT_REQ :
-            printf("[node-%u, txn-%lu] commit request", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] commit request\n", g_node_id, _txn_id);
             pthread_mutex_lock(&_latch);
             rc = COMMIT;
             // cleaned up by terminate req
@@ -112,7 +113,7 @@ TxnManager::process_remote_request(const SundialRequest* request,
             response->set_request_type( SundialResponse::COMMIT_REQ);
             break;
         case SundialRequest::ABORT_REQ :
-            printf("[node-%u, txn-%lu] abort request", g_node_id, _txn_id);
+            printf("[node-%u, txn-%lu] abort request\n", g_node_id, _txn_id);
             pthread_mutex_lock(&_latch);
             rc = ABORT;
             // cleaned up by terminate req
