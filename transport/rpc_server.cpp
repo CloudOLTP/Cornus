@@ -108,14 +108,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     }
 
 #if LOG_NODE
-    // uint64_t begin_2 = get_sys_clock();
-    //     while (true) {
-    //         PAUSE100
-    //         uint64_t end_2 = get_sys_clock();
-    //         double gap_2 = (end_2 - begin_2) * 1000000 / BILLION; // in us
-    //         if (gap_2 >= LOG_DELAY)
-    //             break;
-    //     }
     usleep(LOG_DELAY);
     if (request->request_type() == SundialRequest::LOG_YES_REQ ||
         request->request_type() == SundialRequest::LOG_ABORT_REQ ||
@@ -131,6 +123,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 
     uint64_t txn_id = request->txn_id();
     TxnManager * txn_man = txn_table->get_txn(txn_id);
+    printf("[node-%u, txn-%lu] received request-%d", g_node_id, txn_id,
+        request->request_type());
     // If no TxnManager exists for the requesting transaction, create one.
     if (txn_man == NULL) {
         if (request->request_type() == SundialRequest::TERMINATE_REQ) {
@@ -149,6 +143,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     // the transaction handles the RPC call
     if (txn_man->process_remote_request(request, response) == FAIL ||
     !glob_manager->active) {
+        printf("[node-%u, txn-%lu] reply failure response", g_node_id, txn_id);
         response->set_response_type(SundialResponse::RESP_FAIL);
     }
     response->set_txn_id(txn_id);
