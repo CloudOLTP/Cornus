@@ -58,7 +58,6 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         if (log_record_size > 0) {
             assert(log_record);
             log_semaphore->incr();
-            //printf("[txn-%lu] inc log semaphore while logging\n", _txn_id);
             log_manager->log(this, log_record_size, log_record);
             delete [] log_record;
             // The worker thread will be waken up by the logging thread after
@@ -81,7 +80,6 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         // commit (CLV only).
         uint64_t tt = get_sys_clock();
 
-        //printf("[txn-%lu] starts to wait for logging\n", _txn_id);
         log_semaphore->wait();
 
         _log_ready_time = get_sys_clock();
@@ -210,7 +208,9 @@ TxnManager::process_2pc_phase1()
     if (glob_manager->get_execution_time() > g_failure_pt &&
     g_node_id == FAILURE_NODE) {
         if (ATOM_CAS(glob_manager->active, true, false)) {
-			printf("[node-%u, txn-%lu] node crashes (execution time = %lu sec)\n", g_node_id, _txn_id, glob_manager->get_execution_time());
+#if DEBUG_PRINT
+			printf("[node-%u, txn-%lu] node crashes (execution time = %.2f sec)\n", g_node_id, _txn_id, glob_manager->get_execution_time());
+#endif
             glob_manager->failure_protocol();
         }
         return FAIL;
