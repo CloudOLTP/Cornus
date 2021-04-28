@@ -7,8 +7,8 @@
 #define NUM_NODES 2
 
 // number of server threads on each node
-#define NUM_WORKER_THREADS 16
-#define NUM_RPC_SERVER_THREADS 16
+#define NUM_WORKER_THREADS 2
+#define NUM_RPC_SERVER_THREADS 2
 #define NUM_STORAGE_RPC_SERVER_THREADS  24
 
 // Statistics
@@ -106,12 +106,12 @@
 // Failure Setup
 #define FAILURE_ENABLE                  true
 #define FAILURE_TIMEPOINT               10 // in seconds
-#define FAILURE_NODE                    0
+#define FAILURE_NODE 1
 
 // Benchmark
 // =========
 // max number of rows touched per transaction
-#define RUN_TIME                       10 // in second
+#define RUN_TIME 15
 #define MAX_TUPLE_SIZE                  1024 // in bytes
 #define INIT_PARALLELISM                8
 
