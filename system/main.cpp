@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
     //assert( txn_table->get_size() == 0 );
     endtime = get_server_clock();
     cout << "Complete. Total RunTime = " << 1.0 * (endtime - starttime) / BILLION << endl;
-    if (STATS_ENABLE)
+    if (STATS_ENABLE && (FAILURE_NODE != g_node_id))
         glob_stats->print();
 
     for (uint32_t i = 0; i < g_num_worker_threads; i ++) {
