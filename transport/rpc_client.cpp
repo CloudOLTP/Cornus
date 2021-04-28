@@ -53,7 +53,6 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
         if (!call->status.ok()) {
             printf("[REQ] client rec response fail: (%d) %s\n",
                    call->status.error_code(), call->status.error_message().c_str());
-            assert(false);
         }
         // handle return value for non-system response
         assert(call->reply->response_type() != SundialResponse::SYS_RESP);
@@ -66,7 +65,8 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
 RC
 SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
     SundialResponse &response) {
-    if (!glob_manager->active)
+    if (!glob_manager->active && (request.request_type() !=
+    SundialRequest::SYS_REQ))
         return FAIL;
     ClientContext context;
     Status status = _servers[node_id]->contactRemote(&context, request, &response);
