@@ -19,6 +19,7 @@
 #define TIME_ENABLE                     true
 #define STATS_CP_INTERVAL               1000 // in ms
 #define DEBUG_PRINT                     false
+#define DEBUG_FAILURE                   false
 
 // Execution Model
 // ==========

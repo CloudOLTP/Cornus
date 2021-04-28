@@ -73,8 +73,8 @@ public:
     void                    wakeup_next_thread();
 
     // execution time in seconds
-    double                  get_execution_time() {return (get_sys_clock() -
-    _starttime) / BILLION; };
+    uint64_t                get_execution_time() {return get_sys_clock() -
+    _starttime; };
 	void                    set_starttime(ts_t ts) {_starttime = ts;}; 
 
     // Handle Failure
@@ -112,6 +112,6 @@ private:
     std::stack<WorkerThread *> _ready_workers;
 
     // global stats
-    uint64_t                _starttime; // global start time
+    volatile uint64_t        _starttime; // global start time
 
 };

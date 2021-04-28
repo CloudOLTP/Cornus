@@ -230,6 +230,9 @@ TxnManager::start()
 
 RC
 TxnManager::termination_protocol() {
+#if DEBUG_FAILURE || DEBUG_PRINT
+	printf("[node-%u, txn-%lu] termination protocol\n", g_node_id, _txn_id);
+#endif
     // received msg from failed node, need to learn the decision or force abort
     // possible return values: COMMIT, ABORT, FAIL(self is down)
     _terminate_time = get_sys_clock();

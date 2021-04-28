@@ -13,5 +13,9 @@
     "WORKLOAD": "YCSB",
     "ZIPF_THETA": 0,
     "READ_PERC": 0.5,
-    "PERC_REMOTE": 0.1
+    "PERC_REMOTE": 0.5,
+	"DEBUG_FAILURE": true,
+    "FAILURE_ENABLE": true,
+    "FAILURE_TIMEPOINT": 5,
+	"RUN_TIME": 10
 }
