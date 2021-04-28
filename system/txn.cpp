@@ -223,8 +223,8 @@ TxnManager::start()
     } else {
 #if DEBUG_PRINT
         printf("[node-%u, txn-%lu] txn abort, detected self failure\n",
-#endif
         g_node_id, _txn_id);
+#endif
         _txn_state = ABORTED;
     }
     return rc;
