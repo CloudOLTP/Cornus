@@ -210,6 +210,7 @@ TxnManager::process_2pc_phase1()
     if (glob_manager->get_execution_time() > g_failure_pt &&
     g_node_id == FAILURE_NODE) {
         if (ATOM_CAS(glob_manager->active, true, false)) {
+			printf("[node-%u, txn-%lu] node crashes (execution time = %lu sec)\n", g_node_id, _txn_id, glob_manager->get_execution_time());
             glob_manager->failure_protocol();
         }
         return FAIL;

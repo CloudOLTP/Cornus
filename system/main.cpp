@@ -175,6 +175,7 @@ int main(int argc, char* argv[])
     assert(next_thread_id == g_total_num_threads);
 
     starttime = get_server_clock();
+    glob_manager->set_starttime(starttime);
     start_thread((void *)(worker_threads[g_num_worker_threads - 1]));
 
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)
@@ -206,7 +207,7 @@ int main(int argc, char* argv[])
     //assert( txn_table->get_size() == 0 );
     endtime = get_server_clock();
     cout << "Complete. Total RunTime = " << 1.0 * (endtime - starttime) / BILLION << endl;
-    if (STATS_ENABLE && (FAILURE_NODE != g_node_id))
+    if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
         glob_stats->print();
 
     for (uint32_t i = 0; i < g_num_worker_threads; i ++) {
