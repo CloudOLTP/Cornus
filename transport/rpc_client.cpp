@@ -69,7 +69,7 @@ SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
     SundialRequest::SYS_REQ))
         return FAIL;
     printf("[node-%u, txn-%lu] send sync request-%d", g_node_id, request
-        .txn_id(), request->request_type());
+        .txn_id(), request.request_type());
     ClientContext context;
     Status status = _servers[node_id]->contactRemote(&context, request, &response);
     if (!status.ok()) {
@@ -90,7 +90,7 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     SundialRequest::TERMINATE_REQ))
         return FAIL;
     printf("[node-%u, txn-%lu] send async request-%d", g_node_id, request
-        .txn_id(), request->request_type());
+        .txn_id(), request.request_type());
     assert(node_id != g_node_id);
     // call object to store rpc data
     AsyncClientCall* call = new AsyncClientCall;;
