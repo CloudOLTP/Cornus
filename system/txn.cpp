@@ -225,7 +225,7 @@ TxnManager::start()
         printf("[node-%u, txn-%lu] txn abort, detected self failure\n",
         g_node_id, _txn_id);
 #endif
-        _cc_manager->cleanup(rc); // optional, as node already failed
+        _cc_manager->cleanup(ABORT); // optional, as node already failed
         _txn_state = ABORTED;
     }
     return rc;
