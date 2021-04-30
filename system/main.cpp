@@ -175,7 +175,6 @@ int main(int argc, char* argv[])
     assert(next_thread_id == g_total_num_threads);
 
     starttime = get_server_clock();
-    glob_manager->set_starttime(starttime);
     start_thread((void *)(worker_threads[g_num_worker_threads - 1]));
 
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)

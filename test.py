@@ -103,7 +103,8 @@ def main(arg):
     if eval_arg("MODE", "release", job, default=True): 
         try_compile(job)
         run(job)
-        collect_result(job)
+        if not (eval_arg("FAILURE_ENABLE", "true", job) and eval_arg("FAILURE_NODE", job["NODE_ID"], job)):
+            collect_result(job)
     elif job["MODE"] == "debug":
         try_compile(job)
         run(job)

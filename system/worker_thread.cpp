@@ -44,6 +44,7 @@ RC WorkerThread::run() {
     pthread_barrier_wait( &global_barrier );
 
     uint64_t init_time = get_sys_clock();
+    glob_manager->set_starttime(init_time);
     // calculate which client thread this worker thread corresponds to.
     uint64_t max_txn_id = 0;
 

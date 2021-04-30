@@ -112,6 +112,6 @@ private:
     std::stack<WorkerThread *> _ready_workers;
 
     // global stats
-    volatile uint64_t        _starttime; // global start time
+    static __thread uint64_t _starttime; // thread start time
 
 };
