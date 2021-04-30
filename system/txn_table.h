@@ -12,8 +12,9 @@ class TxnTable
 public:
     struct Node {
         TxnManager * txn;
+        volatile bool valid;
         Node * next;
-        Node() : txn(nullptr), next(nullptr) {};
+        Node() : txn(nullptr), valid(true), next(nullptr) {};
     };
 
     TxnTable();

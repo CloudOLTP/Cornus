@@ -49,21 +49,17 @@ TxnTable::get_txn(uint64_t txn_id, bool remove)
         prev = node;
         node = node->next;
     }
-    if (node && remove) {
-        // remove node
-        if (prev) {
-            prev->next = node->next;
-        } else {
-            _buckets[bucket_id]->first = node->next;
+    TxnManager * txn = NULL;
+    if (node) {
+        if (node->valid) {
+            if (remove)
+                node->valid = false;
+            txn = node->txn;
         }
     }
     COMPILER_BARRIER
     _buckets[bucket_id]->latch = false;
-    if (node) {
-        return node->txn;
-    } else {
-        return NULL;
-    }
+    return txn;
 }
 
 void
