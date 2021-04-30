@@ -338,7 +338,7 @@ TxnManager::process_2pc_phase2(RC rc)
         // No need to run this phase if the remote sub-txn has already committed
         // or aborted.
         if (it->second->state == ABORTED || it->second->state == COMMITTED ||
-        it->second->state == FAILED)g
+        it->second->state == FAILED)
             continue;
         SundialRequest &request = it->second->request;
         SundialResponse &response = it->second->response;

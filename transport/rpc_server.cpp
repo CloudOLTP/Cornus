@@ -112,7 +112,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 #endif
 
     uint64_t txn_id = request->txn_id();
-    response->set_request_type((int)request->request_type());
+    SundialResponse::RequestType tpe = (SundialResponse::RequestType) ((int)
+        request->request_type());
+    response->set_request_type(tpe);
     response->set_txn_id(txn_id);
     response->set_node_id(g_node_id);
     RC rc;
@@ -125,7 +127,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     switch (request->request_type()) {
         case SundialRequest::SYS_REQ:
             glob_manager->receive_sync_request();
-            response->set_response_type( SundialResponse::SYS_RESP );
             return;
         case SundialRequest::READ_REQ:
             txn = txn_table->get_txn(txn_id);
