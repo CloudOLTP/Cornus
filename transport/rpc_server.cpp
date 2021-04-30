@@ -112,7 +112,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 #endif
 
     uint64_t txn_id = request->txn_id();
-    response->set_request_type(request->request_type());
+    response->set_request_type((int)request->request_type());
     response->set_txn_id(txn_id);
     response->set_node_id(g_node_id);
     RC rc;
@@ -132,7 +132,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             if (txn  == NULL) {
                 txn = new TxnManager();
                 txn->set_txn_id(txn_id);
-                node = txn_table->add_txn(txn);
+                txn_table->add_txn(txn);
             }
             // only read and terminate need latch since
             // (1) read can only be concurrent with read and terminate
@@ -141,7 +141,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             rc = txn->process_read_request(request, response);
             txn->unlock();
         case SundialRequest::TERMINATE_REQ:
-            txn = txn_table->get_txn(txn_id, remove=true);
+            txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
                 return;
             }
@@ -150,7 +150,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn->unlock();
             delete txn;
         case SundialRequest::PREPARE_REQ:
-            txn = txn_table->get_txn(txn_id, remove=true);
+            txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
                 // txn already cleaned up
                 response->set_response_type(SundialResponse::PREPARED_ABORT);
@@ -160,7 +160,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             if (txn->get_txn_state() != TxnManager::PREPARED)
                 delete txn;
         case SundialRequest::COMMIT_REQ:
-            txn = txn_table->get_txn(txn_id, remove=true);
+            txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
                 response->set_response_type(SundialResponse::ACK);
                 return;
@@ -168,7 +168,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             rc = txn->process_decision_request(request, response, COMMIT);
             delete  txn;
         case SundialRequest::ABORT_REQ:
-            txn = txn_table->get_txn(txn_id, remove=true);
+            txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
                 response->set_response_type(SundialResponse::ACK);
                 return;
