@@ -141,6 +141,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn->lock();
             rc = txn->process_read_request(request, response);
             txn->unlock();
+            break;
         case SundialRequest::TERMINATE_REQ:
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
@@ -150,6 +151,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             rc = txn->process_terminate_request(request, response);
             txn->unlock();
             delete txn;
+            break;
         case SundialRequest::PREPARE_REQ:
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
@@ -160,6 +162,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             rc = txn->process_prepare_request(request, response);
             if (txn->get_txn_state() != TxnManager::PREPARED)
                 delete txn;
+            break;
         case SundialRequest::COMMIT_REQ:
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
@@ -168,6 +171,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             rc = txn->process_decision_request(request, response, COMMIT);
             delete  txn;
+            break;
         case SundialRequest::ABORT_REQ:
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
@@ -176,6 +180,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             rc = txn->process_decision_request(request, response, ABORT);
             delete  txn;
+            break;
         default:
             assert(false);
     }
