@@ -143,7 +143,6 @@ TxnManager::process_2pc_phase1()
   #endif
 #endif
 #if LOG_REMOTE
-    if (!is_read_only()) {
         // asynchronously log prepare for this node
 #if LOG_DEVICE == LOG_DVC_NATIVE
         SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
@@ -164,9 +163,9 @@ TxnManager::process_2pc_phase1()
         }
 #endif
 #endif
-    }
 #endif
 
+    SundialRequest::NodeData * participant;
     // send prepare request to participants
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // if any failed or aborted, txn must abort, cannot enter this function
@@ -180,10 +179,8 @@ TxnManager::process_2pc_phase1()
         request.set_node_id( it->first );
         // XXX(zhihan): attach participant list
         // attach coordinator
-        if (!is_read_only()) {
-            SundialRequest::NodeData *participant = request.add_nodes();
-            participant->set_nid(g_node_id);
-        }
+        participant = request.add_nodes();
+        participant->set_nid(g_node_id);
         // attach participants
         for (auto itr = _remote_nodes_involved.begin(); itr !=
             _remote_nodes_involved.end(); itr ++) {
@@ -282,11 +279,15 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: perform local logging and commit request in parallel
     // log_semaphore->wait();
 #endif
-    bool readonly = is_read_only();
-    for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
-        if (!(it->second->is_readonly)) {
-            remote_readonly = false;
-            break;
+
+    bool remote_readonly = is_read_only();
+    if (remote_readonly) {
+        for (auto it = _remote_nodes_involved.begin();
+             it != _remote_nodes_involved.end(); it++) {
+            if (!(it->second->is_readonly)) {
+                remote_readonly = false;
+                break;
+            }
         }
     }
     if (remote_readonly) { // no logging and remote message at all

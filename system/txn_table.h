@@ -18,7 +18,7 @@ public:
 
     TxnTable();
     // should support 3 methods: add_txn, get_txn, remove_txn
-    Node * add_txn(TxnManager * txn);
+    void add_txn(TxnManager * txn);
     void remove_txn(TxnManager * txn);
     void print_txn();
 

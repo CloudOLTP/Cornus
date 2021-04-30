@@ -18,7 +18,7 @@ TxnTable::TxnTable()
     }
 }
 
-Node *
+void
 TxnTable::add_txn(TxnManager * txn)
 {
     assert(get_txn(txn->get_txn_id()) == NULL);
@@ -34,7 +34,6 @@ TxnTable::add_txn(TxnManager * txn)
 
     COMPILER_BARRIER
     _buckets[bucket_id]->latch = false;
-    return node;
 }
 
 TxnManager *
