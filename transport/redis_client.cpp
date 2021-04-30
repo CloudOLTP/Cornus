@@ -51,7 +51,7 @@ sync_callback(cpp_redis::reply & response) {
 void 
 async_callback(cpp_redis::reply & response) {
     assert(response.is_integer());
-    TxnManager * txn = txn_table->get_txn(response.as_integer());
+    TxnManager * txn = txn_table->get_txn(response.as_integer(), false, false);
     // mark as returned. 
     txn->rpc_log_semaphore->decr();
 }
@@ -60,7 +60,7 @@ void
 ne_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
-    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer());
+    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer(), false, false);
     // status can only be aborted/prepared
     if (state == TxnManager::ABORTED)
         txn->set_txn_state(TxnManager::ABORTED);
@@ -73,7 +73,8 @@ void
 tp_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
-    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer());
+    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer()
+        , false, false);
     // default is commit, only need to set abort or committed
     if (state == TxnManager::ABORTED) {
         txn->set_decision(ABORT);

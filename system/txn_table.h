@@ -23,7 +23,8 @@ public:
     void remove_txn(TxnManager * txn);
     void print_txn();
 
-    TxnManager * get_txn(uint64_t txn_id, bool remove=false);
+    TxnManager * get_txn(uint64_t txn_id, bool remove=false, bool
+    validate=true);
     void remove_txn(uint64_t txn_id);
     uint32_t get_size();
 

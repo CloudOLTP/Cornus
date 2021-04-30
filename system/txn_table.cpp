@@ -37,7 +37,7 @@ TxnTable::add_txn(TxnManager * txn)
 }
 
 TxnManager *
-TxnTable::get_txn(uint64_t txn_id, bool remove)
+TxnTable::get_txn(uint64_t txn_id, bool remove, bool validate)
 {
     uint32_t bucket_id = txn_id % _txn_table_size;
     Node * node;
@@ -51,8 +51,8 @@ TxnTable::get_txn(uint64_t txn_id, bool remove)
     }
     TxnManager * txn = NULL;
     if (node) {
-        if (node->valid) {
-            if (remove)
+        if (node->valid || !validate) {
+            if (validate && remove)
                 node->valid = false;
             txn = node->txn;
         }
