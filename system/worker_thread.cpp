@@ -43,10 +43,6 @@ RC WorkerThread::run() {
 #endif
     pthread_barrier_wait( &global_barrier );
 
-
-    RC rc = RCOK;
-    assert (rc == RCOK);
-
     uint64_t init_time = get_sys_clock();
     // calculate which client thread this worker thread corresponds to.
     uint64_t max_txn_id = 0;
@@ -55,7 +51,7 @@ RC WorkerThread::run() {
     __attribute__((unused)) uint64_t last_idle_time = get_sys_clock();
 
     // Main loop
-//while (get_sys_clock() - init_time < g_run_time * BILLION || _native_txn) {
+    //while (get_sys_clock() - init_time < g_run_time * BILLION || _native_txn) {
     while (get_sys_clock() - init_time < g_run_time * BILLION) {
         if (!glob_manager->active) {
             glob_manager->worker_thread_done();
@@ -67,7 +63,7 @@ RC WorkerThread::run() {
         }
         if (_native_txn) {
             // restart a previously aborted transaction
-            rc = _native_txn->restart();
+            _native_txn->restart();
         } else {
   #if ENABLE_ADMISSION_CONTROL
             uint64_t tt = get_sys_clock();
@@ -94,15 +90,11 @@ RC WorkerThread::run() {
             _native_txn->set_txn_id( txn_id );
             txn_table->add_txn( _native_txn );
 
-            rc = _native_txn->start();
+            _native_txn->start();
         }
         if (_native_txn->get_txn_state() == TxnManager::COMMITTED
             || (_native_txn->get_store_procedure()->is_self_abort()
                 && _native_txn->get_txn_state() == TxnManager::ABORTED)) {
-            // TODO the following line should be moved inside TxnManager.
-            // INC_INT_STATS(num_aborts_terminate, 1);
-            //if (_native_txn->get_txn_state() == TxnManager::COMMITTED)
-            //    _num_complete_txns ++;
 #if ENABLE_ADMISSION_CONTROL
             if (_native_txn->get_txn_state() == TxnManager::COMMITTED)
                 add_to_pool();
@@ -115,6 +107,12 @@ RC WorkerThread::run() {
             uint64_t sleep_time = g_abort_penalty * glob_manager->rand_double(); // in nanoseconds
             usleep(sleep_time / 1000);
         }
+    }
+    // clean up txn for last non-committed txn
+    if (_native_txn && _native_txn->get_txn_state() == TxnManager::ABORTED) {
+        txn_table->remove_txn(_native_txn);
+        delete _native_txn;
+        _native_txn = NULL;
     }
     glob_manager->worker_thread_done();
     INC_FLOAT_STATS(run_time, get_sys_clock() - init_time);

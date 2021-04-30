@@ -48,6 +48,7 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     _is_single_partition = true;
     _is_read_only = true;
     _is_remote_abort = false;
+    _is_coordinator = false;
 
     log_semaphore = new SemaphoreSync();
     dependency_semaphore = new SemaphoreSync();
@@ -162,6 +163,7 @@ TxnManager::restart() {
     _is_read_only = true;
     _is_remote_abort = false;
     num_local_write = 0;
+    _terminate_time = 0;
 
     _txn_restart_time = get_sys_clock();
     _store_procedure->init();
@@ -182,7 +184,7 @@ TxnManager::start()
 #endif
     RC rc = RCOK;
     _txn_state = RUNNING;
-    _terminate_time = 0;
+    _is_coordinator = true;
     // running transaction on the host node
     rc = _store_procedure->execute();
     // Handle single-partition transactions, skip if self failed
@@ -223,6 +225,7 @@ TxnManager::start()
         printf("[node-%u, txn-%lu] txn abort, detected self failure\n",
         g_node_id, _txn_id);
 #endif
+        _cc_manager->cleanup(rc); // optional, as node already failed
         _txn_state = ABORTED;
     }
     return rc;

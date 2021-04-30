@@ -41,6 +41,7 @@ public:
 
     void              set_txn_id(uint64_t txn_id) { _txn_id = txn_id; }
     uint64_t          get_txn_id()          { return _txn_id; }
+    // if coordinator is read-only
     bool              is_read_only()        { return _is_read_only; }
     void              set_read_only(bool readonly) { _is_read_only = readonly; }
     bool              is_single_partition() { return _is_single_partition; }
@@ -50,6 +51,8 @@ public:
     State             get_txn_state()       { return _txn_state; }
     void              set_txn_state(State state) { _txn_state = state; }
     void              set_decision(RC rc) { _decision = rc; };
+    void              lock() {pthread_mutex_lock(&_latch);};
+    void              unlock() {pthread_mutex_unlock(&_latch);}
 
     // Synchronization
     // ===============
@@ -63,11 +66,23 @@ public:
     // Distributed transactions
     // ========================
 public:
+    // client
     RC send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t index_id,
                                 uint64_t table_id, access_t access_type);
     RC send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> > &remote_requests);
     RC send_log_request(uint64_t node_id, SundialRequest::RequestType type);
+    RC process_2pc_phase1();
+    RC process_2pc_phase2(RC rc);
+    // server
     RC process_remote_request(const SundialRequest* request, SundialResponse* response);
+    RC process_read_request(const SundialRequest* request, SundialResponse*
+    response);
+    RC process_prepare_request(const SundialRequest* request, SundialResponse*
+    response);
+    RC process_decision_request(const SundialRequest* request,
+                             SundialResponse* response, RC rc);
+    RC process_terminate_request(const SundialRequest* request, SundialResponse*
+    response);
     RC termination_protocol();
     void handle_prepare_resp(SundialResponse* response);
 
@@ -81,14 +96,6 @@ public:
             default: assert(false); return RUNNING;
         }
     };
-
-private:
-    RC process_2pc_phase1();
-    RC process_2pc_phase2(RC rc);
-    RC process_read_request(const SundialRequest* request, SundialResponse*
-    response);
-    RC process_prepare_request(const SundialRequest* request, SundialResponse*
-    response);
 
 public:
     // Stats
@@ -110,6 +117,7 @@ private:
     bool              _is_single_partition;
     bool              _is_read_only;
     bool              _is_remote_abort;
+    bool              _is_coordinator;
     // txn_id format.
     // | per thread monotonically increasing ID   |  thread ID   |   Node ID |
     uint64_t          _txn_id;

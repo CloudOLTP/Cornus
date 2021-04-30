@@ -100,9 +100,7 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
                 SundialRequest::LOG_ABORT_REQ;
         send_log_request(g_storage_node_id, type);
-        #if ASYNC_RPC
-            rpc_log_semaphore->wait();
-        #endif
+        rpc_log_semaphore->wait();
 #else
        string data = "[LSN] placehold:" + string('d', num_local_write *
                 g_log_sz * 8);
@@ -181,8 +179,12 @@ TxnManager::process_2pc_phase1()
         request.set_request_type( SundialRequest::PREPARE_REQ);
         request.set_node_id( it->first );
         // XXX(zhihan): attach participant list
-        SundialRequest::NodeData * participant = request.add_nodes();
-        participant->set_nid(g_node_id);
+        // attach coordinator
+        if (!is_read_only()) {
+            SundialRequest::NodeData *participant = request.add_nodes();
+            participant->set_nid(g_node_id);
+        }
+        // attach participants
         for (auto itr = _remote_nodes_involved.begin(); itr !=
             _remote_nodes_involved.end(); itr ++) {
             if (itr->second->is_readonly)
@@ -191,10 +193,11 @@ TxnManager::process_2pc_phase1()
             participant->set_nid(it->first);
         }
         ((LockManager *)_cc_manager)->build_prepare_req( it->first, request );
-        rpc_semaphore->incr();
         if (rpc_client->sendRequestAsync(this, it->first, request, response)
         == FAIL) {
             return FAIL; // self is down, no msg can be sent out
+        } else {
+            rpc_semaphore->incr();
         }
     }
 
@@ -248,6 +251,7 @@ TxnManager::handle_prepare_resp(SundialResponse* response) {
         case SundialResponse::PREPARED_OK_RO:
             _remote_nodes_involved[response->node_id()]->state =
                 COMMITTED;
+            assert(_remote_nodes_involved[response->node_id()]->is_readonly);
             break;
         case SundialResponse::PREPARED_ABORT:
             _remote_nodes_involved[response->node_id()]->state =
@@ -269,8 +273,6 @@ TxnManager::handle_prepare_resp(SundialResponse* response) {
 RC
 TxnManager::process_2pc_phase2(RC rc)
 {
-    // TODO. for CLV this logging is optional. Here we use a conservative
-    // implementation as logging is not on the critical path of locking anyway.
 #if LOG_LOCAL
     std::string record = std::to_string(_txn_id);
     char * log_record = (char *)record.c_str();
@@ -280,15 +282,14 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: perform local logging and commit request in parallel
     // log_semaphore->wait();
 #endif
-
-    bool remote_readonly = true;
+    bool readonly = is_read_only();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         if (!(it->second->is_readonly)) {
             remote_readonly = false;
             break;
         }
     }
-    if (remote_readonly && is_read_only()) { // no logging and remote message at all
+    if (remote_readonly) { // no logging and remote message at all
         _cc_manager->cleanup(rc);
         _finish_time = get_sys_clock();
         _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
@@ -362,7 +363,7 @@ TxnManager::process_2pc_phase2(RC rc)
 #if LOG_REMOTE && COMMIT_ALG == ONE_PC
     rpc_log_semaphore->wait();
 #endif
-    _cc_manager->cleanup(rc); // release lock after receive log resp
+    _cc_manager->cleanup(rc);
     rpc_semaphore->wait();
 
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
@@ -444,11 +445,12 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
     }
 
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
-        rpc_semaphore->incr();
         if (rpc_client->sendRequestAsync(this, it->first, it->second->request,
             it->second->response) == FAIL) {
             // self if fail, stop working and return
             return FAIL;
+        } else {
+            rpc_semaphore->incr();
         }
     }
 

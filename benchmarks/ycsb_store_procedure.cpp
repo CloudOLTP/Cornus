@@ -58,18 +58,14 @@ YCSBStoreProcedure::execute()
     // Phase 0: figure out whether we need remote queries; if so, send messages.
     // for each request, if it touches a remote node, add it to a remote query.
     // bool has_remote_req = false;
-    std::map<uint64_t, int> debug;
     remote_requests.clear();
     for (uint32_t i = 0; i < query->get_request_count(); i ++) {
         RequestYCSB * req = &requests[i];
-        if (debug.find(req->key) == debug.end())
-            debug[req->key] = 1;
-        else 
-            printf("!!!two same key in a query\n");
         uint32_t home_node = GET_WORKLOAD->key_to_node(req->key);
         if (home_node != g_node_id) {
             if (remote_requests.find(home_node) == remote_requests.end())
-                remote_requests.insert(std::pair<uint64_t, vector<RemoteRequestInfo *> > (home_node, vector<RemoteRequestInfo *>()));
+                remote_requests.insert(std::pair<uint64_t, vector<RemoteRequestInfo *> >
+                    (home_node, vector<RemoteRequestInfo *>()));
             // TODO. Ideally, we should send SQL or some other intermediate representation of the query over.
             // For now, we just send the message using the following format (RemoteQuery)
             //        | key | index_id | type | [optional] cc_specific_data |
@@ -84,8 +80,7 @@ YCSBStoreProcedure::execute()
     // send remote package, if abort return abort
     if (remote_requests.size() > 0) {
         rc = _txn->send_remote_package(remote_requests);
-        if (rc == ABORT) return rc;
-        else if (rc == FAIL) return rc;
+        if (rc == ABORT || rc == FAIL) return rc;
     }
 
     // Phase 1: grab permission of local accesses.
@@ -96,12 +91,9 @@ YCSBStoreProcedure::execute()
         if (home_node == g_node_id) {
             uint64_t key = req->key;
             access_t type = req->rtype;
-            // printf("txn: %ld access local key: %ld node: %u\n", _txn->get_txn_id(), key, g_node_id);
             GET_DATA( key, index, type);
         }
     }
-    // if (!remote_requests.empty())
-    //     return RCOK;
 
     // Phase 2: after all data is acquired, finish the rest of the transaction.
     // all the data is here. Do computation and commit.

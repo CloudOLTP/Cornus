@@ -213,6 +213,9 @@ Manager::failure_protocol() {
             continue;
         if (txn->get_txn_state() == TxnManager::RUNNING ||
         txn->get_txn_state() == TxnManager::PREPARED) {
+            if (txn->is_coordinator()) {
+                continue;
+            }
             for (auto it = txn->_remote_nodes_involved.begin(); it !=
             txn->_remote_nodes_involved.end(); it ++) {
                 if (it->second->is_readonly)

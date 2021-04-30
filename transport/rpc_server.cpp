@@ -97,16 +97,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         SundialResponse* response) {
 
     usleep(NETWORK_DELAY);
-    if (request->request_type() == SundialRequest::SYS_REQ) {
-        // At the beginning of run, (g_num_nodes - 1) sync requests are received
-        // as global synchronization. At the end of the run, another
-        // (g_num_nodes - 1) sync requests are received as the termination
-        // synchronization.
-        glob_manager->receive_sync_request();
-        response->set_response_type( SundialResponse::SYS_RESP );
-        return; 
-    }
-
 #if LOG_NODE
     usleep(LOG_DELAY);
     if (request->request_type() == SundialRequest::LOG_YES_REQ ||
@@ -122,45 +112,79 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 #endif
 
     uint64_t txn_id = request->txn_id();
-    TxnManager * txn_man = txn_table->get_txn(txn_id);
+    response->set_request_type(request->request_type());
+    response->set_txn_id(txn_id);
+    response->set_node_id(g_node_id);
+    RC rc;
+    TxnManager * txn;
+
 #if DEBUG_PRINT
     printf("[node-%u, txn-%lu] received request-%d\n", g_node_id, txn_id,
         request->request_type());
 #endif
-    // If no TxnManager exists for the requesting transaction, create one.
-    if (txn_man == NULL) {
-        if (request->request_type() == SundialRequest::TERMINATE_REQ) {
-            // txn already cleaned up
-            response->set_txn_id(txn_id);
-            response->set_node_id(g_node_id);
-            response->set_response_type(SundialResponse::ACK);
+    switch (request->request_type()) {
+        case SundialRequest::SYS_REQ:
+            glob_manager->receive_sync_request();
+            response->set_response_type( SundialResponse::SYS_RESP );
             return;
-        } else {
-            assert(request->request_type() == SundialRequest::READ_REQ);
-            txn_man = new TxnManager();
-            txn_man->set_txn_id(txn_id);
-            txn_table->add_txn(txn_man);
-        }
-    } 
+        case SundialRequest::READ_REQ:
+            txn = txn_table->get_txn(txn_id);
+            if (txn  == NULL) {
+                txn_man = new TxnManager();
+                txn_man->set_txn_id(txn_id);
+                node = txn_table->add_txn(txn_man);
+            }
+            // only read and terminate need latch since
+            // (1) read can only be concurrent with read and terminate
+            // (2) read does not remove txn from txn table when getting txn
+            txn->lock();
+            rc = txn->process_read_request(request, response);
+            txn->unlock();
+        case SundialRequest::TERMINATE_REQ:
+            txn = txn_table->get_txn(txn_id, remove=True);
+            if (txn == NULL) {
+                return;
+            }
+            txn->lock();
+            rc = txn->process_terminate_request(request, response);
+            txn->unlock();
+            delete txn_man;
+        case SundialRequest::PREPARE_REQ:
+            txn = txn_table->get_txn(txn_id, remove=True);
+            if (txn == NULL) {
+                // txn already cleaned up
+                response->set_response_type(SundialResponse::PREPARED_ABORT);
+                return;
+            }
+            rc = txn->process_prepare_request(request, response);
+            if (txn->get_txn_state() != TxnManager::PREPARED)
+                delete txn_man;
+        case SundialRequest::COMMIT_REQ:
+            txn = txn_table->get_txn(txn_id, remove=True);
+            if (txn == NULL) {
+                response->set_response_type(SundialResponse::ACK);
+                return;
+            }
+            rc = txn->process_decision_request(request, response, COMMIT);
+            delete  txn_man;
+        case SundialRequest::ABORT_REQ:
+            txn = txn_table->get_txn(txn_id, remove=True);
+            if (txn == NULL) {
+                response->set_response_type(SundialResponse::ACK);
+                return;
+            }
+            rc = txn->process_decision_request(request, response, ABORT);
+            delete  txn_man;
+        default:
+            assert(false);
+    }
     // the transaction handles the RPC call
-    if (txn_man->process_remote_request(request, response) == FAIL ||
-    !glob_manager->active) {
+    if (rc == FAIL || !glob_manager->active) {
 #if DEBUG_PRINT
         printf("[node-%u, txn-%lu] reply failure response\n", g_node_id,
             txn_id);
 #endif
         response->set_response_type(SundialResponse::RESP_FAIL);
-    }
-    response->set_txn_id(txn_id);
-    response->set_node_id(g_node_id);
-
-    // if the sub-transaction is no longer required, remove from txn_table
-    if (response->response_type() == SundialResponse::RESP_ABORT
-        || response->response_type() == SundialResponse::PREPARED_OK_RO
-        || response->response_type() == SundialResponse::PREPARED_ABORT
-        || response->response_type() == SundialResponse::ACK) {
-        txn_table->remove_txn( txn_man );
-        delete txn_man;
     }
 }
 

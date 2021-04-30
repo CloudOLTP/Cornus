@@ -10,22 +10,23 @@ class TxnManager;
 class TxnTable
 {
 public:
+    struct Node {
+        TxnManager * txn;
+        Node * next;
+        Node() : txn(nullptr), request(0), next(nullptr) {};
+    };
+
     TxnTable();
-    // TODO. right now, get_txn removes the txn from the table.
     // should support 3 methods: add_txn, get_txn, remove_txn
-    void add_txn(TxnManager * txn);
+    Node * add_txn(TxnManager * txn);
     void remove_txn(TxnManager * txn);
     void print_txn();
 
-    TxnManager * get_txn(uint64_t txn_id);
+    TxnManager * get_txn(uint64_t txn_id, bool remove=false);
     void remove_txn(uint64_t txn_id);
     uint32_t get_size();
 
 private:
-    struct Node {
-        TxnManager * txn;
-        Node * next;
-    };
     struct Bucket {
         Node * first;
         volatile bool latch;

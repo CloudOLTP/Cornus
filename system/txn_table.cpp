@@ -18,14 +18,13 @@ TxnTable::TxnTable()
     }
 }
 
-void
+Node *
 TxnTable::add_txn(TxnManager * txn)
 {
     assert(get_txn(txn->get_txn_id()) == NULL);
 
     uint32_t bucket_id = txn->get_txn_id() % _txn_table_size;
     Node * node = new Node; // *) _mm_malloc(sizeof(Node), 64);
-
     node->txn = txn;
       while ( !ATOM_CAS(_buckets[bucket_id]->latch, false, true) )
         PAUSE
@@ -35,24 +34,37 @@ TxnTable::add_txn(TxnManager * txn)
 
     COMPILER_BARRIER
     _buckets[bucket_id]->latch = false;
+    return node;
 }
 
 TxnManager *
-TxnTable::get_txn(uint64_t txn_id)
+TxnTable::get_txn(uint64_t txn_id, bool remove)
 {
     uint32_t bucket_id = txn_id % _txn_table_size;
     Node * node;
     while ( !ATOM_CAS(_buckets[bucket_id]->latch, false, true) )
         PAUSE
     node = _buckets[bucket_id]->first;
+    Node * prev = nullptr;
     while (node && node->txn->get_txn_id() != txn_id) {
+        prev = node;
         node = node->next;
     }
+    if (node && remove) {
+        // remove node
+        if (prev) {
+            prev->next = node->next;
+        } else {
+            _buckets[bucket_id]->first = node->next;
+        }
+    }
+    COMPILER_BARRIER
     _buckets[bucket_id]->latch = false;
-    if (node)
+    if (node) {
         return node->txn;
-    else
+    } else {
         return NULL;
+    }
 }
 
 void
@@ -154,7 +166,6 @@ TxnTable::remove_txn(TxnManager * txn)
     assert(rm_node);
     delete rm_node;
 }
-
 
 uint32_t
 TxnTable::get_size()

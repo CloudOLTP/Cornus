@@ -115,19 +115,21 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
 void
 SundialRPCClient::sendRequestDone(SundialResponse * response)
 {
-    uint64_t txn_id = response->txn_id();
-    TxnManager * txn = txn_table->get_txn(txn_id);
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response->response_type() ]++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response->response_type() ] += response->SpaceUsedLong();
 
     switch (response->request_type()) {
-        case SundialResponse::READ_REQ :
-            break;
-        case SundialResponse::PREPARE_REQ : txn->handle_prepare_resp(response);
+        case SundialResponse::PREPARE_REQ :
+            uint64_t txn_id = response->txn_id();
+            TxnManager * txn = txn_table->get_txn(txn_id);
+            txn->handle_prepare_resp(response);
             break;
         case SundialResponse::TERMINATE_REQ:
+            // dont decr semaphore, and terminate request dont need retrieve txn
             return;
         default:
+            uint64_t txn_id = response->txn_id();
+            TxnManager * txn = txn_table->get_txn(txn_id);
             break;
     }
 
