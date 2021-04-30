@@ -44,9 +44,7 @@ TxnTable::get_txn(uint64_t txn_id, bool remove, bool validate)
     while ( !ATOM_CAS(_buckets[bucket_id]->latch, false, true) )
         PAUSE
     node = _buckets[bucket_id]->first;
-    Node * prev = nullptr;
     while (node && node->txn->get_txn_id() != txn_id) {
-        prev = node;
         node = node->next;
     }
     TxnManager * txn = NULL;
