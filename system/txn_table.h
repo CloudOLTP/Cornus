@@ -13,7 +13,7 @@ public:
     struct Node {
         TxnManager * txn;
         Node * next;
-        Node() : txn(nullptr), request(0), next(nullptr) {};
+        Node() : txn(nullptr), next(nullptr) {};
     };
 
     TxnTable();

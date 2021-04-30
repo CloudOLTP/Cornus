@@ -243,6 +243,7 @@ TxnManager::process_terminate_request(const SundialRequest* request,
     printf("[node-%u, txn-%lu] terminate request\n", g_node_id,
                 _txn_id);
 #endif
+    RC = RCOK;
     switch (_txn_state) {
         case RUNNING:
             // self has not voted yes, log abort and cleanup
@@ -262,11 +263,14 @@ TxnManager::process_terminate_request(const SundialRequest* request,
         case PREPARED:
             // txn has voted, need to run termination protocol to find out
             rc = termination_protocol();
-            process_decision_request(request, response, rc);
+            rc = process_decision_request(request, response, rc);
+            break;
         case COMMITTED:
             // txn is handled already
         case ABORTED:
             // txn is handled already
+        default:
+            break;
     }
-    return RCOK;
+    return rc;
 }

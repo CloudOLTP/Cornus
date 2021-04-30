@@ -24,7 +24,6 @@ public:
     enum State {
         RUNNING,
         PREPARED,
-        ABORTING,
         COMMITTED,
         ABORTED,
         FAILED
@@ -43,6 +42,7 @@ public:
     uint64_t          get_txn_id()          { return _txn_id; }
     // if coordinator is read-only
     bool              is_read_only()        { return _is_read_only; }
+    bool              is_coordinator()        { return _is_coordinator; }
     void              set_read_only(bool readonly) { _is_read_only = readonly; }
     bool              is_single_partition() { return _is_single_partition; }
 
