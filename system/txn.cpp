@@ -238,6 +238,7 @@ TxnManager::termination_protocol() {
 #endif
     // received msg from failed node, need to learn the decision or force abort
     // possible return values: COMMIT, ABORT, FAIL(self is down)
+	_decision = COMMIT;
     _terminate_time = get_sys_clock();
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         if (it->second->is_readonly)

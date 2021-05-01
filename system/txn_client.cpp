@@ -230,7 +230,8 @@ TxnManager::process_2pc_phase1()
     // if all active vote yes but has failed node, run termination protocol
     if (_decision == FAIL) {
         // new decision is updated in termination protocol
-        if (termination_protocol() == FAIL)
+		_decision = termination_protocol();
+        if (_decision == FAIL)
             return FAIL; // self is down
     }
 #endif
