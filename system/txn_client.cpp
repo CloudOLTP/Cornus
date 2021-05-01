@@ -205,11 +205,11 @@ TxnManager::process_2pc_phase1()
 
     // check if current node should crash
 #if FAILURE_ENABLE
-    if (_worker_thread->get_execution_time() > g_failure_pt &&
-    (g_node_id == FAILURE_NODE)) {
+	uint64_t ts = _worker_thread->get_execution_time();
+    if (ts > g_failure_pt && (g_node_id == FAILURE_NODE)) {
         if (ATOM_CAS(glob_manager->active, true, false)) {
 #if DEBUG_PRINT || DEBUG_FAILURE
-			printf("[node-%u, txn-%lu] node crashes (execution time = %.2f sec)\n", g_node_id, _txn_id, (double) (_worker_thread->get_execution_time() / 1000000000.0));
+			printf("[node-%u, txn-%lu] node crashes (execution time = %.2f sec)\n", g_node_id, _txn_id, ts / 1000000000.0);
 #endif
             glob_manager->failure_protocol();
         }

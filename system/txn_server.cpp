@@ -263,6 +263,7 @@ TxnManager::process_terminate_request(const SundialRequest* request,
         case PREPARED:
             // txn has voted, need to run termination protocol to find out
             rc = termination_protocol();
+			printf("terminate_time = %lu\n", _terminate_time);
             rc = process_decision_request(request, response, rc);
             break;
         case COMMITTED:
