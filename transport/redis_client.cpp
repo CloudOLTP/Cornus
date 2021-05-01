@@ -80,8 +80,9 @@ tp_callback(cpp_redis::reply & response) {
         txn->set_decision(ABORT);
     } else if (state == TxnManager::COMMITTED) {
         txn->set_decision(COMMIT);
-    } else
+    } else if (state != TxnManager::PREPARED) {
 		assert(false);
+	}
     // mark as returned.
     txn->rpc_log_semaphore->decr();
 }
