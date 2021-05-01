@@ -22,6 +22,7 @@ WorkerThread::WorkerThread(uint64_t thd_id)
 
     _native_txn = NULL;
     _is_ready = true;
+	_init_time = 0;
 }
 
 // Each thread executes at most one active transaction.
@@ -43,17 +44,16 @@ RC WorkerThread::run() {
 #endif
     pthread_barrier_wait( &global_barrier );
 
-    uint64_t init_time = get_sys_clock();
-    glob_manager->set_starttime(init_time);
+    _init_time = get_sys_clock();
     // calculate which client thread this worker thread corresponds to.
     uint64_t max_txn_id = 0;
 
-    uint64_t last_stats_cp_time = init_time;
+    uint64_t last_stats_cp_time = _init_time;
     __attribute__((unused)) uint64_t last_idle_time = get_sys_clock();
 
     // Main loop
     //while (get_sys_clock() - init_time < g_run_time * BILLION || _native_txn) {
-    while (get_sys_clock() - init_time < g_run_time * BILLION) {
+    while (get_sys_clock() - _init_time < g_run_time * BILLION) {
         if (!glob_manager->active) {
             glob_manager->worker_thread_done();
             return FAIL;
@@ -116,7 +116,7 @@ RC WorkerThread::run() {
         _native_txn = NULL;
     }
     glob_manager->worker_thread_done();
-    INC_FLOAT_STATS(run_time, get_sys_clock() - init_time);
+    INC_FLOAT_STATS(run_time, get_sys_clock() - _init_time);
     return RCOK;
 }
 

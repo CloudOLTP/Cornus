@@ -72,11 +72,6 @@ public:
     bool                    add_to_thread_pool(WorkerThread * worker);
     void                    wakeup_next_thread();
 
-    // execution time in seconds
-    uint64_t                get_execution_time() {return get_sys_clock() -
-    _starttime; };
-	void                    set_starttime(ts_t ts) {_starttime = ts;}; 
-
     // Handle Failure
     void                    failure_protocol();
     volatile bool           active;
@@ -110,8 +105,5 @@ private:
     pthread_mutex_t *       _worker_pool_mutex;
     uint64_t                _unused_quota;
     std::stack<WorkerThread *> _ready_workers;
-
-    // global stats
-    static __thread uint64_t _starttime; // thread start time
 
 };

@@ -9,7 +9,6 @@ __thread uint64_t Manager::_thread_id;
 __thread uint64_t Manager::_max_cts = 1;
 
 Manager::Manager() {
-    _starttime = 0;
     timestamp = (uint64_t *) _mm_malloc(sizeof(uint64_t), 64);
     *timestamp = 1;
     _last_min_ts_time = 0;

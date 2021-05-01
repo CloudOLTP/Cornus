@@ -17,6 +17,7 @@ public:
     RC                      run();
 
     TxnManager *            get_native_txn() { return _native_txn; }
+	uint64_t                get_execution_time() { return get_sys_clock() - _init_time;};
 private:
     //void                  handle_req_finish(TxnManager * &txn_man);
     TxnManager *            _native_txn;
@@ -29,4 +30,5 @@ private:
     bool                    _is_ready;
     pthread_cond_t *        _cond;
     pthread_mutex_t *       _mutex;
+	uint64_t                _init_time;
 };
