@@ -4,4 +4,4 @@ node-1.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:50051
 node-2.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:50051
 node-3.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:50051
 =l
-node-2.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:6379
+128.105.144.81:6379
