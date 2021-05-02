@@ -23,7 +23,7 @@ SundialRPCClient::SundialRPCClient() {
     {
         if (line[0] == '#')
             continue;
-        else if (line[0] == '=' && line[1] == 'l')
+        else if ((line[0] == '=' && line[1] == 'l') || node_id == g_num_nodes)
             break;
         else {
             string url = line;
