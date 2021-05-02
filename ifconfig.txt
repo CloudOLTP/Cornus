@@ -1,5 +1,7 @@
 # a list of servers; each on a new line
 node-0.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:50051
 node-1.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:50051
+node-2.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:50051
+node-3.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:50051
 =l
 node-2.Sundial-dev.nextgendb-PG0.wisc.cloudlab.us:6379
