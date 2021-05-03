@@ -63,6 +63,9 @@ if __name__ == "__main__":
         addr = addr.split(':')[0]
         os.system("ssh {} 'cd Sundial/outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json'".format(addr, exp_name, exp_name))
         num_nodes += 1
-    os.system("cd tools; python3 collect_remote_result.py {}".format(exp_name))
+    suffix = ""
+    if eval_arg("FAILURE_ENABLE", "true", job, default=False):
+        suffix = " {}".format(job["FAILURE_NODE"])
+    os.system("cd tools; python3 collect_remote_result.py {}".format(exp_name)+suffix)
     print("[LOG] FINISH collecting results")
     #os.system("python3 send_email.py {}".format(exp_name))

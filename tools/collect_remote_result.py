@@ -17,6 +17,10 @@ if __name__ == "__main__":
     # usage: python3 collect_result_remote.py [exp_name]
 	curr_node = 0
 	exp_name = sys.argv[1]
+	if len(sys.argv) > 2:
+		skip_node = int(sys.argv[2])
+	else:
+		skip_node = -1
 	ifconfig = open("../ifconfig.txt")
 	i = 0
 	node_type = 1
@@ -27,7 +31,9 @@ if __name__ == "__main__":
 			break
 		else:
 			line = line.split(':')[0].strip()
-			if i != curr_node:
+			if i == skip_node:
+				continue
+			elif i != curr_node:
 				print("collecting from node: {}".format(line))
 				ret = os.system("scp {}@{}:/users/{}/Sundial/outputs/{}.csv ./{}{}.csv".format(user, line, user, exp_name, exp_name, str(i)))
 				if ret != 0:
