@@ -17,7 +17,7 @@ cmds = {
 class myThread (threading.Thread):
 	def __init__(self, usr, line, setup):
 		threading.Thread.__init__(self)
-        self.usr = usr
+		self.usr = usr
 		self.line = line
 		self.setup = setup
 
@@ -28,13 +28,17 @@ class myThread (threading.Thread):
 			ret = os.system("ssh -l {} {} '{}' ".format(self.usr, self.line, self.setup))
 
 if __name__ == "__main__":
-	ifconfig = open("ifconfig.txt")
+	ifconfig = open("../ifconfig.txt")
 	threads = []
+	usr = "scarletg"
+	num_nodes=0
 	for line in ifconfig:
 		if line[0] == '#':
 			continue
 		if line[0] == '=' and line[1] == 'l':
-            break
+			break
+		elif num_nodes == 0:
+			num_nodes += 1
 		else:
 			line = line.split(':')[0]
 			line = line.strip()
@@ -42,6 +46,7 @@ if __name__ == "__main__":
 			thread1.start()
 			threads.append(thread1)
 			time.sleep(0.5)
+			num_nodes += 1
 	for t in threads:
 		t.join()
 	ifconfig.close()
