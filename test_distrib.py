@@ -31,6 +31,8 @@ def start_nodes(arg, curr_node):
             else:
                 log_node = "true"
             continue
+        elif num_nodes == int(job["NUM_NODES"]):
+            break
         job["NODE_ID"] = num_nodes
         job["LOG_NODE"] = log_node
         cmd = "python3 test.py {}".format(compress_job(job))
