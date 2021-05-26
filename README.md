@@ -98,6 +98,13 @@ python3 test_exp.py CONFIG=experiments/ycsb_zipf.json NODE_ID=0 FAILURE_ENABLE=f
 this script allows for list type for each config in .json, and it will enumerate all the possible combinations of the config. 
 i.e. the number of tests in total will be the product of the length of every list. 
 
+collect results from all nodes:
+go to tools/collect_result_remote.py and change the user to your cloudlab user name
+```
+cd tools/
+python3 collect_result_remote.py <exp_name> # exp_name will be name of your json file, in this case it's ycsb_zipf
+```
+
 ### Manual
 For each compute node, do the follow:
 ```
