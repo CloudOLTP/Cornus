@@ -1,18 +1,19 @@
 //
-// Created by Zhihan Guo on 4/5/21.
+// Created by Kan Wu on 10/6/21.
 //
 
-#ifndef SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
-#define SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
+#ifndef SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_
+#define SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_
 
+//TODO move to azure blob storage sdk
 #include <cpp_redis/cpp_redis>
 #include <string>
 
 #include "helper.h"
 
-class RedisClient {
+class AzureBlobClient {
   public:
-    RedisClient();
+    AzureBlobClient();
     RC log_sync(uint64_t node_id, uint64_t txn_id, int status);
     RC log_async(uint64_t node_id, uint64_t txn_id, int status);
     RC log_if_ne(uint64_t node_id, uint64_t txn_id);
@@ -25,4 +26,4 @@ class RedisClient {
     cpp_redis::client client;
 };
 
-#endif //SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
+#endif //SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_

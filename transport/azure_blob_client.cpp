@@ -1,9 +1,9 @@
 //
-// Created by Zhihan Guo on 4/5/21.
+// Created by Kan Wu on 10/6/21.
 //
 #include <sstream>
 
-#include "redis_client.h"
+#include "azure_blob_client.h"
 #include "txn.h"
 #include "txn_table.h"
 #include "manager.h"
@@ -13,7 +13,8 @@ void ne_callback(cpp_redis::reply & response);
 void tp_callback(cpp_redis::reply & response);
 void sync_callback(cpp_redis::reply & response);
 
-RedisClient::RedisClient() {
+AzureBlobClient::AzureBlobClient() {
+    // TODO change to azure blob storage SDK
     std::ifstream in(ifconfig_file);
     string line;
     bool checked_marker = false;
@@ -88,7 +89,7 @@ tp_callback(cpp_redis::reply & response) {
 }
 
 RC
-RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
+AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
     if (!glob_manager->active)
         return FAIL;
     auto script = R"(
@@ -104,7 +105,7 @@ RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
 }
 
 RC
-RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
+AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     if (!glob_manager->active)
         return FAIL;
     auto script = R"(
@@ -122,7 +123,7 @@ RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
 
 // used for termination protocol, req is always LOG_ABORT
 RC
-RedisClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
+AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     if (!glob_manager->active)
         return FAIL;
     // log format - key-value
@@ -143,7 +144,7 @@ RedisClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
 
 // used for prepare, req is always LOG_YES_REQ
 RC
-RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
+AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     if (!glob_manager->active)
         return FAIL;
     // log format - key-value
@@ -164,7 +165,7 @@ RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
 
 // synchronous
 RC
-RedisClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
+AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
     string &data) {
     if (!glob_manager->active)
         return FAIL;
@@ -187,7 +188,7 @@ RedisClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
 }
 
 RC
-RedisClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
+AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                            string & data) {
     if (!glob_manager->active)
         return FAIL;
