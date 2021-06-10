@@ -6,6 +6,7 @@
 #include "rpc_client.h"
 #include "rpc_server.h"
 #include "redis_client.h"
+#include "azure_blob_client.h"
 
 Stats *             glob_stats;
 Manager *           glob_manager;
@@ -92,6 +93,7 @@ uint32_t        g_log_sz                = LOG_SIZE_PER_WRITE;
 SundialRPCClient *  rpc_client;
 SundialRPCServerImpl * rpc_server;
 RedisClient *       redis_client;
+AzureBlobClient *       azure_blob_client;
 
 Transport *     transport;
 InOutQueue **   input_queues;

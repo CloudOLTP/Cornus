@@ -49,6 +49,7 @@ class LogManager;
 class SundialRPCClient;
 class SundialRPCServerImpl;
 class RedisClient;
+class AzureBlobClient;
 
 typedef uint64_t ts_t; // time stamp type
 
@@ -211,6 +212,9 @@ extern SundialRPCClient * rpc_client;
 extern SundialRPCServerImpl * rpc_server;
 #if LOG_DEVICE == LOG_DVC_REDIS
 extern RedisClient *      redis_client;
+#endif
+#if LOG_DEVICE == LOG_DVC_AZURE_BLOB
+extern AzureBlobClient *      azure_blob_client;
 #endif
 
 extern Transport *      transport;
