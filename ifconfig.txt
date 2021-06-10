@@ -1,5 +1,4 @@
 # a list of servers; each on a new line
-node-0.redisexp.spark-PG0.wisc.cloudlab.us:50051
-node-1.redisexp.spark-PG0.wisc.cloudlab.us:50051
+10.0.0.6:50051
 =l
 128.105.144.81:6379

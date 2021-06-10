@@ -66,7 +66,7 @@ class SundialRPC final {
   };
   class Stub final : public StubInterface {
    public:
-    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
+    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
     ::grpc::Status contactRemote(::grpc::ClientContext* context, const ::sundial_rpc::SundialRequest& request, ::sundial_rpc::SundialResponse* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::sundial_rpc::SundialResponse>> AsynccontactRemote(::grpc::ClientContext* context, const ::sundial_rpc::SundialRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::sundial_rpc::SundialResponse>>(AsynccontactRemoteRaw(context, request, cq));

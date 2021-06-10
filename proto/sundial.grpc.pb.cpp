@@ -27,12 +27,12 @@ static const char* SundialRPC_method_names[] = {
 
 std::unique_ptr< SundialRPC::Stub> SundialRPC::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
   (void)options;
-  std::unique_ptr< SundialRPC::Stub> stub(new SundialRPC::Stub(channel));
+  std::unique_ptr< SundialRPC::Stub> stub(new SundialRPC::Stub(channel, options));
   return stub;
 }
 
-SundialRPC::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
-  : channel_(channel), rpcmethod_contactRemote_(SundialRPC_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+SundialRPC::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
+  : channel_(channel), rpcmethod_contactRemote_(SundialRPC_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status SundialRPC::Stub::contactRemote(::grpc::ClientContext* context, const ::sundial_rpc::SundialRequest& request, ::sundial_rpc::SundialResponse* response) {

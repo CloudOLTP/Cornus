@@ -20,17 +20,17 @@ echo "set tabstop=4" > ~/.vimrc
 git config --global user.name "sherlockwu"
 git config --global user.email "wukanustc@gmail.com"
 
-(echo ; echo ; echo ; echo ; echo ; echo ;echo ; echo ; echo ; echo ;) | ssh-keygen -t rsa -b 4096 -C "kwu54@wisc.edu"
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_rsa
-cat ~/.ssh/id_rsa.pub
+#(echo ; echo ; echo ; echo ; echo ; echo ;echo ; echo ; echo ; echo ;) | ssh-keygen -t rsa -b 4096 -C "kwu54@wisc.edu"
+#eval "$(ssh-agent -s)"
+#ssh-add ~/.ssh/id_rsa
+#cat ~/.ssh/id_rsa.pub
 
-git clone https://github.com/redis/redis.git
-cd redis
-make
+#git clone https://github.com/redis/redis.git
+#cd redis
+#make
 
-cd
-mkdir redis_data/
+#cd
+#mkdir redis_data/
 #sudo make install
 
 
