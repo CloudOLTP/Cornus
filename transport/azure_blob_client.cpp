@@ -8,10 +8,10 @@
 #include "txn_table.h"
 #include "manager.h"
 
-void async_callback(cpp_redis::reply & response);
-void ne_callback(cpp_redis::reply & response);
-void tp_callback(cpp_redis::reply & response);
-void sync_callback(cpp_redis::reply & response);
+void ab_async_callback(cpp_redis::reply & response);
+void ab_ne_callback(cpp_redis::reply & response);
+void ab_tp_callback(cpp_redis::reply & response);
+void ab_sync_callback(cpp_redis::reply & response);
 
 AzureBlobClient::AzureBlobClient() {
     // TODO change to azure blob storage SDK
@@ -39,18 +39,18 @@ AzureBlobClient::AzureBlobClient() {
       		std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
 		}
 	});
-    client.flushall(sync_callback);
+    client.flushall(ab_sync_callback);
     client.sync_commit();
     std::cout << "[Sundial] connected to redis server!" << std::endl;
 }
 
 
 void 
-sync_callback(cpp_redis::reply & response) {
+ab_sync_callback(cpp_redis::reply & response) {
 }
 
 void 
-async_callback(cpp_redis::reply & response) {
+ab_async_callback(cpp_redis::reply & response) {
     assert(response.is_integer());
     TxnManager * txn = txn_table->get_txn(response.as_integer(), false, false);
     // mark as returned. 
@@ -58,7 +58,7 @@ async_callback(cpp_redis::reply & response) {
 }
 
 void 
-ne_callback(cpp_redis::reply & response) {
+ab_ne_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
     TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer(), false, false);
@@ -71,7 +71,7 @@ ne_callback(cpp_redis::reply & response) {
 
 // termination protocol callback
 void
-tp_callback(cpp_redis::reply & response) {
+ab_tp_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
     TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer()
@@ -99,7 +99,7 @@ AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {"status-" + id};
     std::vector<std::string> args = {std::to_string(status), std::to_string(txn_id)};
-    client.eval(script, keys, args, sync_callback);
+    client.eval(script, keys, args, ab_sync_callback);
     client.sync_commit();
     return RCOK;
 }
@@ -116,7 +116,7 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"status-" + id};
     std::vector<std::string> args = {std::to_string(status), tid};
-    client.eval(script, keys, args, async_callback);
+    client.eval(script, keys, args, ab_async_callback);
     client.commit();
     return RCOK;
 }
@@ -137,7 +137,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     string key = "status" + std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {key};
     std::vector<std::string> args = {std::to_string(TxnManager::ABORTED), tid};
-    client.eval(script, keys, args, tp_callback);
+    client.eval(script, keys, args, ab_tp_callback);
     client.commit();
     return RCOK;
 }
@@ -158,7 +158,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"data-" + id, "status" + id};
     std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED), tid};
-    client.eval(script, keys, args, ne_callback);
+    client.eval(script, keys, args, ab_ne_callback);
     client.commit();
     return RCOK;
 }
@@ -182,7 +182,7 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
     std::vector<std::string> args = {data,
                                      std::to_string(status),
 									 tid};
-    client.eval(script, keys, args, sync_callback);
+    client.eval(script, keys, args, ab_sync_callback);
     client.sync_commit();
     return RCOK;
 }
@@ -205,7 +205,7 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
     std::vector<std::string> args = {data,
                                      std::to_string(status),
                                      tid};
-    client.eval(script, keys, args, async_callback);
+    client.eval(script, keys, args, ab_async_callback);
     client.commit();
     return RCOK;
 }
