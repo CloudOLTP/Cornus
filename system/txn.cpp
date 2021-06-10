@@ -26,6 +26,7 @@
 #endif
 #include "log.h"
 #include "redis_client.h"
+#include "azure_blob_client.h"
 
 // TODO. cleanup the accesses related malloc code.
 
@@ -244,11 +245,19 @@ TxnManager::termination_protocol() {
         if (it->second->is_readonly)
             continue;
         rpc_log_semaphore->incr();
+#if LOG_DEVICE == LOG_DVC_REDIS
         if (redis_client->log_if_ne(it->first, get_txn_id()) == FAIL) {
             // self if fail, stop working and return
             _decision = FAIL;
             return FAIL;
         }
+#elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        if (azure_blob_client->log_if_ne(it->first, get_txn_id()) == FAIL) {
+            // self if fail, stop working and return
+            _decision = FAIL;
+            return FAIL;
+        }
+#endif
     }
     rpc_log_semaphore->wait();
     return _decision;
