@@ -19,8 +19,7 @@ void ab_sync_callback(cpp_redis::reply & response);
 */
 
 AzureBlobClient::AzureBlobClient() {
-    // change to azure blob storage SDK
-    /*const utility::string_t storage_connection_string(
+    const utility::string_t storage_connection_string(
             U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=JR6MptUo878bCO+eYu2SUF07p+QiiDKbAbawCFSnxvwP+q/aGm7MqnpZMNuOQIGQgmhZ+VBPVSxFiePOLX7s8A==;EndpointSuffix=core.windows.net"));
 
     try {
@@ -32,14 +31,13 @@ AzureBlobClient::AzureBlobClient() {
         azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
 
         // Retrieve a reference to a container.
-        container = blob_client.get_container_reference(U("my-sample-container"));
+        container = blob_client.get_container_reference(U("cornus-experiment-container"));
         // Create the container if it doesn't already exist.
-        // container.create_if_not_exists();
+        container.create_if_not_exists();
     }
     catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;
     }
-    */
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
