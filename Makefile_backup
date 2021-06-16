@@ -4,15 +4,14 @@ CPPF = `pkg-config --cflags protobuf grpc`
 
 .SUFFIXES: .o .cpp .h 
 
-SRC_DIRS = ./ ./benchmarks/ ./concurrency_control/ ./storage/ ./system/ ./transport/ ./proto/ ./utils/
+#SRC_DIRS = ./ ./benchmarks/ ./concurrency_control/ ./storage/ ./system/ ./transport/ ./proto/ ./utils/
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
 CFLAGS=-Wall -g -std=c++11
 INCLUDE = -I. -I./benchmarks -I./concurrency_control -I./storage -I./system -I./transport -I./proto -I./utils 
-INCLUDE += -I/home/kanwu/vcpkg/installed/x64-linux/include
-#CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -Werror -O3
-CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -O3
+CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -Werror -O3
+#CFLAGS += -I/home/kanwu/vcpkg/installed/x64-linux/include
 
 LDFLAGS = -Wall -L. -L./libs -pthread -g -lrt -std=c++11 -O3 -ljemalloc
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
@@ -26,6 +25,7 @@ LDFLAGS += -L/home/kanwu/vcpkg/installed/x64-linux/lib -lazurestorage\
 #-I /home/kanwu/vcpkg/installed/x64-linux/include 
 
 CPPS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp))
+#CPPS = $(filter-out transport/azure_blob_client.cpp, $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp)))
 OBJS = $(CPPS:.cpp=.o)
 DEPS = $(CPPS:.cpp=.d)
 

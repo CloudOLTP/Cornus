@@ -1,6 +1,7 @@
 //
 // Created by Zhihan Guo on 4/5/21.
 //
+#if LOG_DEVICE == LOG_DVC_REDIS
 #include <sstream>
 
 #include "redis_client.h"
@@ -208,4 +209,4 @@ RedisClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
     client.commit();
     return RCOK;
 }
-
+#endif

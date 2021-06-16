@@ -96,8 +96,8 @@ RedisClient *       redis_client;
 AzureBlobClient *       azure_blob_client;
 
 Transport *     transport;
-InOutQueue **   input_queues;
-InOutQueue **   output_queues;
+//InOutQueue **   input_queues;
+//InOutQueue **   output_queues;
 WorkerThread ** worker_threads;
 
 // TODO. tune this table size

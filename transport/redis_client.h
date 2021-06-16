@@ -5,6 +5,8 @@
 #ifndef SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
 #define SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
 
+#if LOG_DEVICE == LOG_DVC_REDIS
+
 #include <cpp_redis/cpp_redis>
 #include <string>
 
@@ -24,5 +26,7 @@ class RedisClient {
   private:
     cpp_redis::client client;
 };
+
+#endif
 
 #endif //SUNDIAL_TRANSPORT_REDIS_CLIENT_H_

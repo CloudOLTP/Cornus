@@ -5,6 +5,8 @@
 #ifndef SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_
 #define SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_
 
+#if LOG_DEVICE == LOG_DVC_AZURE_BLOB
+
 #include <was/storage_account.h>
 #include <was/blob.h>
 #include <cpprest/filestream.h>
@@ -27,5 +29,7 @@ class AzureBlobClient {
   private:
     azure::storage::cloud_blob_container container;
 };
+
+#endif
 
 #endif //SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_

@@ -21,7 +21,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-#include <boost/lockfree/queue.hpp>
+//#include <boost/lockfree/queue.hpp>
 #include "pthread.h"
 
 #include "config.h"
@@ -218,9 +218,9 @@ extern AzureBlobClient *      azure_blob_client;
 #endif
 
 extern Transport *      transport;
-typedef boost::lockfree::queue<uint64_t, boost::lockfree::capacity<INOUT_QUEUE_SIZE>> InOutQueue;
-extern InOutQueue **    input_queues;
-extern InOutQueue **    output_queues;
+//typedef boost::lockfree::queue<uint64_t, boost::lockfree::capacity<INOUT_QUEUE_SIZE>> InOutQueue;
+//extern InOutQueue **    input_queues;
+//extern InOutQueue **    output_queues;
 extern WorkerThread **  worker_threads;
 extern uint32_t         g_txn_table_size;
 extern TxnTable *       txn_table;

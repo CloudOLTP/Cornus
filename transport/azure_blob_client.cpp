@@ -1,12 +1,15 @@
 //
 // Created by Kan Wu on 10/6/21.
 //
+
+#if LOG_DEVICE == LOG_DVC_AZURE_BLOB
 #include <sstream>
 
 #include "azure_blob_client.h"
 #include "txn.h"
 #include "txn_table.h"
 #include "manager.h"
+
 
 /*
 void ab_async_callback(cpp_redis::reply & response);
@@ -17,7 +20,7 @@ void ab_sync_callback(cpp_redis::reply & response);
 
 AzureBlobClient::AzureBlobClient() {
     // change to azure blob storage SDK
-    const utility::string_t storage_connection_string(
+    /*const utility::string_t storage_connection_string(
             U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=JR6MptUo878bCO+eYu2SUF07p+QiiDKbAbawCFSnxvwP+q/aGm7MqnpZMNuOQIGQgmhZ+VBPVSxFiePOLX7s8A==;EndpointSuffix=core.windows.net"));
 
     try {
@@ -36,6 +39,7 @@ AzureBlobClient::AzureBlobClient() {
     catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;
     }
+    */
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
@@ -262,4 +266,4 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
      */
     return RCOK;
 }
-
+#endif
