@@ -5,8 +5,10 @@
 #ifndef SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_
 #define SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_
 
-//TODO move to azure blob storage sdk
-#include <cpp_redis/cpp_redis>
+#include <was/storage_account.h>
+#include <was/blob.h>
+#include <cpprest/filestream.h>
+#include <cpprest/containerstream.h>
 #include <string>
 
 #include "helper.h"
@@ -23,7 +25,7 @@ class AzureBlobClient {
     RC log_async_data(uint64_t node_id, uint64_t txn_id, int status,
         std::string & data);
   private:
-    cpp_redis::client client;
+    azure::storage::cloud_blob_container container;
 };
 
 #endif //SUNDIAL_TRANSPORT_AZURE_BLOB_CLIENT_H_

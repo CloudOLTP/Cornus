@@ -8,43 +8,39 @@
 #include "txn_table.h"
 #include "manager.h"
 
+/*
 void ab_async_callback(cpp_redis::reply & response);
 void ab_ne_callback(cpp_redis::reply & response);
 void ab_tp_callback(cpp_redis::reply & response);
 void ab_sync_callback(cpp_redis::reply & response);
+*/
 
 AzureBlobClient::AzureBlobClient() {
-    // TODO change to azure blob storage SDK
-    std::ifstream in(ifconfig_file);
-    string line;
-    bool checked_marker = false;
-    while(getline(in, line)) {
-        if (line.size() >= 2 && line[0] == '=' && line[1] == 'l') {
-            checked_marker = true;
-            continue;
-        } else if (line[0] == '#') {
-            continue;
-        }
-        if (checked_marker) {
-            break;
-        }
+    // change to azure blob storage SDK
+    const utility::string_t storage_connection_string(
+            U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=JR6MptUo878bCO+eYu2SUF07p+QiiDKbAbawCFSnxvwP+q/aGm7MqnpZMNuOQIGQgmhZ+VBPVSxFiePOLX7s8A==;EndpointSuffix=core.windows.net"));
+
+    try {
+        // Retrieve storage account from connection string.
+        azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(
+                storage_connection_string);
+
+        // Create the blob client.
+        azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
+
+        // Retrieve a reference to a container.
+        container = blob_client.get_container_reference(U("my-sample-container"));
+        // Create the container if it doesn't already exist.
+        // container.create_if_not_exists();
     }
-    std::cout << "[Sundial] connecting to redis server at " << line << std::endl;
-	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
-	size_t port;
-	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
-	iss >> port;
-    client.connect(line.substr(0, line.find(":")), port, [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
-        if (status == cpp_redis::connect_state::dropped) {
-      		std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
-		}
-	});
-    client.flushall(ab_sync_callback);
-    client.sync_commit();
-    std::cout << "[Sundial] connected to redis server!" << std::endl;
+    catch (const std::exception &e) {
+        std::wcout << U("Error: ") << e.what() << std::endl;
+    }
+
+    std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
 
-
+/*
 void 
 ab_sync_callback(cpp_redis::reply & response) {
 }
@@ -87,11 +83,19 @@ ab_tp_callback(cpp_redis::reply & response) {
     // mark as returned.
     txn->rpc_log_semaphore->decr();
 }
+*/
 
 RC
 AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
     if (!glob_manager->active)
         return FAIL;
+
+    // step 1: set pair: ('status-'+node_id+txn_id, status)
+    // step 2: return txn_id for callback
+    // step 3: ab_sync_callback = NULL
+    // step 4: sync_commit
+
+    /*
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         return tonumber(ARGV[2])
@@ -101,6 +105,7 @@ AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
     std::vector<std::string> args = {std::to_string(status), std::to_string(txn_id)};
     client.eval(script, keys, args, ab_sync_callback);
     client.sync_commit();
+    */
     return RCOK;
 }
 
@@ -108,6 +113,13 @@ RC
 AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     if (!glob_manager->active)
         return FAIL;
+
+    // step 1: set pair: ('status-'+node_id+txn_id, status)
+    // step 2: return txn_id ??????
+    // step 3: ab_async_callback ????? need to update txn_table
+    // step 4: sync_commit ??????
+
+    /*
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         return tonumber(ARGV[2])
@@ -118,6 +130,7 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     std::vector<std::string> args = {std::to_string(status), tid};
     client.eval(script, keys, args, ab_async_callback);
     client.commit();
+    */
     return RCOK;
 }
 
@@ -126,6 +139,14 @@ RC
 AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     if (!glob_manager->active)
         return FAIL;
+
+    // step 1: set if not exist, pair: ('status-'+node_id+txn_id, ABORTED)
+    // step 2: get status = 'status-'+node_id+txn_id
+    // step 3: return status, txn_id ??????? what is this status??????
+    // step 4: ab_tp_callback ????? set txn state
+    // step 5: sync_commit ??????
+
+    /*
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
@@ -139,6 +160,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     std::vector<std::string> args = {std::to_string(TxnManager::ABORTED), tid};
     client.eval(script, keys, args, ab_tp_callback);
     client.commit();
+    */
     return RCOK;
 }
 
@@ -147,6 +169,15 @@ RC
 AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     if (!glob_manager->active)
         return FAIL;
+
+    // step 1: set, pair: ('data-'+node_id+txn_id, data)
+    // step 2: set if not exist, pair: ('status-'+node_id+txn_id, PREPARED)
+    // step 2: get status = 'status-'+node_id+txn_id
+    // step 3: return status, txn_id ??????? what is this status??????
+    // step 4: ab_ne_callback ????? if aborted, set aborted
+    // step 5: sync_commit
+
+    /*
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
@@ -160,6 +191,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data
     std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED), tid};
     client.eval(script, keys, args, ab_ne_callback);
     client.commit();
+     */
     return RCOK;
 }
 
@@ -169,6 +201,16 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
     string &data) {
     if (!glob_manager->active)
         return FAIL;
+
+
+    // step 1: set, pair: ('data-'+node_id+txn_id, data)
+    // step 2: set  pair: ('status-'+node_id+txn_id, PREPARED)
+    // step 3: return txn_id
+    // step 4: ab_sync_callback = NULL
+    // step 5: sync_commit
+
+
+    /*
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
@@ -184,6 +226,7 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
 									 tid};
     client.eval(script, keys, args, ab_sync_callback);
     client.sync_commit();
+     */
     return RCOK;
 }
 
@@ -192,6 +235,15 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                            string & data) {
     if (!glob_manager->active)
         return FAIL;
+
+    // step 1: set, pair: ('data-'+node_id+txn_id, data)
+    // step 2: set  pair: ('status-'+node_id+txn_id, PREPARED)
+    // step 3: return txn_id
+    // step 4: ab_sync_callback = NULL
+    // step 5: sync_commit
+
+
+    /*
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
@@ -207,6 +259,7 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                                      tid};
     client.eval(script, keys, args, ab_async_callback);
     client.commit();
+     */
     return RCOK;
 }
 
