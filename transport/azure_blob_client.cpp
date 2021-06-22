@@ -19,8 +19,7 @@ void ab_sync_callback(cpp_redis::reply & response);
 */
 
 AzureBlobClient::AzureBlobClient() {
-    const utility::string_t storage_connection_string(
-            U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=JR6MptUo878bCO+eYu2SUF07p+QiiDKbAbawCFSnxvwP+q/aGm7MqnpZMNuOQIGQgmhZ+VBPVSxFiePOLX7s8A==;EndpointSuffix=core.windows.net"));
+    const utility::string_t storage_connection_string(U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=f/Bmf3ADcuEVX2DIQ+esfAGTuhFnYmusfjwIFWK/AvyA8Hi102GApBE5eIvGXill7qGJ6M2JU1bHVZrZkSQ4vw==;EndpointSuffix=core.windows.net"));
 
     try {
         // Retrieve storage account from connection string.
@@ -31,9 +30,15 @@ AzureBlobClient::AzureBlobClient() {
         azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
 
         // Retrieve a reference to a container.
-        container = blob_client.get_container_reference(U("cornus-experiment-container"));
+        azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("my-sample-container-2"));
+    cout << "get here!" << endl;
         // Create the container if it doesn't already exist.
-        container.create_if_not_exists();
+        // container.create_if_not_exists();
+        azure::storage::cloud_block_blob blob2 = container.get_block_blob_reference(U("my-blob-2"));
+    cout << "get here!" << endl;
+        //blob2.upload_text(U("more text"));
+        blob2.delete_blob();
+    cout << "get here!" << endl;
     }
     catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;

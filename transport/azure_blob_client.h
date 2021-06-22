@@ -27,7 +27,7 @@ class AzureBlobClient {
     RC log_async_data(uint64_t node_id, uint64_t txn_id, int status,
         std::string & data);
   private:
-    azure::storage::cloud_blob_container container;
+    //azure::storage::cloud_blob_container container;
 };
 
 #endif

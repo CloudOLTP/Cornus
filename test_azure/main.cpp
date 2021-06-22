@@ -20,9 +20,9 @@ int main() {
         azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
 
         // Retrieve a reference to a container.
-        azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("my-sample-container"));
+        azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("my-sample-container-2"));
         // Create the container if it doesn't already exist.
-        // container.create_if_not_exists();
+        container.create_if_not_exists();
 
         // Retrieve reference to a blob named "my-blob-1".
         azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(U("my-blob-1"));

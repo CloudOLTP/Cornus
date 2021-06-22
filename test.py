@@ -38,6 +38,7 @@ def run(job=None):
         app_flags += "-Gn{} ".format(job['NODE_ID'])
     else:
         app_flags += "-Gn0 "
+    os.system("echo ./rundb %s " % app_flags)
     os.system("./rundb %s | tee temp.out" % app_flags)
 
 def parse_output(job):
