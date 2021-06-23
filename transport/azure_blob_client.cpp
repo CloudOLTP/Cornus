@@ -53,9 +53,10 @@ AzureBlobClient::AzureBlobClient() {
     log_async(0, 3000, 10);
     log_async(0, 4000, 10);
 
-    string data_1 =
-    log_sync_data(0, 5000, 10, std::to_string("test_data_5000"));
-    log_sync_data(0, 6000, 10, std::to_string("test_data_6000"));
+    string data_1 = "test_data_5000";
+    string data_2 = "test_data_6000";
+    log_sync_data(0, 5000, 10, data_1);
+    log_sync_data(0, 6000, 10, data_2);
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
