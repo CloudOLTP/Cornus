@@ -1,11 +1,3 @@
-#include <was/storage_account.h>
-#include <was/blob.h>
-#include <cpprest/filestream.h>
-#include <cpprest/containerstream.h>
-#include <string>
-#include <iostream>
-
-/*
 #include <string>
 #include <fstream>
 
@@ -78,39 +70,9 @@ int main(int argc, char* argv[])
     return 0;
 }
 #else
-*/
 int main(int argc, char* argv[])
 {
-    std::cout << "test!!!!!!" << std::endl;
-    const utility::string_t storage_connection_string(U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=f/Bmf3ADcuEVX2DIQ+esfAGTuhFnYmusfjwIFWK/AvyA8Hi102GApBE5eIvGXill7qGJ6M2JU1bHVZrZkSQ4vw==;EndpointSuffix=core.windows.net"));
 
-    try {
-        // Retrieve storage account from connection string.
-        azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(
-                storage_connection_string);
-
-        // Create the blob client.
-        azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
-
-        // Retrieve a reference to a container.
-        azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("my-sample-container-2"));
-    std::cout << "get here!" << std::endl;
-        // Create the container if it doesn't already exist.
-        // container.create_if_not_exists();
-        azure::storage::cloud_block_blob blob2 = container.get_block_blob_reference(U("my-blob-2"));
-    std::cout << "get here!" << std::endl;
-        //blob2.upload_text(U("more text"));
-        blob2.delete_blob();
-        blob2.upload_text(U("new new text"));
-    std::cout << "get here!" << std::endl;
-    }
-    catch (const std::exception &e) {
-        std::wcout << U("Error: ") << e.what() << std::endl;
-    }
-
-    return 0;
-} 
-/*
     parser(argc, argv);
     cout << "[Sundial] start node " << g_node_id << endl;
 #if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
@@ -304,4 +266,3 @@ void get_node_id()
     }
     file.close();
 }
-*/
