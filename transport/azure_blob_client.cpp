@@ -58,8 +58,12 @@ AzureBlobClient::AzureBlobClient() {
     log_sync_data(0, 5000, 10, data_1);
     log_sync_data(0, 6000, 10, data_2);
 
-    log_async_data(0, 6000, 10, data_1);
-    log_async_data(0, 7000, 10, data_2);
+    log_async_data(0, 7000, 10, data_1);
+    log_async_data(0, 8000, 10, data_2);
+    
+
+    log_if_ne(0, 9000);
+    log_if_ne(0, 10000);
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
@@ -149,6 +153,7 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
 // used for termination protocol, req is always LOG_ABORT
 RC
 AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
+    cout << "get to log_if_ne!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -165,9 +170,11 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
     upload_task.then(
             [blob, txn_id]() -> void {
+                cout << "log if ne, log finish" << endl;
                 // TODO step 1: get the value
                 utility::string_t text = blob.download_text();
                 cout << "downloaded as: " << text << endl;
+                
 
                 // TODO step 2: ab_tp_callback
 
@@ -188,6 +195,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     client.eval(script, keys, args, ab_tp_callback);
     client.commit();
     */
+    cout << "return from log_if_ne" << endl;
     return RCOK;
 }
 
