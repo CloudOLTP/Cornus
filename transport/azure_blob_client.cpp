@@ -3,6 +3,7 @@
 //
 
 #if LOG_DEVICE == LOG_DVC_AZURE_BLOB
+
 #include <sstream>
 
 #include "azure_blob_client.h"
@@ -19,7 +20,8 @@ void ab_sync_callback(cpp_redis::reply & response);
 */
 
 AzureBlobClient::AzureBlobClient() {
-    const utility::string_t storage_connection_string(U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=f/Bmf3ADcuEVX2DIQ+esfAGTuhFnYmusfjwIFWK/AvyA8Hi102GApBE5eIvGXill7qGJ6M2JU1bHVZrZkSQ4vw==;EndpointSuffix=core.windows.net"));
+    const utility::string_t storage_connection_string(
+            U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=f/Bmf3ADcuEVX2DIQ+esfAGTuhFnYmusfjwIFWK/AvyA8Hi102GApBE5eIvGXill7qGJ6M2JU1bHVZrZkSQ4vw==;EndpointSuffix=core.windows.net"));
 
     try {
         // Retrieve storage account from connection string.
@@ -31,15 +33,15 @@ AzureBlobClient::AzureBlobClient() {
 
         // Retrieve a reference to a container.
         container = blob_client.get_container_reference(U("cornus-logs"));
-    cout << "get here!" << endl;
+        cout << "get here!" << endl;
         // Create the container if it doesn't already exist.
         container.create_if_not_exists();
 
         azure::storage::cloud_block_blob blob2 = container.get_block_blob_reference(U("test-blob"));
-    cout << "get here!" << endl;
+        cout << "get here!" << endl;
         blob2.upload_text(U("more text"));
         //blob2.delete_blob();
-    cout << "get here!" << endl;
+        cout << "get here!" << endl;
     }
     catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;
@@ -47,8 +49,8 @@ AzureBlobClient::AzureBlobClient() {
 
 
     // test APIs
-    log_sync(0,1000,ABORTED);
-    log_sync(0,2000,ABORTED);
+    log_sync(0, 1000, 10);
+    log_sync(0, 2000, 10);
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
@@ -100,7 +102,7 @@ ab_tp_callback(cpp_redis::reply & response) {
 
 RC
 AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
-    cout << "get to log_sync!" <<endl;
+    cout << "get to log_sync!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -185,7 +187,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
 
 // used for prepare, req is always LOG_YES_REQ
 RC
-AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
+AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data) {
     if (!glob_manager->active)
         return FAIL;
 
@@ -217,7 +219,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data
 // synchronous
 RC
 AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
-    string &data) {
+                               string &data) {
     if (!glob_manager->active)
         return FAIL;
 
@@ -251,7 +253,7 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
 
 RC
 AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
-                           string & data) {
+                                string &data) {
     if (!glob_manager->active)
         return FAIL;
 
@@ -281,4 +283,5 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
      */
     return RCOK;
 }
+
 #endif
