@@ -60,7 +60,7 @@ AzureBlobClient::AzureBlobClient() {
 
     log_async_data(0, 7000, 10, data_1);
     log_async_data(0, 8000, 10, data_2);
-    
+
 
     log_if_ne(0, 9000);
     log_if_ne(0, 10000);
@@ -167,17 +167,32 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     azure::storage::blob_request_options options;
     azure::storage::operation_context context;
 
-    pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
+    pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options,
+                                                          context);
     upload_task.then(
             [blob, txn_id]() -> void {
                 cout << "log if ne, log finish" << endl;
-                // TODO step 1: get the value
+                // TODO make this async step 1: get the value
                 utility::string_t text = blob.download_text();
                 cout << "downloaded as: " << text << endl;
-                
 
-                // TODO step 2: ab_tp_callback
-
+                // step 2: ab_tp_callback
+                TxnManager::State state = (TxnManager::State) std::stoi(text);
+                TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+                // default is commit, only need to set abort or committed
+                if (state == TxnManager::ABORTED) {
+                    cout << "this is an abort" << endl;
+                    if (txn != NULL)
+                        txn->set_decision(ABORT);
+                } else if (state == TxnManager::COMMITTED) {
+                    if (txn != NULL)
+                        txn->set_decision(COMMIT);
+                } else if (state != TxnManager::PREPARED) {
+                    assert(false);
+                }
+                // mark as returned.
+                if (txn != NULL)
+                    txn->rpc_log_semaphore->decr();
             });
 
     /*
