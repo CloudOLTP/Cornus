@@ -267,7 +267,7 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
 
     pplx::task<void> upload_task_data = blob_data.upload_text_async(U(data));
     upload_task_data.then(
-            []() -> void {
+            [txn_table, txn_id]() -> void {
                 pplx::task<void> upload_task_status = blob_status.upload_text_async(U(std::to_string(status)));
                 upload_task_status.then(
                         [txn_table, txn_id]() -> void {
