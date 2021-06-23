@@ -33,15 +33,12 @@ AzureBlobClient::AzureBlobClient() {
 
         // Retrieve a reference to a container.
         container = blob_client.get_container_reference(U("cornus-logs"));
-        cout << "get here!" << endl;
         // Create the container if it doesn't already exist.
         container.create_if_not_exists();
 
         azure::storage::cloud_block_blob blob2 = container.get_block_blob_reference(U("test-blob"));
-        cout << "get here!" << endl;
         blob2.upload_text(U("more text"));
         //blob2.delete_blob();
-        cout << "get here!" << endl;
     }
     catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;
@@ -52,14 +49,12 @@ AzureBlobClient::AzureBlobClient() {
     log_sync(0, 1000, 10);
     log_sync(0, 2000, 10);
 
+
+
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
 
 /*
-void 
-ab_sync_callback(cpp_redis::reply & response) {
-}
-
 void 
 ab_async_callback(cpp_redis::reply & response) {
     assert(response.is_integer());
@@ -107,51 +102,28 @@ AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
         return FAIL;
 
     // step 1: set pair: ('status-'+node_id+txn_id, status)
-    // step 2: return txn_id for callback
-    // step 3: ab_sync_callback = NULL
-    // step 4: sync_commit
 
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U("status-" + id));
     blob.upload_text(U(std::to_string(status)));
-
-
-    /*
-    auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1])
-        return tonumber(ARGV[2])
-        )";
-    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
-    std::vector<std::string> keys = {"status-" + id};
-    std::vector<std::string> args = {std::to_string(status), std::to_string(txn_id)};
-    client.eval(script, keys, args, ab_sync_callback);
-    client.sync_commit();
-    */
     return RCOK;
 }
 
 RC
 AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
+    cout << "get to log_async!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
     // step 1: set pair: ('status-'+node_id+txn_id, status)
-    // step 2: return txn_id ??????
-    // step 3: ab_async_callback ????? need to update txn_table
-    // step 4: sync_commit ??????
+    // step 2: ab_async_callback need to update txn_table for txn_id
 
-    /*
-    auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1])
-        return tonumber(ARGV[2])
-        )";
-    string tid = std::to_string(txn_id);
-    string id = std::to_string(node_id) + "-" + tid;
-    std::vector<std::string> keys = {"status-" + id};
-    std::vector<std::string> args = {std::to_string(status), tid};
-    client.eval(script, keys, args, ab_async_callback);
-    client.commit();
-    */
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U("status-" + id));
+    //blob.upload_text(U(std::to_string(status)));
+    blob.upload_text_async(U(std::to_string(status+1)));
+    // TODO ab_async_callback
+
     return RCOK;
 }
 
