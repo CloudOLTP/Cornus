@@ -124,7 +124,12 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U("status-" + id));
     //blob.upload_text(U(std::to_string(status)));
-    blob.upload_text_async(U(std::to_string(status)));
+    pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(status)));
+    upload_task.then(
+            []() -> void {
+                // continue your work here asynchronously after the upload operation is completed
+                cout << "async upload finished!" << endl;
+            });
     // TODO ab_async_callback
 
     return RCOK;
