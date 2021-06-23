@@ -45,6 +45,11 @@ AzureBlobClient::AzureBlobClient() {
         std::wcout << U("Error: ") << e.what() << std::endl;
     }
 
+
+    // test APIs
+    log_sync(0,1000,ABORTED);
+    log_sync(0,2000,ABORTED);
+
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
 
