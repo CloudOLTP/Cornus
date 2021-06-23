@@ -53,6 +53,8 @@ AzureBlobClient::AzureBlobClient() {
     log_async(0, 3000, 10);
     log_async(0, 4000, 10);
 
+    log_sync_data(0, 5000, 10, "test_data_5000");
+    log_sync_data(0, 6000, 10, "test_data_6000");
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
@@ -126,7 +128,7 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(status)));
     upload_task.then(
             [txn_table, txn_id]() -> void {
-                // continue your work here asynchronously after the upload operation is completed
+                // when upload finish, update log_semaphore
                 cout << "async upload finished!" << endl;
                 TxnManager * txn = txn_table->get_txn(txn_id, false, false);
                 cout << (void *)txn_table << " " << (void *) txn << " " << txn_id << endl;
@@ -148,7 +150,30 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     // step 2: get status = 'status-'+node_id+txn_id
     // step 3: return status, txn_id ??????? what is this status??????
     // step 4: ab_tp_callback ????? set txn state
-    // step 5: sync_commit ??????
+
+    /*
+    string tid = std::to_string(txn_id);
+    string key = "status" + std::to_string(node_id) + "-" + tid;
+
+    azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U(key));
+    azure::storage::access_condition condition = azure::storage::access_condition::generate_if_not_exists_condition();
+    azure::storage::blob_request_options options;
+    azure::storage::operation_context context;
+    pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
+    upload_task.then(
+            [txn_table, txn_id]() -> void {
+                // step 1: check return value; whether uploading succeed
+                // step 2: when upload finish, update log_semaphore
+                cout << "async upload finished!" << endl;
+                TxnManager * txn = txn_table->get_txn(txn_id, false, false);
+                cout << (void *)txn_table << " " << (void *) txn << " " << txn_id << endl;
+                if (txn != NULL) {
+                    txn->rpc_log_semaphore->decr();
+                }
+                // TODO ab_tp_callback
+
+            });
+    */
 
     /*
     // log format - key-value
@@ -203,34 +228,20 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
 RC
 AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
                                string &data) {
+    cout << "get to log_sync_data!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
-
     // step 1: set, pair: ('data-'+node_id+txn_id, data)
     // step 2: set  pair: ('status-'+node_id+txn_id, PREPARED)
-    // step 3: return txn_id
-    // step 4: ab_sync_callback = NULL
-    // step 5: sync_commit
 
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
+    azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
 
-    /*
-    // log format - key-value
-    // key: "type(data/status)-node_id-txn_id"
-    auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1])
-        redis.call('set', KEYS[2], ARGV[2])
-        return tonumber(ARGV[3])
-    )";
-    string tid = std::to_string(txn_id);
-    string id = std::to_string(node_id) + "-" + tid;
-    std::vector<std::string> keys = {"data-" + id, "status" + id};
-    std::vector<std::string> args = {data,
-                                     std::to_string(status),
-									 tid};
-    client.eval(script, keys, args, ab_sync_callback);
-    client.sync_commit();
-     */
+    blob_data.upload_text(U(data));
+    blob_status.upload_text(U(std::to_string(status)));
+
     return RCOK;
 }
 
@@ -242,28 +253,28 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
 
     // step 1: set, pair: ('data-'+node_id+txn_id, data)
     // step 2: set  pair: ('status-'+node_id+txn_id, PREPARED)
-    // step 3: return txn_id
-    // step 4: ab_sync_callback = NULL
-    // step 5: sync_commit
+    // step 3: async_callback, update log_semaphore
+/*
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
+    azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
 
-
-    /*
-    // log format - key-value
-    // key: "type(data/status)-node_id-txn_id"
-    auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1])
-        redis.call('set', KEYS[2], ARGV[2])
-        return tonumber(ARGV[3])
-    )";
-    string tid = std::to_string(txn_id);
-    string id = std::to_string(node_id) + "-" + tid;
-    std::vector<std::string> keys = {"data-" + id, "status" + id};
-    std::vector<std::string> args = {data,
-                                     std::to_string(status),
-                                     tid};
-    client.eval(script, keys, args, ab_async_callback);
-    client.commit();
-     */
+    pplx::task<void> upload_task_data = blob_data.upload_text_async(U(data));
+    upload_task_data.then(
+            []() -> void {
+                pplx::task<void> upload_task_status = blob_status.upload_text_async(U(std::to_string(status)));
+                upload_task_status.then(
+                        [txn_table, txn_id]() -> void {
+                            // when upload finish, update log_semaphore
+                            cout << "async log data and status upload finished!" << endl;
+                            TxnManager * txn = txn_table->get_txn(txn_id, false, false);
+                            cout << (void *)txn_table << " " << (void *) txn << " " << txn_id << endl;
+                            if (txn != NULL) {
+                                txn->rpc_log_semaphore->decr();
+                            }
+                        });
+            });
+*/
     return RCOK;
 }
 
