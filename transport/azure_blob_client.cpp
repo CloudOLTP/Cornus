@@ -23,21 +23,22 @@ AzureBlobClient::AzureBlobClient() {
 
     try {
         // Retrieve storage account from connection string.
-        azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(
+        storage_account = azure::storage::cloud_storage_account::parse(
                 storage_connection_string);
 
         // Create the blob client.
-        azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
+        blob_client = storage_account.create_cloud_blob_client();
 
         // Retrieve a reference to a container.
-        azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("my-sample-container-2"));
+        container = blob_client.get_container_reference(U("cornus-logs"));
     cout << "get here!" << endl;
         // Create the container if it doesn't already exist.
-        // container.create_if_not_exists();
-        azure::storage::cloud_block_blob blob2 = container.get_block_blob_reference(U("my-blob-2"));
+        container.create_if_not_exists();
+
+        azure::storage::cloud_block_blob blob2 = container.get_block_blob_reference(U("test-blob"));
     cout << "get here!" << endl;
-        //blob2.upload_text(U("more text"));
-        blob2.delete_blob();
+        blob2.upload_text(U("more text"));
+        //blob2.delete_blob();
     cout << "get here!" << endl;
     }
     catch (const std::exception &e) {
