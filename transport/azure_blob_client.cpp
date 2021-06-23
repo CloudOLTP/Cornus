@@ -177,8 +177,8 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
                 cout << "downloaded as: " << text << endl;
 
                 // step 2: ab_tp_callback
-                TxnManager::State state = (TxnManager::State) std::stoi(text);
-                TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+                //TxnManager::State state = (TxnManager::State) std::stoi(text);
+                /*TxnManager *txn = txn_table->get_txn(txn_id, false, false);
                 // default is commit, only need to set abort or committed
                 if (state == TxnManager::ABORTED) {
                     cout << "this is an abort" << endl;
@@ -193,6 +193,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
                 // mark as returned.
                 if (txn != NULL)
                     txn->rpc_log_semaphore->decr();
+                */
             });
 
     /*

@@ -11,7 +11,7 @@ int main() {
             U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=JR6MptUo878bCO+eYu2SUF07p+QiiDKbAbawCFSnxvwP+q/aGm7MqnpZMNuOQIGQgmhZ+VBPVSxFiePOLX7s8A==;EndpointSuffix=core.windows.net"));
 
 
-    try {
+/*    try {
         // Retrieve storage account from connection string.
         azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(
                 storage_connection_string);
@@ -44,8 +44,10 @@ int main() {
         blob3.upload_text(U("other text"));
     }
     catch (const std::exception &e) {
-        std::wcout << U("Error: ") << e.what() << std::endl;
+        std::cout << U("Error: ") << e.what() << std::endl;
     }
+*/
+    std::cout << "get to second part" << std::endl;
 
     try {
         // Retrieve storage account from connection string.
@@ -56,7 +58,7 @@ int main() {
         azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
 
         // Retrieve a reference to a container.
-        azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("my-sample-container"));
+        azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("my-sample-container-2"));
 
         // Retrieve reference to a blob named "my-blob-4".
         azure::storage::cloud_block_blob blob4 = container.get_block_blob_reference(U("my-blob-4"));
@@ -69,5 +71,7 @@ int main() {
         std::wcout << U("Error: ") << e.what() << std::endl;
     }
 
+    std::cout << "get to third part" << std::endl;
+    
     return 1;
 }
