@@ -50,6 +50,9 @@ AzureBlobClient::AzureBlobClient() {
     log_sync(0, 2000, 10);
 
 
+    log_async(0, 3000, 10);
+    log_async(0, 4000, 10);
+
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
@@ -121,7 +124,7 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U("status-" + id));
     //blob.upload_text(U(std::to_string(status)));
-    blob.upload_text_async(U(std::to_string(status+1)));
+    blob.upload_text_async(U(std::to_string(status)));
     // TODO ab_async_callback
 
     return RCOK;
