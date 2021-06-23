@@ -132,7 +132,8 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U("status-" + id));
     pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(status)));
     upload_task.then(
-            [txn_table, txn_id]() -> void {
+//            [txn_table, txn_id]() -> void {
+            [txn_id]() -> void {
                 // when upload finish, update log_semaphore
                 cout << "async upload finished!" << endl;
                 TxnManager * txn = txn_table->get_txn(txn_id, false, false);
@@ -267,7 +268,7 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
 
     pplx::task<void> upload_task_data = blob_data.upload_text_async(U(data));
     upload_task_data.then(
-            [txn_table, txn_id, blob_status]() -> void {
+            [txn_table, txn_id, blob_status, status]() -> void {
                 pplx::task<void> upload_task_status = blob_status.upload_text_async(U(std::to_string(status)));
                 upload_task_status.then(
                         [txn_table, txn_id]() -> void {
