@@ -12,7 +12,7 @@ CFLAGS=-Wall -g -std=c++11
 INCLUDE = -I. -I./benchmarks -I./concurrency_control -I./storage -I./system -I./transport -I./proto -I./utils 
 INCLUDE += -I/home/kanwu/vcpkg/installed/x64-linux/include
 #CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -Werror -O3
-CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -O3 -g
+CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -O3 -g -fpermissive
 
 LDFLAGS = -Wall -L. -L./libs -pthread -g -lrt -std=c++11 -O3 -ljemalloc
 #LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\

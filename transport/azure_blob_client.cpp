@@ -58,8 +58,8 @@ AzureBlobClient::AzureBlobClient() {
     log_sync_data(0, 5000, 10, data_1);
     log_sync_data(0, 6000, 10, data_2);
 
-    log_sync_data(0, 6000, 10, data_1);
-    log_sync_data(0, 7000, 10, data_2);
+    log_async_data(0, 6000, 10, data_1);
+    log_async_data(0, 7000, 10, data_2);
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
@@ -143,6 +143,7 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
                 }
             });
 
+    cout << "return from log_async" << endl;
     return RCOK;
 }
 
@@ -254,7 +255,7 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
 RC
 AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                                 string &data) {
-    cout << "get to log_sync_data!" << endl;
+    cout << "get to log_async_data!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -264,15 +265,16 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
 
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
+    azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
 
 
     pplx::task<void> upload_task_data = blob_data.upload_text_async(U(data));
     upload_task_data.then(
-            [txn_table, txn_id, status]() -> void {
-                azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
+            [blob_status, status, txn_id]() -> void {
+                cout << "log status finished" << endl;
                 pplx::task<void> upload_task_status = blob_status.upload_text_async(U(std::to_string(status)));
                 upload_task_status.then(
-                        [txn_table, txn_id]() -> void {
+                        [txn_id]() -> void {
                             // when upload finish, update log_semaphore
                             cout << "async log data and status upload finished!" << endl;
                             TxnManager * txn = txn_table->get_txn(txn_id, false, false);
@@ -283,6 +285,7 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                         });
             });
 
+    cout << "return from log_async_data" << endl;
     return RCOK;
 }
 
