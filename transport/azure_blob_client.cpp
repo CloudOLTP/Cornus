@@ -58,6 +58,9 @@ AzureBlobClient::AzureBlobClient() {
     log_sync_data(0, 5000, 10, data_1);
     log_sync_data(0, 6000, 10, data_2);
 
+    log_sync_data(0, 6000, 10, data_1);
+    log_sync_data(0, 7000, 10, data_2);
+
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
 
@@ -230,7 +233,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
 RC
 AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
                                string &data) {
-    cout << "get to log_sync_data!" << endl;
+    // cout << "get to log_sync_data!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -250,13 +253,14 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
 RC
 AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                                 string &data) {
+    cout << "get to log_sync_data!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
     // step 1: set, pair: ('data-'+node_id+txn_id, data)
     // step 2: set  pair: ('status-'+node_id+txn_id, PREPARED)
     // step 3: async_callback, update log_semaphore
-/*
+
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
@@ -276,7 +280,7 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                             }
                         });
             });
-*/
+
     return RCOK;
 }
 
