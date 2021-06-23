@@ -70,8 +70,31 @@ int main() {
     catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;
     }
-
     std::cout << "get to third part" << std::endl;
+
+    try {
+        // Retrieve storage account from connection string.
+        azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(
+                storage_connection_string);
+
+        // Create the blob client.
+        azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
+
+        // Retrieve a reference to a container.
+        azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("my-sample-container-2"));
+
+        // Retrieve reference to a blob named "my-blob-4".
+        azure::storage::cloud_block_blob blob4 = container.get_block_blob_reference(U("my-blob-4"));
+        azure::storage::access_condition condition4 = azure::storage::access_condition::generate_if_not_exists_condition();
+        azure::storage::blob_request_options options4;
+        azure::storage::operation_context context4;
+        pplx::task<void> upload_task = blob4.upload_text_async(U("test"), condition4, options4, context4);
+    }
+    catch (const std::exception &e) {
+        std::wcout << U("Error: ") << e.what() << std::endl;
+    }
+
+    std::cout << "get to fourth part" << std::endl;
     
     return 1;
 }
