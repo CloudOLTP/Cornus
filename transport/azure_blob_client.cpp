@@ -132,12 +132,11 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U("status-" + id));
     pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(status)));
     upload_task.then(
-//            [txn_table, txn_id]() -> void {
             [txn_id]() -> void {
                 // when upload finish, update log_semaphore
                 cout << "async upload finished!" << endl;
-                TxnManager * txn = txn_table->get_txn(txn_id, false, false);
-                cout << (void *)txn_table << " " << (void *) txn << " " << txn_id << endl;
+                TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+                cout << (void *) txn_table << " " << (void *) txn << " " << txn_id << endl;
                 if (txn != NULL) {
                     txn->rpc_log_semaphore->decr();
                 }
@@ -155,32 +154,24 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
 
     // step 1: set if not exist, pair: ('status-'+node_id+txn_id, ABORTED)
     // step 2: get status = 'status-'+node_id+txn_id
-    // step 3: return status, txn_id ??????? what is this status??????
-    // step 4: ab_tp_callback ????? set txn state
+    // step 3: ab_tp_callback
 
-    /*
-    string tid = std::to_string(txn_id);
-    string key = "status" + std::to_string(node_id) + "-" + tid;
-
-    azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U(key));
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob = container.get_block_blob_reference(U("status-" + id));
     azure::storage::access_condition condition = azure::storage::access_condition::generate_if_not_exists_condition();
     azure::storage::blob_request_options options;
     azure::storage::operation_context context;
+
     pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
     upload_task.then(
-            [txn_table, txn_id]() -> void {
-                // step 1: check return value; whether uploading succeed
-                // step 2: when upload finish, update log_semaphore
-                cout << "async upload finished!" << endl;
-                TxnManager * txn = txn_table->get_txn(txn_id, false, false);
-                cout << (void *)txn_table << " " << (void *) txn << " " << txn_id << endl;
-                if (txn != NULL) {
-                    txn->rpc_log_semaphore->decr();
-                }
-                // TODO ab_tp_callback
+            [blob, txn_id]() -> void {
+                // TODO step 1: get the value
+                utility::string_t text = blob.download_text();
+                cout << "downloaded as: " << text << endl;
+
+                // TODO step 2: ab_tp_callback
 
             });
-    */
 
     /*
     // log format - key-value
@@ -277,8 +268,8 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                         [txn_id]() -> void {
                             // when upload finish, update log_semaphore
                             cout << "async log data and status upload finished!" << endl;
-                            TxnManager * txn = txn_table->get_txn(txn_id, false, false);
-                            cout << (void *)txn_table << " " << (void *) txn << " " << txn_id << endl;
+                            TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+                            cout << (void *) txn_table << " " << (void *) txn << " " << txn_id << endl;
                             if (txn != NULL) {
                                 txn->rpc_log_semaphore->decr();
                             }
