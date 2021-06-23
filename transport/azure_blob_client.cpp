@@ -264,11 +264,12 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
 
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
-    azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
+
 
     pplx::task<void> upload_task_data = blob_data.upload_text_async(U(data));
     upload_task_data.then(
-            [txn_table, txn_id, blob_status, status]() -> void {
+            [txn_table, txn_id, status]() -> void {
+                azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
                 pplx::task<void> upload_task_status = blob_status.upload_text_async(U(std::to_string(status)));
                 upload_task_status.then(
                         [txn_table, txn_id]() -> void {
