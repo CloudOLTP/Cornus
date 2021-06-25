@@ -47,31 +47,31 @@ AzureBlobClient::AzureBlobClient() {
 
     // test APIs
     cout << "======= test log sync =====" << endl;
-    log_sync(0, 1000, 10);
-    log_sync(0, 2000, 10);
+    //log_sync(0, 1000, 10);
+    //log_sync(0, 2000, 10);
 
     cout << "======= test log sync_data =====" << endl;
     string data_1 = "test_data_5000";
     string data_2 = "test_data_6000";
-    log_sync_data(0, 5000, 10, data_1);
-    log_sync_data(0, 6000, 10, data_2);
+    //log_sync_data(0, 5000, 10, data_1);
+    //log_sync_data(0, 6000, 10, data_2);
 
     cout << "======= test log async =====" << endl;
-    log_async(0, 3000, 10);
-    log_async(0, 4000, 10);
+    //log_async(0, 3000, 10);
+    //log_async(0, 4000, 10);
 
 
     cout << "======= test log async_data =====" << endl;
-    log_async_data(0, 7000, 10, data_1);
-    log_async_data(0, 8000, 10, data_2);
+    //log_async_data(0, 7000, 10, data_1);
+    //log_async_data(0, 8000, 10, data_2);
 
     cout << "======= test log_if_ne =====" << endl;
     log_if_ne(0, 9000);
     log_if_ne(0, 10000);
 
     cout << "======= test log_if_ne_data =====" << endl;
-    log_if_ne_data(0, 11000, data_1);
-    log_if_ne_data(0, 12000, data_2);
+    //log_if_ne_data(0, 11000, data_1);
+    //log_if_ne_data(0, 12000, data_2);
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
@@ -199,7 +199,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
 
     // version 1: upload_tex_async
     auto t = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options,
-                                    context).then([txn_id](pplx::task<void> previous_task) {
+                                    context).then([blob, txn_id](pplx::task<void> previous_task) {
         try {
             previous_task.get();
         }
