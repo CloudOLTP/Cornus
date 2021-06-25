@@ -46,38 +46,38 @@ AzureBlobClient::AzureBlobClient() {
 
 
     // test APIs
+    cout << "======= test log sync =====" << endl;
     log_sync(0, 1000, 10);
     log_sync(0, 2000, 10);
 
-
-    log_async(0, 3000, 10);
-    log_async(0, 4000, 10);
-
+    cout << "======= test log sync_data =====" << endl;
     string data_1 = "test_data_5000";
     string data_2 = "test_data_6000";
     log_sync_data(0, 5000, 10, data_1);
     log_sync_data(0, 6000, 10, data_2);
 
+    cout << "======= test log async =====" << endl;
+    log_async(0, 3000, 10);
+    log_async(0, 4000, 10);
+
+
+    cout << "======= test log async_data =====" << endl;
     log_async_data(0, 7000, 10, data_1);
     log_async_data(0, 8000, 10, data_2);
 
-
+    cout << "======= test log_if_ne =====" << endl;
     log_if_ne(0, 9000);
     log_if_ne(0, 10000);
+
+    cout << "======= test log_if_ne_data =====" << endl;
+    log_if_ne_data(0, 11000, data_1);
+    log_if_ne_data(0, 12000, data_2);
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
 
 /*
-void 
-ab_async_callback(cpp_redis::reply & response) {
-    assert(response.is_integer());
-    TxnManager * txn = txn_table->get_txn(response.as_integer(), false, false);
-    // mark as returned. 
-    txn->rpc_log_semaphore->decr();
-}
-
-void 
+void
 ab_ne_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
@@ -167,7 +167,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     azure::storage::blob_request_options options;
     azure::storage::operation_context context;
 
-    // sync version
+    // version 0: sync
     try {
         // Retrieve reference to a blob named "my-blob-4".
         blob.upload_text(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
@@ -227,21 +227,6 @@ upload_task.then(
 
 );
 */
-/*
-// log format - key-value
-// key: "type(data/status)-node_id-txn_id"
-auto script = R"(
-    redis.call('setnx', KEYS[1], ARGV[1])
-    local status = tonumber(redis.call('get', KEYS[1]))
-    return {tonumber(status), tonumber(ARGV[2])}
-)";
-string tid = std::to_string(txn_id);
-string key = "status" + std::to_string(node_id) + "-" + std::to_string(txn_id);
-std::vector<std::string> keys = {key};
-std::vector<std::string> args = {std::to_string(TxnManager::ABORTED), tid};
-client.eval(script, keys, args, ab_tp_callback);
-client.commit();
-*/
     cout << "return from log_if_ne" << endl;
     return RCOK;
 }
@@ -249,31 +234,48 @@ client.commit();
 // used for prepare, req is always LOG_YES_REQ
 RC
 AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data) {
+    cout << "get to log_if_ne_data!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
     // step 1: set, pair: ('data-'+node_id+txn_id, data)
     // step 2: set if not exist, pair: ('status-'+node_id+txn_id, PREPARED)
-    // step 2: get status = 'status-'+node_id+txn_id
-    // step 3: return status, txn_id ??????? what is this status??????
+    // step 3: get status = 'status-'+node_id+txn_id
     // step 4: ab_ne_callback ????? if aborted, set aborted
-    // step 5: sync_commit
 
-    /*
-    // log format - key-value
-    // key: "type(data/status)-node_id-txn_id"
-    auto script = R"(
-        redis.call('set', KEYS[1], ARGV[1])
-        redis.call('setnx', KEYS[2], ARGV[2])
-        local status = tonumber(redis.call('get', KEYS[2]))
-        return {tonumber(status), tonumber(ARGV[3])};)";
-    string tid = std::to_string(txn_id);
-    string id = std::to_string(node_id) + "-" + tid;
-    std::vector<std::string> keys = {"data-" + id, "status" + id};
-    std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED), tid};
-    client.eval(script, keys, args, ab_ne_callback);
-    client.commit();
-     */
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
+    azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
+
+    azure::storage::access_condition condition = azure::storage::access_condition::generate_if_not_exists_condition();
+    azure::storage::blob_request_options options;
+    azure::storage::operation_context context;
+
+    // version 0: sync
+    TxnManager::State state = TxnManager::PREPARED;
+    blob_data.upload_text(U(data));
+    try {
+        // Retrieve reference to a blob named "my-blob-4".
+        blob_status.upload_text(U(std::to_string(TxnManager::PREPARED)), condition, options, context);
+    } catch (const std::exception &e) {
+        std::cout << U("Error: ") << e.what() << std::endl;
+        utility::string_t text = blob.download_text();
+        cout << "downloaded as: " << text << endl;
+        state = (TxnManager::State) std::stoi(text);
+    }
+
+    TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+    // status can only be aborted/prepared
+    if (state == TxnManager::ABORTED) {
+        if (txn != NULL)
+            txn->set_txn_state(TxnManager::ABORTED);
+    }
+    // mark as returned.
+    if (txn != NULL)
+        txn->rpc_log_semaphore->decr();
+
+
+    cout << "return from log_if_ne_data" << endl;
     return RCOK;
 }
 
