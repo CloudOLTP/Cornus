@@ -33,12 +33,7 @@ AzureBlobClient::AzureBlobClient() {
 
         // Retrieve a reference to a container.
         container = blob_client.get_container_reference(U("cornus-logs"));
-        // Create the container if it doesn't already exist.
         container.create_if_not_exists();
-
-        azure::storage::cloud_block_blob blob2 = container.get_block_blob_reference(U("test-blob"));
-        blob2.upload_text(U("more text"));
-        //blob2.delete_blob();
     }
     catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;
@@ -75,39 +70,6 @@ AzureBlobClient::AzureBlobClient() {
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
-
-/*
-void
-ab_ne_callback(cpp_redis::reply & response) {
-    assert(response.is_array());
-    TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
-    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer(), false, false);
-    // status can only be aborted/prepared
-    if (state == TxnManager::ABORTED)
-        txn->set_txn_state(TxnManager::ABORTED);
-    // mark as returned. 
-    txn->rpc_log_semaphore->decr();
-}
-
-// termination protocol callback
-void
-ab_tp_callback(cpp_redis::reply & response) {
-    assert(response.is_array());
-    TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
-    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer()
-        , false, false);
-    // default is commit, only need to set abort or committed
-    if (state == TxnManager::ABORTED) {
-        txn->set_decision(ABORT);
-    } else if (state == TxnManager::COMMITTED) {
-        txn->set_decision(COMMIT);
-    } else if (state != TxnManager::PREPARED) {
-		assert(false);
-	}
-    // mark as returned.
-    txn->rpc_log_semaphore->decr();
-}
-*/
 
 RC
 AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
@@ -169,15 +131,15 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
 
     // version 0: sync
     /*
+    TxnManager::State state = TxnManager::ABORTED;
     try {
         blob.upload_text(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
     } catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;
+        utility::string_t text = blob.download_text();
+        cout << "downloaded as: " << text << endl;
+        state = (TxnManager::State) std::stoi(text);
     }
-
-    utility::string_t text = blob.download_text();
-    cout << "downloaded as: " << text << endl;
-    TxnManager::State state = (TxnManager::State) std::stoi(text);
 
     TxnManager *txn = txn_table->get_txn(txn_id, false, false);
     // default is commit, only need to set abort or committed
@@ -199,17 +161,17 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     // version 1: upload_tex_async
     auto t = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options,
                                     context).then([blob, txn_id](pplx::task<void> previous_task) {
+        TxnManager::State state = TxnManager::ABORTED;
         try {
             previous_task.get();
         }
         catch (azure::storage::storage_exception& e)
         {
             std::wcout << U("Error: ") << e.what() << std::endl;
+            utility::string_t text = blob.download_text();
+            cout << "downloaded as: " << text << endl;
+            state = (TxnManager::State) std::stoi(text);
         }
-        
-        utility::string_t text = blob.download_text();
-        cout << "downloaded as: " << text << endl;
-        TxnManager::State state = (TxnManager::State) std::stoi(text);
 
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
         // default is commit, only need to set abort or committed
@@ -226,8 +188,6 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
         // mark as returned.
         if (txn != NULL)
             txn->rpc_log_semaphore->decr();
-
-        // not failed, do other work
     });
 
     cout << "return from log_if_ne" << endl;
