@@ -259,7 +259,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
         blob_status.upload_text(U(std::to_string(TxnManager::PREPARED)), condition, options, context);
     } catch (const std::exception &e) {
         std::cout << U("Error: ") << e.what() << std::endl;
-        utility::string_t text = blob.download_text();
+        utility::string_t text = blob_status.download_text();
         cout << "downloaded as: " << text << endl;
         state = (TxnManager::State) std::stoi(text);
     }
