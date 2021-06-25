@@ -168,6 +168,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     azure::storage::operation_context context;
 
     // version 0: sync
+    /*
     try {
         // Retrieve reference to a blob named "my-blob-4".
         blob.upload_text(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
@@ -194,19 +195,23 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     // mark as returned.
     if (txn != NULL)
         txn->rpc_log_semaphore->decr();
+    */
 
-/*
-pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options,
-                                                  context);
-upload_task.then(
-    [blob, txn_id]() -> void {
-        cout << "log if ne, log finish" << endl;
-        // TODO make this async step 1: get the value
+    // version 1: upload_tex_async
+    auto t = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options,
+                                    context).then([txn_id](pplx::task<void> previous_task) {
+        try {
+            previous_task.get();
+        }
+        catch (azure::storage::storage_exception& e)
+        {
+            std::wcout << U("Error: ") << e.what() << std::endl;
+        }
+        
         utility::string_t text = blob.download_text();
         cout << "downloaded as: " << text << endl;
+        TxnManager::State state = (TxnManager::State) std::stoi(text);
 
-        // step 2: ab_tp_callback
-        //TxnManager::State state = (TxnManager::State) std::stoi(text);
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
         // default is commit, only need to set abort or committed
         if (state == TxnManager::ABORTED) {
@@ -223,10 +228,10 @@ upload_task.then(
         if (txn != NULL)
             txn->rpc_log_semaphore->decr();
 
-}
+        // not failed, do other work
+    });
+    //t.wait();
 
-);
-*/
     cout << "return from log_if_ne" << endl;
     return RCOK;
 }
@@ -265,6 +270,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
     }
 
     TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+    cout << "get state: " << state << endl;
     // status can only be aborted/prepared
     if (state == TxnManager::ABORTED) {
         if (txn != NULL)
