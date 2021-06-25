@@ -167,50 +167,81 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     azure::storage::blob_request_options options;
     azure::storage::operation_context context;
 
-    pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options,
-                                                          context);
-    upload_task.then(
-            [blob, txn_id]() -> void {
-                cout << "log if ne, log finish" << endl;
-                // TODO make this async step 1: get the value
-                utility::string_t text = blob.download_text();
-                cout << "downloaded as: " << text << endl;
+    // sync version
+    try {
+        // Retrieve reference to a blob named "my-blob-4".
+        blob.upload_text(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
+    } catch (const std::exception &e) {
+        std::wcout << U("Error: ") << e.what() << std::endl;
+    }
 
-                // step 2: ab_tp_callback
-                //TxnManager::State state = (TxnManager::State) std::stoi(text);
-                /*TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-                // default is commit, only need to set abort or committed
-                if (state == TxnManager::ABORTED) {
-                    cout << "this is an abort" << endl;
-                    if (txn != NULL)
-                        txn->set_decision(ABORT);
-                } else if (state == TxnManager::COMMITTED) {
-                    if (txn != NULL)
-                        txn->set_decision(COMMIT);
-                } else if (state != TxnManager::PREPARED) {
-                    assert(false);
-                }
-                // mark as returned.
-                if (txn != NULL)
-                    txn->rpc_log_semaphore->decr();
-                */
-            });
+    utility::string_t text = blob.download_text();
+    cout << "downloaded as: " << text << endl;
+    TxnManager::State state = (TxnManager::State) std::stoi(text);
 
-    /*
-    // log format - key-value
-    // key: "type(data/status)-node_id-txn_id"
-    auto script = R"(
-        redis.call('setnx', KEYS[1], ARGV[1])
-        local status = tonumber(redis.call('get', KEYS[1]))
-        return {tonumber(status), tonumber(ARGV[2])}
-    )";
-    string tid = std::to_string(txn_id);
-    string key = "status" + std::to_string(node_id) + "-" + std::to_string(txn_id);
-    std::vector<std::string> keys = {key};
-    std::vector<std::string> args = {std::to_string(TxnManager::ABORTED), tid};
-    client.eval(script, keys, args, ab_tp_callback);
-    client.commit();
-    */
+    TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+    // default is commit, only need to set abort or committed
+    if (state == TxnManager::ABORTED) {
+        cout << "this is an abort" << endl;
+        if (txn != NULL)
+            txn->set_decision(ABORT);
+    } else if (state == TxnManager::COMMITTED) {
+        if (txn != NULL)
+            txn->set_decision(COMMIT);
+    } else if (state != TxnManager::PREPARED) {
+        assert(false);
+    }
+    // mark as returned.
+    if (txn != NULL)
+        txn->rpc_log_semaphore->decr();
+
+/*
+pplx::task<void> upload_task = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options,
+                                                  context);
+upload_task.then(
+    [blob, txn_id]() -> void {
+        cout << "log if ne, log finish" << endl;
+        // TODO make this async step 1: get the value
+        utility::string_t text = blob.download_text();
+        cout << "downloaded as: " << text << endl;
+
+        // step 2: ab_tp_callback
+        //TxnManager::State state = (TxnManager::State) std::stoi(text);
+        TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+        // default is commit, only need to set abort or committed
+        if (state == TxnManager::ABORTED) {
+            cout << "this is an abort" << endl;
+            if (txn != NULL)
+                txn->set_decision(ABORT);
+        } else if (state == TxnManager::COMMITTED) {
+            if (txn != NULL)
+                txn->set_decision(COMMIT);
+        } else if (state != TxnManager::PREPARED) {
+            assert(false);
+        }
+        // mark as returned.
+        if (txn != NULL)
+            txn->rpc_log_semaphore->decr();
+
+}
+
+);
+*/
+/*
+// log format - key-value
+// key: "type(data/status)-node_id-txn_id"
+auto script = R"(
+    redis.call('setnx', KEYS[1], ARGV[1])
+    local status = tonumber(redis.call('get', KEYS[1]))
+    return {tonumber(status), tonumber(ARGV[2])}
+)";
+string tid = std::to_string(txn_id);
+string key = "status" + std::to_string(node_id) + "-" + std::to_string(txn_id);
+std::vector<std::string> keys = {key};
+std::vector<std::string> args = {std::to_string(TxnManager::ABORTED), tid};
+client.eval(script, keys, args, ab_tp_callback);
+client.commit();
+*/
     cout << "return from log_if_ne" << endl;
     return RCOK;
 }
