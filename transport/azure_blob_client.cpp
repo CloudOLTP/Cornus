@@ -66,12 +66,12 @@ AzureBlobClient::AzureBlobClient() {
     //log_async_data(0, 8000, 10, data_2);
 
     cout << "======= test log_if_ne =====" << endl;
-    log_if_ne(0, 9000);
-    log_if_ne(0, 10000);
+    //log_if_ne(0, 9000);
+    //log_if_ne(0, 10000);
 
     cout << "======= test log_if_ne_data =====" << endl;
-    //log_if_ne_data(0, 11000, data_1);
-    //log_if_ne_data(0, 12000, data_2);
+    log_if_ne_data(0, 11000, data_1);
+    log_if_ne_data(0, 12000, data_2);
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
@@ -170,7 +170,6 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     // version 0: sync
     /*
     try {
-        // Retrieve reference to a blob named "my-blob-4".
         blob.upload_text(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
     } catch (const std::exception &e) {
         std::wcout << U("Error: ") << e.what() << std::endl;
@@ -230,7 +229,6 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
 
         // not failed, do other work
     });
-    //t.wait();
 
     cout << "return from log_if_ne" << endl;
     return RCOK;
@@ -252,15 +250,16 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
 
+
+    // version 0: sync
+    /*
     azure::storage::access_condition condition = azure::storage::access_condition::generate_if_not_exists_condition();
     azure::storage::blob_request_options options;
     azure::storage::operation_context context;
 
-    // version 0: sync
     TxnManager::State state = TxnManager::PREPARED;
     blob_data.upload_text(U(data));
     try {
-        // Retrieve reference to a blob named "my-blob-4".
         blob_status.upload_text(U(std::to_string(TxnManager::PREPARED)), condition, options, context);
     } catch (const std::exception &e) {
         std::cout << U("Error: ") << e.what() << std::endl;
@@ -279,7 +278,35 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
     // mark as returned.
     if (txn != NULL)
         txn->rpc_log_semaphore->decr();
+    */
 
+    // version 1: upload_tex_async
+    auto t = blob_data.upload_text_async(U(data)).then([blob_status, txn_id]() {
+        TxnManager::State state = TxnManager::PREPARED;
+        try {
+            azure::storage::access_condition condition = azure::storage::access_condition::generate_if_not_exists_condition();
+            azure::storage::blob_request_options options;
+            azure::storage::operation_context context;
+
+            blob_status.upload_text(U(std::to_string(TxnManager::PREPARED)), condition, options, context);
+        } catch (const std::exception &e) {
+            std::cout << U("Error: ") << e.what() << std::endl;
+            utility::string_t text = blob_status.download_text();
+            cout << "downloaded as: " << text << endl;
+            state = (TxnManager::State) std::stoi(text);
+        }
+
+        TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+        cout << "get state: " << state << endl;
+        // status can only be aborted/prepared
+        if (state == TxnManager::ABORTED) {
+            if (txn != NULL)
+                txn->set_txn_state(TxnManager::ABORTED);
+        }
+        // mark as returned.
+        if (txn != NULL)
+            txn->rpc_log_semaphore->decr();
+    });
 
     cout << "return from log_if_ne_data" << endl;
     return RCOK;
