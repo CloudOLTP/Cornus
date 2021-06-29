@@ -281,7 +281,7 @@ TxnManager::process_2pc_phase2(RC rc)
     // log_semaphore->wait();
 #endif
 
-    bool remote_readonly = is_read_only();
+    bool remote_readonly = is_read_only() && (rc == COMMIT);
     if (remote_readonly) {
         for (auto it = _remote_nodes_involved.begin();
              it != _remote_nodes_involved.end(); it++) {
