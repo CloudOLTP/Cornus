@@ -61,12 +61,12 @@ AzureBlobClient::AzureBlobClient() {
     //log_async_data(0, 8000, 10, data_2);
 
     cout << "======= test log_if_ne =====" << endl;
-    //log_if_ne(0, 9000);
-    //log_if_ne(0, 10000);
+    log_if_ne(0, 9000);
+    log_if_ne(0, 10000);
 
     cout << "======= test log_if_ne_data =====" << endl;
-    log_if_ne_data(0, 11000, data_1);
-    log_if_ne_data(0, 12000, data_2);
+    //log_if_ne_data(0, 11000, data_1);
+    //log_if_ne_data(0, 12000, data_2);
 
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
