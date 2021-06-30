@@ -308,7 +308,7 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
 
-
+    // TODO may don't want to use the second then task
     pplx::task<void> upload_task_data = blob_data.upload_text_async(U(data));
     upload_task_data.then(
             [blob_status, status, txn_id]() -> void {
