@@ -5,6 +5,7 @@
 #if LOG_DEVICE == LOG_DVC_AZURE_BLOB
 
 #include <sstream>
+#include <unistd.h>
 
 #include "azure_blob_client.h"
 #include "txn.h"
@@ -34,6 +35,7 @@ AzureBlobClient::AzureBlobClient() {
         // Retrieve a reference to a container.
         container = blob_client.get_container_reference(U("cornus-logs"));
         container.delete_container_if_exists();
+        usleep(100000);
         container.create_if_not_exists();
     }
     catch (const std::exception &e) {
