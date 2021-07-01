@@ -75,7 +75,7 @@ AzureBlobClient::AzureBlobClient() {
 
 RC
 AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
-    cout << "get to log_sync!" << endl;
+    // cout << "get to log_sync!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -89,7 +89,7 @@ AzureBlobClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
 
 RC
 AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
-    cout << "get to log_async!" << endl;
+    // cout << "get to log_async!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -102,22 +102,22 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     upload_task.then(
             [txn_id]() -> void {
                 // when upload finish, update log_semaphore
-                cout << "async upload finished!" << endl;
+                // cout << "async upload finished!" << endl;
                 TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-                cout << (void *) txn_table << " " << (void *) txn << " " << txn_id << endl;
+                // cout << (void *) txn_table << " " << (void *) txn << " " << txn_id << endl;
                 if (txn != NULL) {
                     txn->rpc_log_semaphore->decr();
                 }
             });
 
-    cout << "return from log_async" << endl;
+    // cout << "return from log_async" << endl;
     return RCOK;
 }
 
 // used for termination protocol, req is always LOG_ABORT
 RC
 AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
-    cout << "get to log_if_ne!" << endl;
+    // cout << "get to log_if_ne!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -171,14 +171,14 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
         {
             std::wcout << U("Error: ") << e.what() << std::endl;
             utility::string_t text = blob.download_text();
-            cout << "downloaded as: " << text << endl;
+            // cout << "downloaded as: " << text << endl;
             state = (TxnManager::State) std::stoi(text);
         }
 
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
         // default is commit, only need to set abort or committed
         if (state == TxnManager::ABORTED) {
-            cout << "this is an abort" << endl;
+            // cout << "this is an abort" << endl;
             if (txn != NULL)
                 txn->set_decision(ABORT);
         } else if (state == TxnManager::COMMITTED) {
@@ -192,14 +192,14 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
             txn->rpc_log_semaphore->decr();
     });
 
-    cout << "return from log_if_ne" << endl;
+    // cout << "return from log_if_ne" << endl;
     return RCOK;
 }
 
 // used for prepare, req is always LOG_YES_REQ
 RC
 AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data) {
-    cout << "get to log_if_ne_data!" << endl;
+    // cout << "get to log_if_ne_data!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -254,12 +254,12 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
         } catch (const std::exception &e) {
             std::cout << U("Error: ") << e.what() << std::endl;
             utility::string_t text = blob_status.download_text();
-            cout << "downloaded as: " << text << endl;
+            // cout << "downloaded as: " << text << endl;
             state = (TxnManager::State) std::stoi(text);
         }
 
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-        cout << "get state: " << state << endl;
+        // cout << "get state: " << state << endl;
         // status can only be aborted/prepared
         if (state == TxnManager::ABORTED) {
             if (txn != NULL)
@@ -270,7 +270,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
             txn->rpc_log_semaphore->decr();
     });
 
-    cout << "return from log_if_ne_data" << endl;
+    // cout << "return from log_if_ne_data" << endl;
     return RCOK;
 }
 
@@ -298,7 +298,7 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
 RC
 AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                                 string &data) {
-    cout << "get to log_async_data!" << endl;
+    // cout << "get to log_async_data!" << endl;
     if (!glob_manager->active)
         return FAIL;
 
@@ -314,21 +314,20 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
     pplx::task<void> upload_task_data = blob_data.upload_text_async(U(data));
     upload_task_data.then(
             [blob_status, status, txn_id]() -> void {
-                cout << "log status finished" << endl;
                 pplx::task<void> upload_task_status = blob_status.upload_text_async(U(std::to_string(status)));
                 upload_task_status.then(
                         [txn_id]() -> void {
                             // when upload finish, update log_semaphore
-                            cout << "async log data and status upload finished!" << endl;
+                            // cout << "async log data and status upload finished!" << endl;
                             TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-                            cout << (void *) txn_table << " " << (void *) txn << " " << txn_id << endl;
+                            // cout << (void *) txn_table << " " << (void *) txn << " " << txn_id << endl;
                             if (txn != NULL) {
                                 txn->rpc_log_semaphore->decr();
                             }
                         });
             });
 
-    cout << "return from log_async_data" << endl;
+    // cout << "return from log_async_data" << endl;
     return RCOK;
 }
 
