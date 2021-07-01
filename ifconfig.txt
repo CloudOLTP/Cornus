@@ -1,4 +1,5 @@
 # a list of servers; each on a new line
-10.0.0.6:50051
+compute1:50051
+compute2:50051
 =l
 128.105.144.81:6379

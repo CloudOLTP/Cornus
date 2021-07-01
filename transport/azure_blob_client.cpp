@@ -41,6 +41,7 @@ AzureBlobClient::AzureBlobClient() {
 
 
     // test APIs
+    /*
     cout << "======= test log sync =====" << endl;
     //log_sync(0, 1000, 10);
     //log_sync(0, 2000, 10);
@@ -68,6 +69,7 @@ AzureBlobClient::AzureBlobClient() {
     //log_if_ne_data(0, 11000, data_1);
     //log_if_ne_data(0, 12000, data_2);
 
+    */
     std::cout << "[Sundial] connected to azure blob storage!" << std::endl;
 }
 
