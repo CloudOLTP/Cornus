@@ -3,12 +3,32 @@
 #include <cpprest/filestream.h>
 #include <cpprest/containerstream.h>
 #include <iostream>
+#include <string>
 
-int main() {
+int main(int argc, char * argv[]) {
     std::cout << "hello world!" << std::endl;
     // Define the connection-string with your values.
     const utility::string_t storage_connection_string(
             U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=JR6MptUo878bCO+eYu2SUF07p+QiiDKbAbawCFSnxvwP+q/aGm7MqnpZMNuOQIGQgmhZ+VBPVSxFiePOLX7s8A==;EndpointSuffix=core.windows.net"));
+
+        
+    // Retrieve storage account from connection string.
+    azure::storage::cloud_storage_account storage_account = azure::storage::cloud_storage_account::parse(
+                storage_connection_string);
+
+    // Create the blob client.
+    azure::storage::cloud_blob_client blob_client = storage_account.create_cloud_blob_client();
+
+    // Retrieve a reference to a container.
+    azure::storage::cloud_blob_container container = blob_client.get_container_reference(U("results"));
+        
+
+    std::string file_name = argv[1];
+    azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(U(file_name));
+    concurrency::streams::istream input_stream = concurrency::streams::file_stream<uint8_t>::open_istream(
+                U(file_name)).get();
+    blockBlob.upload_from_stream(input_stream);
+    input_stream.close().wait();
 
 
 /*    try {
@@ -46,7 +66,6 @@ int main() {
     catch (const std::exception &e) {
         std::cout << U("Error: ") << e.what() << std::endl;
     }
-*/
     std::cout << "get to second part" << std::endl;
 
     try {
@@ -95,6 +114,7 @@ int main() {
     }
 
     std::cout << "get to fourth part" << std::endl;
+*/
     
     return 1;
 }

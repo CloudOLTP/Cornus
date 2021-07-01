@@ -4,7 +4,7 @@ import subprocess, datetime, time, signal, json
 import pandas as pd
 
 
-user = "scarletg"
+user = "kanwu"
 
 def produce_avg(df_result, df_list, col, output_cnt):
 	sum_val = df_result[col]
@@ -35,10 +35,10 @@ if __name__ == "__main__":
 				continue
 			elif i != curr_node:
 				print("collecting from node: {}".format(line))
-				ret = os.system("scp {}@{}:/users/{}/Sundial/outputs/{}.csv ./{}{}.csv".format(user, line, user, exp_name, exp_name, str(i)))
+				ret = os.system("scp {}@{}:/home/{}/Sundial/outputs/{}.csv ./{}{}.csv".format(user, line, user, exp_name, exp_name, str(i)))
 				if ret != 0:
 					time.sleep(1)
-					os.system("scp {}@{}:/users/{}/Sundial/outputs/{}.csv ./{}{}.csv".format(user, line, user, exp_name, exp_name, str(i)))
+					os.system("scp {}@{}:/home/{}/Sundial/outputs/{}.csv ./{}{}.csv".format(user, line, user, exp_name, exp_name, str(i)))
 			else:
 				os.system("cp ../outputs/{}.csv ./{}{}.csv".format(exp_name, exp_name, i))
 			i += 1
