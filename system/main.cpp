@@ -88,6 +88,8 @@ int main(int argc, char* argv[])
 #if DISTRIBUTED
     rpc_client = new SundialRPCClient();
     rpc_server = new SundialRPCServerImpl;
+    pthread_t * pthread_rpc = new pthread_t;
+    pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
     #if LOG_DEVICE == LOG_DVC_REDIS
         // assume a shared logging but store different node's info to different key
         cout << "creat Redis client!!!!!!!" << endl;
@@ -96,8 +98,6 @@ int main(int argc, char* argv[])
         cout << "creat Azure client!!!!!!!" << endl;
         azure_blob_client = new AzureBlobClient();
     #endif
-    pthread_t * pthread_rpc = new pthread_t;
-    pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
 #endif
 
 #if LOG_LOCAL

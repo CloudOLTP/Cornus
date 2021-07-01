@@ -37,8 +37,8 @@ AzureBlobClient::AzureBlobClient() {
         if (g_node_id == 0) {
             container.delete_container_if_exists();
             cout << "just delete the azure container" << endl;
-            usleep(100000000);
         }
+        usleep(100000000);
         cout << "is to create a new container" << endl;
         container.create_if_not_exists();
     }
