@@ -34,8 +34,12 @@ AzureBlobClient::AzureBlobClient() {
 
         // Retrieve a reference to a container.
         container = blob_client.get_container_reference(U("cornus-logs"));
-        container.delete_container_if_exists();
-        usleep(1000000);
+        if (g_node_id == 0) {
+            container.delete_container_if_exists();
+            cout << "just delete the azure container" << endl;
+            usleep(100000000);
+        }
+        cout << "is to create a new container" << endl;
         container.create_if_not_exists();
     }
     catch (const std::exception &e) {
