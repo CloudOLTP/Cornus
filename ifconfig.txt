@@ -1,5 +1,4 @@
 # a list of servers; each on a new line
-node-0.redisexp.spark-PG0.wisc.cloudlab.us:50051
-node-1.redisexp.spark-PG0.wisc.cloudlab.us:50051
+node0.c5h11oh-102270.nextgendb-PG0.wisc.cloudlab.us:50051
 =l
-128.105.144.154:6379
+<redis_host>:6380 <password_goes_here>

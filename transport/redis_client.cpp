@@ -2,6 +2,7 @@
 // Created by Zhihan Guo on 4/5/21.
 //
 #include <sstream>
+#include <cstdlib>
 
 #include "redis_client.h"
 #include "txn.h"
@@ -14,6 +15,7 @@ void tp_callback(cpp_redis::reply & response);
 void sync_callback(cpp_redis::reply & response);
 
 RedisClient::RedisClient() {
+    tls = LOG_TLS_REDIS;
     std::ifstream in(ifconfig_file);
     string line;
     bool checked_marker = false;
@@ -28,16 +30,39 @@ RedisClient::RedisClient() {
             break;
         }
     }
-    std::cout << "[Sundial] connecting to redis server at " << line << std::endl;
+    std::cout << "[Sundial] connecting to redis server at " << line.substr(0, line.find(" ")) << std::endl;
 	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
 	size_t port;
-	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
-	iss >> port;
-    client.connect(line.substr(0, line.find(":")), port, [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
-        if (status == cpp_redis::connect_state::dropped) {
-      		std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
-		}
-	});
+	
+    if (tls) {
+        std::istringstream iss(line);
+        std::string host;
+        std::string auth;
+        iss >> host >> auth;
+        std::string cmd = "sudo sed -i \"s/^connect.*/connect = " + host + "/g\" /etc/stunnel/redis.conf";
+        assert(system(cmd.c_str()) == 0);
+        assert(system("sudo systemctl restart stunnel4.service") == 0);
+
+        client.connect("127.0.0.1", 6380, [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
+            if (status == cpp_redis::connect_state::dropped) {
+                std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
+            }
+        });
+
+        client.auth(auth, [](cpp_redis::reply & response){
+            std::cout << "[Sundial] auth response: " << response.as_string() << std::endl;
+        });
+    }
+    else {
+        std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
+        iss >> port;
+        client.connect(line.substr(0, line.find(":")), port, [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
+            if (status == cpp_redis::connect_state::dropped) {
+                std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
+            }
+        });
+    }
+
     client.flushall(sync_callback);
     client.sync_commit();
     std::cout << "[Sundial] connected to redis server!" << std::endl;

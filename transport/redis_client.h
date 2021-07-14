@@ -23,6 +23,7 @@ class RedisClient {
         std::string & data);
   private:
     cpp_redis::client client;
+    bool tls;
 };
 
 #endif //SUNDIAL_TRANSPORT_REDIS_CLIENT_H_

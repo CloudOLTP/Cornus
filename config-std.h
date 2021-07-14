@@ -105,6 +105,7 @@
 #define LOG_DEVICE                      LOG_DVC_REDIS
 #define LOG_DELAY                       0
 #define LOG_SIZE_PER_WRITE              32 // in bytes
+#define LOG_TLS_REDIS                   false // if redis needs tls tunnel
 
 // Failure Setup
 #define FAILURE_ENABLE                  true
