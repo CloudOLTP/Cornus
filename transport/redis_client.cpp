@@ -29,7 +29,7 @@ RedisClient::RedisClient() {
             break;
         }
     }
-    std::cout << "[Sundial] kan connecting to redis server at " << line << std::endl;
+    std::cout << "[Sundial] kan connecting to redis server at " << line.substr(0, line.find(" ")) << std::endl;
 	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
 	size_t port;
 	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
@@ -39,6 +39,14 @@ RedisClient::RedisClient() {
       		std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
 		}
 	});
+    if (iss.eof() == false) { // an auth string is following
+        std::cout << "[Sundial debug] entering auth section" << std::endl;
+        string auth;
+        iss >> auth;
+        client.auth(auth, [](cpp_redis::reply & response){
+            std::cout << "[Sundial] Auth response: " << response.as_string() << std::endl;
+        });
+    }
     client.flushall(sync_callback);
     client.sync_commit();
     std::cout << "[Sundial] connected to redis server!" << std::endl;
