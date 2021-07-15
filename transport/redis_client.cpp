@@ -29,7 +29,7 @@ RedisClient::RedisClient() {
             break;
         }
     }
-    std::cout << "[Sundial] connecting to redis server at " << line << std::endl;
+    std::cout << "[Sundial] kan connecting to redis server at " << line << std::endl;
 	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
 	size_t port;
 	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
