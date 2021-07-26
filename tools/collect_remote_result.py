@@ -18,9 +18,9 @@ if __name__ == "__main__":
 	curr_node = 0
 	exp_name = sys.argv[1]
 	if len(sys.argv) > 2:
-		skip_node = int(sys.argv[2])
+		num_nodes = int(sys.argv[2])
 	else:
-		skip_node = -1
+		num_nodes = -1
 	ifconfig = open("../ifconfig.txt")
 	i = 0
 	node_type = 1
@@ -31,8 +31,8 @@ if __name__ == "__main__":
 			break
 		else:
 			line = line.split(':')[0].strip()
-			if i == skip_node:
-				continue
+			if i == num_nodes:
+				break
 			elif i != curr_node:
 				print("collecting from node: {}".format(line))
 				ret = os.system("scp {}@{}:/home/{}/Sundial/outputs/{}.csv ./{}{}.csv".format(user, line, user, exp_name, exp_name, str(i)))

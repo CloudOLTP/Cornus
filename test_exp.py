@@ -49,12 +49,17 @@ if __name__ == "__main__":
     if eval_arg("MODE", "release", job, default=True):
         os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")
+    print("[LOG] Start collecting results from remote")
     f = open('ifconfig.txt')
     num_nodes = 0
     for addr in f:
+        if num_nodes == job["NUM_NODES"]:
+            print("[LOG] num_nodes == job[\"NUM_NODES\"]. Stop ssh-ing remote.")
+            break
         if '#' in addr:
             continue
         if "=l" in addr:
+            print("[LOG] end of ifconfig.txt reached. Stop ssh-ing remote.")
             break
         if curr_node == num_nodes:
             num_nodes += 1
@@ -66,6 +71,6 @@ if __name__ == "__main__":
     suffix = ""
     if eval_arg("FAILURE_ENABLE", "true", job, default=False):
         suffix = " {}".format(job["FAILURE_NODE"])
-    os.system("cd tools; python3 collect_remote_result.py {}".format(exp_name)+suffix)
+    os.system("cd tools; python3 collect_remote_result.py {} {}".format(exp_name, num_nodes)+suffix)
     print("[LOG] FINISH collecting results")
     #os.system("python3 send_email.py {}".format(exp_name))
