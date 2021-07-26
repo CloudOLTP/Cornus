@@ -69,7 +69,10 @@ void
 ne_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
-    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer(), false, false);
+    uint64_t txnid = response.as_array()[1].as_integer(); // debug
+    TxnManager * txn = txn_table->get_txn(txnid, false, false);
+    std::cout << "[ne_callback] txnid=" << txnid;
+    std::cout << ", txn=" << std::hex << txn << endl;
     // status can only be aborted/prepared
     if (state == TxnManager::ABORTED)
         txn->set_txn_state(TxnManager::ABORTED);
