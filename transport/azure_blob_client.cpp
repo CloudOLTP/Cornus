@@ -22,7 +22,7 @@ void ab_sync_callback(cpp_redis::reply & response);
 
 AzureBlobClient::AzureBlobClient() {
     const utility::string_t storage_connection_string(
-            U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=f/Bmf3ADcuEVX2DIQ+esfAGTuhFnYmusfjwIFWK/AvyA8Hi102GApBE5eIvGXill7qGJ6M2JU1bHVZrZkSQ4vw==;EndpointSuffix=core.windows.net"));
+            U("DefaultEndpointsProtocol=https;AccountName=cornuslog;AccountKey=eyXp2hguWSy9TvS8AGTp9n7O2GjqJIp/5bvT83BO7OWajfLhVmPNUL1qBWYfgj6dBs++aZ0Y0lja6K7vDIj83Q==;EndpointSuffix=core.windows.net"));
 
     try {
         // Retrieve storage account from connection string.
