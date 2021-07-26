@@ -1,0 +1,19 @@
+{
+    "DISTRIBUTED": "true",
+    "NUM_WORKER_THREADS": 20,
+    "NUM_RPC_SERVER_THREADS": 20,
+    "CC_ALG": "NO_WAIT",
+    "COMMIT_ALG": ["ONE_PC", "TWO_PC"],
+    "LOG_DEVICE": "LOG_DVC_REDIS",
+    "i": [0, 1, 2, 3, 4],
+    "RUN_TIME": 30,
+    "LOG_DELAY": 0,
+    "WORKLOAD": "YCSB",
+    "NUM_NODES": 4,
+    "PERC_REMOTE": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    "READ_PERC": 0.5,
+    "ZIPF_THETA": 0,
+    "SYNTH_TABLE_SIZE": "10485760",
+    "FAILURE_ENABLE": "false",
+    "FAILURE_TIMEPOINT": 10
+}
