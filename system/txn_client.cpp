@@ -151,6 +151,7 @@ TxnManager::process_2pc_phase1()
 #endif
 #if LOG_REMOTE
         // asynchronously log prepare for this node
+    if (!is_read_only()) {
     #if LOG_DEVICE == LOG_DVC_NATIVE
         SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
         send_log_request(g_storage_node_id, type);
@@ -185,6 +186,7 @@ TxnManager::process_2pc_phase1()
         }
         #endif
     #endif
+    }
 #endif
 
     SundialRequest::NodeData * participant;
