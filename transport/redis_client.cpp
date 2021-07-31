@@ -40,7 +40,6 @@ RedisClient::RedisClient() {
 		}
 	});
     if (iss.eof() == false) { // an auth string is following
-        std::cout << "[Sundial debug] entering auth section" << std::endl;
         string auth;
         iss >> auth;
         client.auth(auth, [](cpp_redis::reply & response){
@@ -70,9 +69,17 @@ ne_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
     uint64_t txnid = response.as_array()[1].as_integer(); // debug
+
+    // if (txnid / g_num_nodes == 6808 || txnid / g_num_nodes == 1206) {
+    //     std::cout << "[debug-" << g_node_id << " txn-" << std::dec << txnid << "][RedisClient] ne_callback, state=" << state << endl;
+    // }
+
     TxnManager * txn = txn_table->get_txn(txnid, false, false);
-    std::cout << "[ne_callback] txnid=" << txnid;
-    std::cout << ", txn=" << std::hex << txn << endl;
+
+    // if (txnid / g_num_nodes == 6808 || txnid / g_num_nodes == 1206) {
+    //     std::cout << "[debug-" << g_node_id << " txn-" << std::dec << txnid << "][RedisClient] ne_callback, txn=" << std::hex << txn << endl << std::dec;
+    // }
+    
     // status can only be aborted/prepared
     if (state == TxnManager::ABORTED)
         txn->set_txn_state(TxnManager::ABORTED);
@@ -171,6 +178,9 @@ RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED), tid};
     client.eval(script, keys, args, ne_callback);
     client.commit();
+    // if (txn_id / g_num_nodes == 6808 || txn_id / g_num_nodes == 1206) {
+    //     std::cout << "[debug-" << g_node_id << " txn-" << txn_id << "][RedisClient] log_if_ne_data requested: set " << keys[0] << " to " << args[0] << ", setnx " << keys[1] << " to " << args[1] << endl;
+    // }
     return RCOK;
 }
 

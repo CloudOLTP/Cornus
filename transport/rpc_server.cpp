@@ -151,6 +151,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             rc = txn->process_terminate_request(request, response);
             txn->unlock();
             txn_table->remove_txn(txn);
+            // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
+            //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][TERM_REQ] txn removed from TxnTable " << endl;
+            // }
             delete txn;
             break;
         case SundialRequest::PREPARE_REQ:
@@ -162,7 +165,13 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             rc = txn->process_prepare_request(request, response);
             if (txn->get_txn_state() != TxnManager::PREPARED) {
+                // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
+                //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][PREP_REQ] txn in state " << txn->get_txn_state() << endl;
+                // }
                 txn_table->remove_txn(txn);
+                // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
+                //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][PREP_REQ] txn removed from TxnTable " << endl;
+                // }
                 delete txn;
             }
             break;
@@ -174,6 +183,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             rc = txn->process_decision_request(request, response, COMMIT);
             txn_table->remove_txn(txn);
+            // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
+            //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][COMMIT_REQ] txn removed from TxnTable " << endl;
+            // }
             delete txn;
             break;
         case SundialRequest::ABORT_REQ:
@@ -184,6 +196,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             rc = txn->process_decision_request(request, response, ABORT);
             txn_table->remove_txn(txn);
+            // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
+            //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][ABORT_REQ] txn removed from TxnTable " << endl;
+            // }
             delete txn;
             break;
         default:

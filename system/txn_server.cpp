@@ -42,7 +42,9 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 #if DEBUG_PRINT
     printf("[node-%u, txn-%lu] prepare request\n", g_node_id, _txn_id);
 #endif
-
+    // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
+    //     printf("[debug-%u, txn-%lu][remote] pre-process_prepare_req, state=%u\n", g_node_id, _txn_id, this->get_txn_state());
+    // }
     if (!glob_manager->active) {
         _txn_state = ABORTED;
         return FAIL;
@@ -86,6 +88,9 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     log_semaphore->wait();
 #endif
     // log votes
+    // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
+    //     printf("[debug-%u, txn-%lu][remote] process_prepare_req, num_tuples=%u state=%u\n", g_node_id, _txn_id, num_tuples, this->get_txn_state());
+    // }
     if (num_tuples != 0) {
         // log prepare msg
 #if LOG_REMOTE
@@ -97,6 +102,9 @@ TxnManager::process_prepare_request(const SundialRequest* request,
             g_log_sz * 8);
             rpc_log_semaphore->incr();
             #if COMMIT_ALG == ONE_PC
+            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
+            //     printf("[debug-%u, txn-%lu][remote] process_prepare_req, about to logging redis, state=%u\n", g_node_id, _txn_id, this->get_txn_state());
+            // }
             if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
             FAIL) {
                 return FAIL;
@@ -135,6 +143,9 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         _txn_state = COMMITTED;
         _cc_manager->cleanup(COMMIT); // release lock after log is received
         response->set_response_type( SundialResponse::PREPARED_OK_RO );
+        // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
+        //     printf("[debug-%u, txn-%lu][remote] process_prepare_req, readonly node, state=%u\n", g_node_id, _txn_id, this->get_txn_state());
+        // }
         return rc;
     }
     response->set_response_type( SundialResponse::PREPARED_OK );
