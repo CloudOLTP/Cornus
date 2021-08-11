@@ -1,6 +1,8 @@
 
 #include <string>
 #include <fstream>
+#include <iostream>
+#include <unistd.h>
 
 #include "global.h"
 #include "ycsb.h"
