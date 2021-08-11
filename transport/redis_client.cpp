@@ -1,6 +1,7 @@
 //
 // Created by Zhihan Guo on 4/5/21.
 //
+#if LOG_DEVICE == LOG_DVC_REDIS
 #include <sstream>
 #include <cstdlib>
 
@@ -30,39 +31,23 @@ RedisClient::RedisClient() {
             break;
         }
     }
-    std::cout << "[Sundial] connecting to redis server at " << line.substr(0, line.find(" ")) << std::endl;
+    std::cout << "[Sundial] kan connecting to redis server at " << line.substr(0, line.find(" ")) << std::endl;
 	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
 	size_t port;
-	
-    if (tls) {
-        std::istringstream iss(line);
-        std::string host;
-        std::string auth;
-        iss >> host >> auth;
-        std::string cmd = "sudo sed -i \"s/^connect.*/connect = " + host + "/g\" /etc/stunnel/redis.conf";
-        assert(system(cmd.c_str()) == 0);
-        assert(system("sudo systemctl restart stunnel4.service") == 0);
-
-        client.connect("127.0.0.1", 6380, [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
-            if (status == cpp_redis::connect_state::dropped) {
-                std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
-            }
-        });
-
+	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
+	iss >> port;
+    client.connect(line.substr(0, line.find(":")), port, [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
+        if (status == cpp_redis::connect_state::dropped) {
+      		std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
+		}
+	});
+    if (iss.eof() == false) { // an auth string is following
+        string auth;
+        iss >> auth;
         client.auth(auth, [](cpp_redis::reply & response){
-            std::cout << "[Sundial] auth response: " << response.as_string() << std::endl;
+            std::cout << "[Sundial] Auth response: " << response.as_string() << std::endl;
         });
     }
-    else {
-        std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
-        iss >> port;
-        client.connect(line.substr(0, line.find(":")), port, [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
-            if (status == cpp_redis::connect_state::dropped) {
-                std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
-            }
-        });
-    }
-
     client.flushall(sync_callback);
     client.sync_commit();
     std::cout << "[Sundial] connected to redis server!" << std::endl;
@@ -85,7 +70,18 @@ void
 ne_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
-    TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer(), false, false);
+    uint64_t txnid = response.as_array()[1].as_integer(); // debug
+
+    // if (txnid / g_num_nodes == 6808 || txnid / g_num_nodes == 1206) {
+    //     std::cout << "[debug-" << g_node_id << " txn-" << std::dec << txnid << "][RedisClient] ne_callback, state=" << state << endl;
+    // }
+
+    TxnManager * txn = txn_table->get_txn(txnid, false, false);
+
+    // if (txnid / g_num_nodes == 6808 || txnid / g_num_nodes == 1206) {
+    //     std::cout << "[debug-" << g_node_id << " txn-" << std::dec << txnid << "][RedisClient] ne_callback, txn=" << std::hex << txn << endl << std::dec;
+    // }
+    
     // status can only be aborted/prepared
     if (state == TxnManager::ABORTED)
         txn->set_txn_state(TxnManager::ABORTED);
@@ -184,6 +180,9 @@ RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED), tid};
     client.eval(script, keys, args, ne_callback);
     client.commit();
+    // if (txn_id / g_num_nodes == 6808 || txn_id / g_num_nodes == 1206) {
+    //     std::cout << "[debug-" << g_node_id << " txn-" << txn_id << "][RedisClient] log_if_ne_data requested: set " << keys[0] << " to " << args[0] << ", setnx " << keys[1] << " to " << args[1] << endl;
+    // }
     return RCOK;
 }
 
@@ -233,4 +232,4 @@ RedisClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
     client.commit();
     return RCOK;
 }
-
+#endif

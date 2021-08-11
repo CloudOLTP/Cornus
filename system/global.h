@@ -21,7 +21,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
-#include <boost/lockfree/queue.hpp>
+//#include <boost/lockfree/queue.hpp>
 #include "pthread.h"
 
 #include "config.h"
@@ -49,6 +49,7 @@ class LogManager;
 class SundialRPCClient;
 class SundialRPCServerImpl;
 class RedisClient;
+class AzureBlobClient;
 
 typedef uint64_t ts_t; // time stamp type
 
@@ -212,11 +213,14 @@ extern SundialRPCServerImpl * rpc_server;
 #if LOG_DEVICE == LOG_DVC_REDIS
 extern RedisClient *      redis_client;
 #endif
+#if LOG_DEVICE == LOG_DVC_AZURE_BLOB
+extern AzureBlobClient *      azure_blob_client;
+#endif
 
 extern Transport *      transport;
-typedef boost::lockfree::queue<uint64_t, boost::lockfree::capacity<INOUT_QUEUE_SIZE>> InOutQueue;
-extern InOutQueue **    input_queues;
-extern InOutQueue **    output_queues;
+//typedef boost::lockfree::queue<uint64_t, boost::lockfree::capacity<INOUT_QUEUE_SIZE>> InOutQueue;
+//extern InOutQueue **    input_queues;
+//extern InOutQueue **    output_queues;
 extern WorkerThread **  worker_threads;
 extern uint32_t         g_txn_table_size;
 extern TxnTable *       txn_table;

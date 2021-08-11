@@ -90,8 +90,15 @@ RC WorkerThread::run() {
             _native_txn = new TxnManager(query, this);
             _native_txn->set_txn_id( txn_id );
             txn_table->add_txn( _native_txn );
+            // if (txn_id / g_num_nodes == 6808 || txn_id / g_num_nodes == 1206) {
+            //     std::cout << "[debug-" << g_node_id << ", txn-" << txn_id << "][native] about to start txn" << endl;
+            // }
 
             _native_txn->start();
+
+            // if (txn_id / g_num_nodes == 6808 || txn_id / g_num_nodes == 1206) {
+            //     std::cout << "[debug-" << g_node_id << ", txn-" << txn_id << "][native] txn executed" << endl;
+            // }
         }
         if (_native_txn->get_txn_state() == TxnManager::COMMITTED
             || (_native_txn->get_store_procedure()->is_self_abort()
@@ -101,6 +108,9 @@ RC WorkerThread::run() {
                 add_to_pool();
 #endif
             txn_table->remove_txn(_native_txn);
+            // if (_native_txn->get_txn_id() / g_num_nodes == 6808 || _native_txn->get_txn_id() / g_num_nodes == 1206) {
+            //     std::cout << "[debug-" << g_node_id << " txn-" << _native_txn->get_txn_id() << "][native] txn removed from TxnTable " << endl;
+            // }
             delete _native_txn;
             _native_txn = NULL;
         } else { // should restart

@@ -26,6 +26,7 @@
 #endif
 #include "log.h"
 #include "redis_client.h"
+#include "azure_blob_client.h"
 
 // TODO. cleanup the accesses related malloc code.
 
@@ -201,15 +202,29 @@ TxnManager::start()
 #if DEBUG_PRINT
             printf("[node-%u, txn-%lu] prepare phase\n", g_node_id, _txn_id);
 #endif
+            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
+            //     printf("[debug-%u, txn-%lu] pre-prepare phase, txn in state %u\n", g_node_id, _txn_id, this->get_txn_state());
+            // }
             _prepare_start_time = get_sys_clock();
             rc = process_2pc_phase1();
+            // if the remote is readonly, remote txn will be COMMITTED, remote will send back OK_RO (ok-readonly), fetch by TxnManager::handle_prepare_resp. the remote WILL NOT LOG IN REDIS.
+            // then "_remote_nodes_involved[response->node_id()]->state" is set to COMMITTED.
+            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
+            //     printf("[debug-%u, txn-%lu] post-prepare phase, txn in state %u, rc=%u\n", g_node_id, _txn_id, this->get_txn_state(), rc);
+            // }
         }
         if (rc != FAIL) {
 #if DEBUG_PRINT
             printf("[node-%u, txn-%lu] commit phase\n", g_node_id, _txn_id);
 #endif
+            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
+            //     printf("[debug-%u, txn-%lu] commit phase, txn in state %u\n", g_node_id, _txn_id, this->get_txn_state());
+            // }
             _commit_start_time = get_sys_clock();
             rc = process_2pc_phase2(rc);
+            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
+            //     printf("[debug-%u, txn-%lu] post-commit phase, txn in state %u, rc=%u\n", g_node_id, _txn_id, this->get_txn_state(), rc);
+            // }
         }
     }
     if (rc != FAIL) {
@@ -246,11 +261,19 @@ TxnManager::termination_protocol() {
         if (it->second->is_readonly)
             continue;
         rpc_log_semaphore->incr();
+#if LOG_DEVICE == LOG_DVC_REDIS
         if (redis_client->log_if_ne(it->first, get_txn_id()) == FAIL) {
             // self if fail, stop working and return
             _decision = FAIL;
             return FAIL;
         }
+#elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        if (azure_blob_client->log_if_ne(it->first, get_txn_id()) == FAIL) {
+            // self if fail, stop working and return
+            _decision = FAIL;
+            return FAIL;
+        }
+#endif
     }
     rpc_log_semaphore->wait();
     return _decision;

@@ -136,6 +136,9 @@ TxnTable::remove_txn(uint64_t txn_id)
 void
 TxnTable::remove_txn(TxnManager * txn)
 {
+    // if (txn->get_txn_id() / g_num_nodes == 6808) {
+    //     std::cout << "[debug-" << g_node_id << "] 6808: txn to be deleted in TxnTable" << endl;
+    // }
     uint32_t bucket_id = txn->get_txn_id() % _txn_table_size;
     Node * node = NULL;
     Node * rm_node = NULL;

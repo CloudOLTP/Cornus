@@ -30,6 +30,7 @@
 #endif
 #include "log.h"
 #include "redis_client.h"
+#include "azure_blob_client.h"
 
 
 RC
@@ -96,18 +97,24 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     // if logging didn't happen, process commit phase
 #if LOG_REMOTE
     if (!is_read_only()) {
-#if LOG_DEVICE == LOG_DVC_NATIVE
+    #if LOG_DEVICE == LOG_DVC_NATIVE
         SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
                 SundialRequest::LOG_ABORT_REQ;
         send_log_request(g_storage_node_id, type);
         rpc_log_semaphore->wait();
-#else
+    #elif LOG_DEVICE == LOG_DVC_REDIS
        string data = "[LSN] placehold:" + string('d', num_local_write *
                 g_log_sz * 8);
        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
            data) == FAIL)
            return FAIL;
-#endif
+    #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+       string data = "[LSN] placehold:" + string('d', num_local_write *
+                g_log_sz * 8);
+       if (azure_blob_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
+           data) == FAIL)
+           return FAIL;
+    #endif
     }
 #endif
     _cc_manager->cleanup(rc);
@@ -144,26 +151,41 @@ TxnManager::process_2pc_phase1()
 #endif
 
 #if LOG_REMOTE
-    // asynchronously log prepare for this node
+        // asynchronously log prepare for this node
     if (!is_txn_read_only()) {
     #if LOG_DEVICE == LOG_DVC_NATIVE
-            SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
-            send_log_request(g_storage_node_id, type);
+        SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
+        send_log_request(g_storage_node_id, type);
     #elif LOG_DEVICE == LOG_DVC_REDIS
-            string data = "[LSN] placehold:" + string('d', num_local_write *
-                    g_log_sz * 8);
-            rpc_log_semaphore->incr();
-    #if COMMIT_ALG == ONE_PC
-            if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
-            FAIL) {
-                return FAIL;
-            }
-    #else
-            if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
-                data) == FAIL) {
-                return FAIL;
-            }
-    #endif
+        string data = "[LSN] placehold:" + string('d', num_local_write *
+                g_log_sz * 8);
+        rpc_log_semaphore->incr();
+        #if COMMIT_ALG == ONE_PC
+        if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
+        FAIL) {
+            return FAIL;
+        }
+        #else
+        if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
+            data) == FAIL) {
+            return FAIL;
+        }
+        #endif
+    #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        string data = "[LSN] placehold:" + string('d', num_local_write *
+                g_log_sz * 8);
+        rpc_log_semaphore->incr();
+        #if COMMIT_ALG == ONE_PC
+        if (azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
+        FAIL) {
+            return FAIL;
+        }
+        #else
+        if (azure_blob_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
+            data) == FAIL) {
+            return FAIL;
+        }
+        #endif
     #endif
     }
 #endif
@@ -305,39 +327,52 @@ TxnManager::process_2pc_phase2(RC rc)
 
 #if LOG_REMOTE
     #if COMMIT_ALG == TWO_PC
-    // 2pc: persistent decision
-    uint64_t starttime = get_sys_clock();
-#if LOG_DEVICE == LOG_DVC_NATIVE
-    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-            SundialRequest::LOG_ABORT_REQ;
-    send_log_request(g_storage_node_id, type);
-    rpc_log_semaphore->wait();
-#elif LOG_DEVICE == LOG_DVC_REDIS
-    rpc_log_semaphore->incr();
-    if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
-    FAIL) {
-        return FAIL;
-    }
-    rpc_log_semaphore->wait();
-#endif
+        // 2pc: persistent decision
+        uint64_t starttime = get_sys_clock();
+        #if LOG_DEVICE == LOG_DVC_NATIVE
+            SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+                    SundialRequest::LOG_ABORT_REQ;
+            send_log_request(g_storage_node_id, type);
+            rpc_log_semaphore->wait();
+        #elif LOG_DEVICE == LOG_DVC_REDIS
+            rpc_log_semaphore->incr();
+            if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
+            FAIL) {
+                return FAIL;
+            }
+            rpc_log_semaphore->wait();
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+            rpc_log_semaphore->incr();
+            if (azure_blob_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
+            FAIL) {
+                return FAIL;
+            }
+            rpc_log_semaphore->wait();
+        #endif
 
-    // profile: time spent on a sync log
-    INC_FLOAT_STATS(time_debug4, get_sys_clock() - starttime);
-    INC_INT_STATS(int_debug4, 1);
-#elif COMMIT_ALG == ONE_PC
-    #if LOG_DEVICE == LOG_DVC_NATIVE
-    SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-            SundialRequest::LOG_ABORT_REQ;
-    send_log_request(g_storage_node_id, type);
-    #elif LOG_DEVICE == LOG_DVC_REDIS
-    rpc_log_semaphore->incr();
-    if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
-    FAIL) {
-        return FAIL;
-    }
+        // profile: time spent on a sync log
+        INC_FLOAT_STATS(time_debug4, get_sys_clock() - starttime);
+        INC_INT_STATS(int_debug4, 1);
+    #elif COMMIT_ALG == ONE_PC
+        #if LOG_DEVICE == LOG_DVC_NATIVE
+            SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+                    SundialRequest::LOG_ABORT_REQ;
+            send_log_request(g_storage_node_id, type);
+        #elif LOG_DEVICE == LOG_DVC_REDIS
+            rpc_log_semaphore->incr();
+            if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
+            FAIL) {
+                return FAIL;
+            }
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+            rpc_log_semaphore->incr();
+            if (azure_blob_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
+            FAIL) {
+                return FAIL;
+            }
+        #endif
+        INC_INT_STATS(int_debug4, 1);
     #endif
-    INC_INT_STATS(int_debug4, 1);
-#endif
 #endif
 
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {

@@ -1,4 +1,9 @@
 # a list of servers; each on a new line
-node0.c5h11oh-102270.nextgendb-PG0.wisc.cloudlab.us:50051
+compute1:50051
+compute2:50051
+compute3:50051
+compute4:50051
 =l
-<redis_host>:6380 <password_goes_here>
+# compute1:6379
+cornusredis.redis.cache.windows.net:6379 GiJPjtKcoOlNel4GCWZctbysmmml1KkkXG6OikkrKPs=
+# 128.105.144.81:6379
