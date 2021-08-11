@@ -47,6 +47,7 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     _is_sub_txn = false;
     _is_single_partition = true;
     _is_read_only = true;
+    _is_txn_read_only = true;
     _is_remote_abort = false;
     _is_coordinator = false;
 
@@ -161,6 +162,7 @@ TxnManager::restart() {
     assert(_txn_state == ABORTED);
     _is_single_partition = true;
     _is_read_only = true;
+    _is_txn_read_only = true;
     _is_remote_abort = false;
     num_local_write = 0;
     _terminate_time = 0;

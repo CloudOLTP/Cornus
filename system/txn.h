@@ -42,8 +42,10 @@ public:
     uint64_t          get_txn_id()          { return _txn_id; }
     // if coordinator is read-only
     bool              is_read_only()        { return _is_read_only; }
+    bool              is_txn_read_only()    { return _is_txn_read_only; }
     bool              is_coordinator()        { return _is_coordinator; }
     void              set_read_only(bool readonly) { _is_read_only = readonly; }
+    void              set_txn_read_write() { _is_txn_read_only = false; }
     bool              is_single_partition() { return _is_single_partition; }
 
     CCManager *       get_cc_manager()      { return _cc_manager; }
@@ -116,6 +118,7 @@ private:
     volatile RC       _decision;
     bool              _is_single_partition;
     bool              _is_read_only;
+    bool              _is_txn_read_only;
     bool              _is_remote_abort;
     bool              _is_coordinator;
     // txn_id format.

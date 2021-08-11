@@ -62,7 +62,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         memcpy(data, request->tuple_data(i).data().c_str(), request->tuple_data(i).size());
     }
     // set up all nodes involved (including sender, excluding self)
-    // so that termination protocol will not where to find
+    // so that termination protocol will know where to find
     for (int i = 0; i < request->nodes_size(); i++) {
         uint64_t node_id = request->nodes(i).nid();
         if (node_id == g_node_id)
@@ -84,9 +84,9 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 #endif
     log_semaphore->wait();
 #endif
-    // log votes
-    if (num_tuples != 0) {
-        // log prepare msg
+
+    // log vote if the entire txn is read-write
+    if (request->nodes_size() != 0) {
 #if LOG_REMOTE
         uint64_t starttime = get_sys_clock();
 #if LOG_DEVICE == LOG_DVC_NATIVE
@@ -111,8 +111,11 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         // profile: avg time on logging a sync vote
         INC_FLOAT_STATS(time_debug2, get_sys_clock() - starttime);
         INC_INT_STATS(int_debug2, 1);
-        _txn_state = PREPARED;
 #endif
+    }
+
+    // log msg no matter it is readonly or not
+    if (num_tuples != 0) {
         _txn_state = PREPARED;
     } else {
         // readonly remote nodes

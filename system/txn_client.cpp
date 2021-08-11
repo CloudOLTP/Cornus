@@ -142,27 +142,30 @@ TxnManager::process_2pc_phase1()
     glob_manager->wakeup_next_thread();
   #endif
 #endif
+
 #if LOG_REMOTE
-        // asynchronously log prepare for this node
-#if LOG_DEVICE == LOG_DVC_NATIVE
-        SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
-        send_log_request(g_storage_node_id, type);
-#elif LOG_DEVICE == LOG_DVC_REDIS
-        string data = "[LSN] placehold:" + string('d', num_local_write *
-                g_log_sz * 8);
-        rpc_log_semaphore->incr();
-#if COMMIT_ALG == ONE_PC
-        if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
-        FAIL) {
-            return FAIL;
-        }
-#else
-        if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
-            data) == FAIL) {
-            return FAIL;
-        }
-#endif
-#endif
+    // asynchronously log prepare for this node
+    if (!is_txn_read_only()) {
+    #if LOG_DEVICE == LOG_DVC_NATIVE
+            SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
+            send_log_request(g_storage_node_id, type);
+    #elif LOG_DEVICE == LOG_DVC_REDIS
+            string data = "[LSN] placehold:" + string('d', num_local_write *
+                    g_log_sz * 8);
+            rpc_log_semaphore->incr();
+    #if COMMIT_ALG == ONE_PC
+            if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
+            FAIL) {
+                return FAIL;
+            }
+    #else
+            if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
+                data) == FAIL) {
+                return FAIL;
+            }
+    #endif
+    #endif
+    }
 #endif
 
     SundialRequest::NodeData * participant;
@@ -182,12 +185,14 @@ TxnManager::process_2pc_phase1()
         participant = request.add_nodes();
         participant->set_nid(g_node_id);
         // attach participants
-        for (auto itr = _remote_nodes_involved.begin(); itr !=
-            _remote_nodes_involved.end(); itr ++) {
-            if (itr->second->is_readonly)
-                continue;
-            participant = request.add_nodes();
-            participant->set_nid(it->first);
+        if (!is_txn_read_only()) {
+            for (auto itr = _remote_nodes_involved.begin(); itr !=
+                _remote_nodes_involved.end(); itr++) {
+                if (itr->second->is_readonly)
+                    continue;
+                participant = request.add_nodes();
+                participant->set_nid(it->first);
+            }
         }
         ((LockManager *)_cc_manager)->build_prepare_req( it->first, request );
         if (rpc_client->sendRequestAsync(this, it->first, request, response)
@@ -220,10 +225,10 @@ TxnManager::process_2pc_phase1()
     // profile: # prepare phase
     INC_INT_STATS(int_debug3, 1);
 
-    // wait for log
-    if (!is_read_only()) {
+    // wait for log if the txn is read/write
+    if (!is_txn_read_only())
         rpc_log_semaphore->wait();
-    }
+
     // wait for vote
     rpc_semaphore->wait();
 #if FAILURE_ENABLE
@@ -402,8 +407,10 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
     if (rpc_client->sendRequest(node_id, request, response) == FAIL)
         return FAIL;
 
-    if (access_type != RD)
+    if (access_type != RD) {
         _remote_nodes_involved[node_id]->is_readonly = false;
+        set_txn_read_write();
+    }
 
     // handle RPC response
     if (response.response_type() == SundialResponse::RESP_OK) {
@@ -441,8 +448,10 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             read_request->set_key((*it2)->key);
             read_request->set_index_id((*it2)->index_id);
             read_request->set_access_type((*it2)->access_type);
-        	if ((*it2)->access_type != RD)
-            	_remote_nodes_involved[node_id]->is_readonly = false;
+        	if ((*it2)->access_type != RD) {
+                _remote_nodes_involved[node_id]->is_readonly = false;
+                set_txn_read_write();
+            }
         }
     }
 
