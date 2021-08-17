@@ -8,5 +8,6 @@ rundb
 __pycache__
 .vscode
 outputs/*.json
+outputs/*.csv
 config.h
 *.log
