@@ -1,6 +1,6 @@
 #pragma once
 
-#include "global.h
+#include "global.h"
 #include "sundial.grpc.pb.h"
 #include "sundial.pb.h"
 #include <iostream>
