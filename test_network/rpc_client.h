@@ -45,13 +45,11 @@ public:
     static void AsyncCompleteRpc(SundialRPCClient * s);
     RC sendRequest(uint64_t node_id, SundialRequest &request, SundialResponse
     &response);
-    RC sendRequestAsync(TxnManager * txn, uint64_t node_id,
+    RC sendRequestAsync(uint64_t node_id,
                           SundialRequest &request, SundialResponse &response);
     void sendRequestDone(SundialResponse * response);
 private:
-    //std::unique_ptr<SundialRPC::Stub> ** _servers;
     SundialRPCClientStub ** _servers;
     CompletionQueue cq;
-    //pthread_t * _thread;
     std::thread * _thread;
 };

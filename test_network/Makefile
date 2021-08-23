@@ -34,9 +34,9 @@ DEPS = $(CPPS:.cpp=.d)
 
 #vpath %.proto $(PROTOS_PATH)
 
-all : run_test_grpc
+all : run_test_network
 
-run_test_grpc : $(OBJS)
+run_test_network : $(OBJS)
 	$(CC) -no-pie -o $@ $^ $(LDFLAGS)
 
 -include $(OBJS:%.o=%.d)

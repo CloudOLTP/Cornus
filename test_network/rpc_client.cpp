@@ -1,15 +1,11 @@
 #include "global.h"
 #include "rpc_client.h"
-#include "stats.h"
-#include "manager.h"
-#include "txn.h"
-#include "txn_table.h"
 
 SundialRPCClient::SundialRPCClient() {
     _servers = new SundialRPCClientStub * [g_num_nodes];
     // get server names
     std::ifstream in(ifconfig_file);
-    string line;
+    std::string line;
     uint32_t node_id = 0;
 
     while ( node_id  < g_num_nodes && getline(in, line) )
@@ -19,16 +15,16 @@ SundialRPCClient::SundialRPCClient() {
         else if ((line[0] == '=' && line[1] == 'l') || node_id == g_num_nodes)
             break;
         else {
-            string url = line;
+            std::string url = line;
             if (node_id != g_node_id) {
                 _servers[node_id] = new SundialRPCClientStub(grpc::CreateChannel(url,
                     grpc::InsecureChannelCredentials()));
-                cout << "[Sundial] init rpc client - " << node_id << " at " << url << endl;
+                std::cout << "[Sundial] init rpc client - " << node_id << " at " << url << std::endl;
             }
             node_id ++;
         }
     }
-    cout << "[Sundial] rpc client is initialized!" << endl;
+    std::cout << "[Sundial] rpc client is initialized!" << std::endl;
     // spawn a reader thread to indefinitely read completion queue
     _thread = new std::thread(AsyncCompleteRpc, this);
     // use a single cq for different channels.
@@ -57,9 +53,6 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
 RC
 SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
     SundialResponse &response) {
-    if (!glob_manager->active && (request.request_type() !=
-    SundialRequest::SYS_REQ))
-        return FAIL;
     ClientContext context;
     Status status = _servers[node_id]->contactRemote(&context, request, &response);
     if (!status.ok()) {
@@ -75,9 +68,6 @@ RC
 SundialRPCClient::sendRequestAsync(uint64_t node_id,
                                    SundialRequest &request, SundialResponse &response)
 {
-    if (!glob_manager->active && (request.request_type() !=
-    SundialRequest::TERMINATE_REQ))
-        return FAIL;
     assert(node_id != g_node_id);
     // call object to store rpc data
     AsyncClientCall* call = new AsyncClientCall;;

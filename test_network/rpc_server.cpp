@@ -4,7 +4,7 @@
 void
 SundialRPCServerImpl::run() {
     std::ifstream in(ifconfig_file);
-    string line;
+    std::string line;
     uint32_t num_nodes = 0;
     while (getline (in, line)) {
         if (line[0] == '#')
@@ -29,7 +29,7 @@ SundialRPCServerImpl::run() {
     for (uint32_t i = 0; i < num_thds; i++) {
         _thread_pool[i] = new std::thread(HandleRpcs, this);
     }
-    cout <<"[Sundial] rpc server initialized, lisentening on " << line << endl;
+    std::cout <<"[Sundial] rpc server initialized, lisentening on " << line << std::endl;
 }
 
 void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
