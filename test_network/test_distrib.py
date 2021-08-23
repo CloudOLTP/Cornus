@@ -9,7 +9,7 @@ ifconfig = "ifconfig.txt"
 
 
 def start_nodes(curr_node):
-    os.system("sudo pkill rundb")
+    os.system("sudo pkill run_test_network")
     os.system("export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH")
     os.system("make clean; make -j16;")
     f = open(ifconfig)
@@ -25,8 +25,8 @@ def start_nodes(curr_node):
         if curr_node != num_nodes:
             # start server remotely
             addr = addr.split(':')[0]
-            os.system("ssh {} 'sudo pkill rundb'".format(addr))
-            ret = os.system("ssh {} 'cd ~/Sundial/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' & ".format(addr, cmd))
+            os.system("ssh {} 'sudo pkill run_test_network'".format(addr))
+            ret = os.system("ssh {} 'cd ~/Sundial/test_network/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' & ".format(addr, cmd))
             if ret != 0:
                 err_msg = "error executing server"
                 print("ERROR: " + err_msg)

@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     for (int i = 1; i < argc; i++) {
         assert(argv[i][0] == '-');
         if (argv[i][1] == 'G') {
-            if (argv[i][2] == 'n') 
+            if (argv[i][2] == 'n')
                 g_node_id = atoi( &argv[i][3] );
         }
     }
