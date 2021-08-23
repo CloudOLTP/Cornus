@@ -53,13 +53,17 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
 RC
 SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
     SundialResponse &response) {
+    uint64_t starttime;
+    uint64_t endtime;
     ClientContext context;
+    starttime = get_sys_clock();
     Status status = _servers[node_id]->contactRemote(&context, request, &response);
     if (!status.ok()) {
         printf("[REQ] client sendRequest to %lu fail: (%d) %s\n", node_id,
                status.error_code(), status.error_message().c_str());
     } else {
-        printf("[REQ] client sendRequest to %lu succeed!\n", node_id);
+        endtime = get_sys_clock() - starttime;
+	    std::cout << g_node_id << ", " << request.node_id() << ", " << endtime/1000 << " us" << std::endl;
     }
 	return RCOK;
 }

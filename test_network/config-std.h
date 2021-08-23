@@ -1,7 +1,7 @@
 #pragma once
 
-#define NUM_NODES                       1
-#define NUM_RPC_SERVER_THREADS          24
+#define NUM_NODES                       4
+#define NUM_RPC_SERVER_THREADS          4
 #define LOG_DEVICE                      LOG_DVC_NONE
 
 // Constants

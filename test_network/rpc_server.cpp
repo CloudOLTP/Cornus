@@ -37,6 +37,7 @@ void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
     new CallData(&(s->service_), s->cq_.get());
     void* tag;  // uniquely identifies a request.
     bool ok;
+    std::cout << "node " << g_node_id << " rpc thd starts" << std::endl;
     while (true) {
       // Block waiting to read the next event from the completion queue. The
       // event is uniquely identified by its tag, which in this case is the
@@ -61,6 +62,7 @@ SundialRPCServerImpl::contactRemote(ServerContext* context, const SundialRequest
 void
 SundialRPCServerImpl::processContactRemote(ServerContext* context, const SundialRequest* request,
         SundialResponse* response) {
+	g_num_rpc_recv++;
     return;
 }
 

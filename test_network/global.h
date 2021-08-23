@@ -33,6 +33,7 @@ class SundialRPCServerImpl;
 
 extern uint32_t         g_num_nodes;
 extern uint32_t         g_node_id;
+extern uint32_t         g_num_rpc_recv;
 
 extern char           ifconfig_file[];
 enum RC {RCOK, COMMIT, ABORT, WAIT, LOCAL_MISS, SPECULATE, ERROR, FINISH, FAIL};

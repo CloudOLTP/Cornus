@@ -14,6 +14,7 @@ char            ifconfig_file[80]       = "ifconfig.txt";
 // ================
 uint32_t        g_num_nodes             = NUM_NODES;
 uint32_t        g_node_id               = NUM_NODES;
+uint32_t        g_num_rpc_recv = 0;
 
 SundialRPCClient *  rpc_client;
 SundialRPCServerImpl * rpc_server;

@@ -24,11 +24,11 @@ int main(int argc, char* argv[])
 
     std::cout << "[Sundial] start node " << g_node_id << std::endl;
 
-    rpc_client = new SundialRPCClient();
     rpc_server = new SundialRPCServerImpl;
     rpc_server->run();
 //    pthread_t * pthread_rpc = new pthread_t;
 //    pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
+    rpc_client = new SundialRPCClient();
 
 #if LOG_DEVICE == LOG_DVC_REDIS
     // assume a shared logging but store different node's info to different key
@@ -41,24 +41,22 @@ int main(int argc, char* argv[])
 
     // make sure server is setup before moving on
     sleep(30);
-    uint64_t starttime;
-    uint64_t endtime;
 
     std::cout << "[Sundial] Synchronization starts on node " << g_node_id << std::endl;
     // Notify other nodes that the current node has finished initialization
-    for (int iter = 0; iter < 1; iter++) {
+    int num_iter = 3;
+    for (int iter = 0; iter < num_iter; iter++) {
         for (uint32_t i = 0; i < g_num_nodes; i++) {
             if (i == g_node_id) continue;
             SundialRequest request;
             SundialResponse response;
             request.set_request_type(SundialRequest::SYS_REQ);
-            starttime = get_sys_clock();
+            request.set_node_id(i);
             rpc_client->sendRequest(i, request, response);
-            endtime = get_sys_clock() - starttime;
-            std::cout << "[Sundial] network round-trip from node " << g_node_id <<
-            " to node " << i << ": " << endtime / 1000 << " us" << std::endl;
         }
     }
+    while (g_num_rpc_recv < (g_num_nodes - 1) * num_iter) {
+	}
     return 0;
 }
 
