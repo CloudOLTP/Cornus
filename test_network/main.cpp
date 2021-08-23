@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unistd.h>
 
+#include "global.h"
 #include "rpc_server.h"
 #include "rpc_client.h"
 //#include "redis_client.h"

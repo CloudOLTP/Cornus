@@ -1,3 +1,4 @@
+#include "global.h"
 #include "rpc_client.h"
 #include "rpc_server.h"
 #if LOG_DEVICE == LOG_DVC_REDIS
