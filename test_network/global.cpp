@@ -1,7 +1,10 @@
 #include "rpc_client.h"
 #include "rpc_server.h"
+#if LOG_DEVICE == LOG_DVC_REDIS
 #include "redis_client.h"
+#elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
 #include "azure_blob_client.h"
+#endif
 
 char            ifconfig_file[80]       = "ifconfig.txt";
 

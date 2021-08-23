@@ -28,6 +28,9 @@
 #include <sys/time.h>
 #include <math.h>
 
+class SundialRPCClient;
+class SundialRPCServerImpl;
+
 extern uint32_t         g_num_nodes;
 extern uint32_t         g_node_id;
 
