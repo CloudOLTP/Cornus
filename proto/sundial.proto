@@ -41,6 +41,8 @@ message SundialRequest {
     bytes                   log_data      = 6;
     uint64                  node_id       = 7;
     repeated NodeData       nodes         = 8;
+    uint64                  request_time  = 9;
+    uint64                  thread_id     = 10;
 }
 
 message SundialResponse {

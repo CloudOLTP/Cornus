@@ -21,6 +21,7 @@ class TxnManager;
 struct AsyncClientCall {
     // Container for the data we expect from the server.
     SundialResponse * reply;
+    SundialRequest * request;
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
@@ -47,7 +48,7 @@ public:
     &response);
     RC sendRequestAsync(TxnManager * txn, uint64_t node_id,
                           SundialRequest &request, SundialResponse &response);
-    void sendRequestDone(SundialResponse * response);
+    void sendRequestDone(SundialRequest * request, SundialResponse * response);
 private:
     //std::unique_ptr<SundialRPC::Stub> ** _servers;
     SundialRPCClientStub ** _servers;

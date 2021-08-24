@@ -19,7 +19,12 @@ Stats_thd::Stats_thd()
 
     _resp_msg_count = (uint64_t *) _mm_malloc(sizeof(uint64_t) * SundialResponse::NUM_RESP_TYPES, 64);
     _resp_msg_size = (uint64_t *) _mm_malloc(sizeof(uint64_t) * SundialResponse::NUM_RESP_TYPES, 64);
-
+    _req_msg_avg_latency = (uint64_t *) _mm_malloc(sizeof(uint64_t) *
+        SundialResponse::NUM_REQ_TYPES, 64);
+    _req_msg_max_latency = (uint64_t *) _mm_malloc(sizeof(uint64_t) *
+        SundialResponse::NUM_REQ_TYPES, 64);
+    _req_msg_min_latency = (uint64_t *) _mm_malloc(sizeof(uint64_t) *
+        SundialResponse::NUM_REQ_TYPES, 64);
     clear();
 }
 
@@ -35,6 +40,11 @@ void Stats_thd::clear() {
 
     memset(_req_msg_count, 0, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
     memset(_req_msg_size, 0, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
+    memset(_req_msg_avg_latency, 0, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
+    memset(_req_msg_max_latency, 0, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
+    for (uint32_t i = 0; i < SundialRequest::NUM_REQ_TYPES) {
+        _req_msg_min_latency[i] = UINT64_MAX;
+    }
 
     memset(_resp_msg_count, 0, sizeof(uint64_t) * SundialResponse::NUM_RESP_TYPES);
     memset(_resp_msg_size, 0, sizeof(uint64_t) * SundialResponse::NUM_RESP_TYPES);
@@ -54,6 +64,12 @@ Stats_thd::copy_from(Stats_thd * stats_thd)
 
     memcpy(_req_msg_count, stats_thd->_req_msg_count, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
     memcpy(_req_msg_size, stats_thd->_req_msg_size, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
+    memcpy(_req_msg_max_latency, stats_thd->_req_msg_size, sizeof(uint64_t) *
+    SundialRequest::NUM_REQ_TYPES);
+    memcpy(_req_msg_min_latency, stats_thd->_req_msg_size, sizeof(uint64_t) *
+    SundialRequest::NUM_REQ_TYPES);
+    memcpy(_req_msg_avg_latency, stats_thd->_req_msg_size, sizeof(uint64_t) *
+    SundialRequest::NUM_REQ_TYPES);
 
     memcpy(_resp_msg_count, stats_thd->_resp_msg_count, sizeof(uint64_t) * SundialResponse::NUM_RESP_TYPES);
     memcpy(_resp_msg_size, stats_thd->_resp_msg_size, sizeof(uint64_t) * SundialResponse::NUM_RESP_TYPES);
@@ -203,6 +219,25 @@ void Stats::output(std::ostream * os)
     uint64_t total_prepare_resp_size = sum_prepared_ok_msg_size + sum_prepared_ok_ro_msg_size;
     STAT_SUM(uint64_t, sum_prepare_count, _req_msg_count[SundialRequest::PREPARE_REQ]);
     STAT_SUM(uint64_t, sum_prepare_size, _req_msg_size[SundialRequest::PREPARE_REQ]);
+
+    // debug grpc latency
+    for (uint32_t i = 0; i < SundialRequest::NUM_REQ_TYPES; i++) {
+        string msg_name = SundialRequest::RequestType_Name(i);
+        // use response count since latency is collected when response is
+        // received
+        STAT_SUM(uint64_t, sum_grpc_msg_count, _resp_msg_count[i]);
+        STAT_MAX(uint64_t, max_grpc_msg_max_latency, _req_msg_max_latency[i]);
+        STAT_MIN(uint64_t, min_grpc_msg_min_latency, _req_msg_min_latency[i]);
+        STAT_SUM(uint64_t, sum_grpc_msg_avg_latency, _req_msg_avg_latency[i]);
+        cout << "    " << setw(30) << left << "average_" <<
+        msg_name << "_req_latency:" << sum_grpc_msg_avg_latency * 1.0 /
+        sum_grpc_msg_count
+        << endl;
+        cout << "    " << setw(30) << left << "max_" <<
+        msg_name << "_req_latency:" << max_grpc_msg_max_latency << endl;
+        cout << "    " << setw(30) << left << "min_" <<
+        msg_name << "_req_latency:" << min_grpc_msg_min_latency << endl;
+    }
 
     STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
     STAT_SUM(uint64_t, total_remote_prepare, _int_stats[STAT_int_debug2]);

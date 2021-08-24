@@ -179,6 +179,9 @@ public:
     uint64_t * _req_msg_count;
     uint64_t * _req_msg_size;
     uint64_t * _resp_msg_count;
+    uint64_t * _req_msg_max_latency;
+    uint64_t * _req_msg_min_latency;
+    uint64_t * _req_msg_avg_latency;
     uint64_t * _resp_msg_size;
     //uint64_t * _msg_committed_count;
     //uint64_t * _msg_committed_size;

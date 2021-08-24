@@ -56,7 +56,8 @@ SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
         }
         // handle return value for non-system response
         assert(call->reply->response_type() != SundialResponse::SYS_RESP);
-        s->sendRequestDone(call->reply);
+
+        s->sendRequestDone(call->request, call->reply);
         // Once we're complete, deallocate the call object.
         delete call;
     }
@@ -73,11 +74,24 @@ SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
         .txn_id(), request.request_type());
 #endif
     ClientContext context;
+    request.set_request_time(get_sys_clock());
     Status status = _servers[node_id]->contactRemote(&context, request, &response);
     if (!status.ok()) {
         printf("[REQ] client sendRequest fail: (%d) %s\n",
                status.error_code(), status.error_message().c_str());
         assert(false);
+    }
+    uint64_t latency = get_sys_clock() - request->request_time();
+    glob_stats->_stats[GET_THD_ID]->_req_msg_avg_lantecy[response->response_type()] += latency;
+    if (latency > glob_stats->_stats[GET_THD_ID]->_req_msg_max_lantecy
+    [response->response_type()]) {
+        glob_stats->_stats[GET_THD_ID]->_req_msg_max_lantecy
+        [response->response_type()] = latency;
+    }
+    if (latency < glob_stats->_stats[GET_THD_ID]->_req_msg_min_lantecy
+    [response->response_type()]) {
+        glob_stats->_stats[GET_THD_ID]->_resp_msg_min_lantecy
+        [response->response_type()] = latency;
     }
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response.response_type() ] += response.SpaceUsedLong();
@@ -99,12 +113,14 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     // call object to store rpc data
     AsyncClientCall* call = new AsyncClientCall;;
     assert(node_id != g_node_id);
-    // RACE CONDITION: should assign thd id to server thread
+    request.set_request_time(get_sys_clock());
+    request.set_thread_id(GET_THD_ID);
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_req_msg_size[ request.request_type() ] += request.SpaceUsedLong();
     call->response_reader = _servers[node_id]->stub_->PrepareAsynccontactRemote(&call->context, request, &cq);
 
     // StartCall initiates the RPC call
+    call->request = &request;
     call->response_reader->StartCall();
     call->reply = &response;
     call->response_reader->Finish(call->reply, &(call->status), (void*)call);
@@ -113,10 +129,25 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
 
 
 void
-SundialRPCClient::sendRequestDone(SundialResponse * response)
+SundialRPCClient::sendRequestDone(SundialRequest * request, SundialResponse *
+response)
 {
-    glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response->response_type() ]++;
-    glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response->response_type() ] += response->SpaceUsedLong();
+    // RACE CONDITION (solved): should assign thd id to server thread
+    uint64_t thread_id = request->thread_id();
+    uint64_t latency = get_sys_clock() - request->request_time();
+    glob_stats->_stats[thread_id]->_req_msg_avg_lantecy[response->response_type()] += latency;
+    if (latency > glob_stats->_stats[thread_id]->_req_msg_max_lantecy
+    [response->response_type()]) {
+        glob_stats->_stats[thread_id]->_req_msg_max_lantecy
+        [response->response_type()] = latency;
+    }
+    if (latency < glob_stats->_stats[thread_id]->_req_msg_min_lantecy
+    [response->response_type()]) {
+        glob_stats->_stats[thread_id]->_resp_msg_min_lantecy
+        [response->response_type()] = latency;
+    }
+    glob_stats->_stats[thread_id]->_resp_msg_count[ response->response_type() ]++;
+    glob_stats->_stats[thread_id]->_resp_msg_size[ response->response_type() ] += response->SpaceUsedLong();
 
     uint64_t txn_id = response->txn_id();
     TxnManager * txn;

@@ -130,6 +130,16 @@ extern double g_cpu_freq;
     for (uint32_t ii = 0; ii < g_total_num_threads; ii++) \
         sum += _stats[ii]->name;
 
+#define STAT_MAX(type, max, name) \
+    type max = 0; \
+    for (uint32_t ii = 0; ii < g_total_num_threads; ii++) \
+        max = _stats[ii]->name > max ? _stats[ii]->name : max;
+
+#define STAT_MIN(type, min, name) \
+    type min = 0; \
+    for (uint32_t ii = 0; ii < g_total_num_threads; ii++) \
+        min = _stats[ii]->name < min ? _stats[ii]->name : min;
+
 // Malloc helper
 // =============
 #define MALLOC(size) malloc(size)
