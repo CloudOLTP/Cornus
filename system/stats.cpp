@@ -42,7 +42,7 @@ void Stats_thd::clear() {
     memset(_req_msg_size, 0, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
     memset(_req_msg_avg_latency, 0, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
     memset(_req_msg_max_latency, 0, sizeof(uint64_t) * SundialRequest::NUM_REQ_TYPES);
-    for (uint32_t i = 0; i < SundialRequest::NUM_REQ_TYPES) {
+    for (uint32_t i = 0; i < SundialRequest::NUM_REQ_TYPES; i++) {
         _req_msg_min_latency[i] = UINT64_MAX;
     }
 
