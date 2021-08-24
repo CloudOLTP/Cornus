@@ -81,17 +81,18 @@ SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
                status.error_code(), status.error_message().c_str());
         assert(false);
     }
-    uint64_t latency = get_sys_clock() - request->request_time();
-    glob_stats->_stats[GET_THD_ID]->_req_msg_avg_lantecy[response->response_type()] += latency;
-    if (latency > glob_stats->_stats[GET_THD_ID]->_req_msg_max_lantecy
-    [response->response_type()]) {
-        glob_stats->_stats[GET_THD_ID]->_req_msg_max_lantecy
-        [response->response_type()] = latency;
+    uint64_t latency = get_sys_clock() - request.request_time();
+    glob_stats->_stats[GET_THD_ID]->_req_msg_avg_latency[response
+    .response_type()] += latency;
+    if (latency > glob_stats->_stats[GET_THD_ID]->_req_msg_max_latency
+    [response.response_type()]) {
+        glob_stats->_stats[GET_THD_ID]->_req_msg_max_latency
+        [response.response_type()] = latency;
     }
-    if (latency < glob_stats->_stats[GET_THD_ID]->_req_msg_min_lantecy
-    [response->response_type()]) {
-        glob_stats->_stats[GET_THD_ID]->_req_msg_min_lantecy
-        [response->response_type()] = latency;
+    if (latency < glob_stats->_stats[GET_THD_ID]->_req_msg_min_latency
+    [response.response_type()]) {
+        glob_stats->_stats[GET_THD_ID]->_req_msg_min_latency
+        [response.response_type()] = latency;
     }
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_resp_msg_size[ response.response_type() ] += response.SpaceUsedLong();
@@ -135,15 +136,15 @@ response)
     // RACE CONDITION (solved): should assign thd id to server thread
     uint64_t thread_id = request->thread_id();
     uint64_t latency = get_sys_clock() - request->request_time();
-    glob_stats->_stats[thread_id]->_req_msg_avg_lantecy[response->response_type()] += latency;
-    if (latency > glob_stats->_stats[thread_id]->_req_msg_max_lantecy
+    glob_stats->_stats[thread_id]->_req_msg_avg_latency[response->response_type()] += latency;
+    if (latency > glob_stats->_stats[thread_id]->_req_msg_max_latency
     [response->response_type()]) {
-        glob_stats->_stats[thread_id]->_req_msg_max_lantecy
+        glob_stats->_stats[thread_id]->_req_msg_max_latency
         [response->response_type()] = latency;
     }
-    if (latency < glob_stats->_stats[thread_id]->_req_msg_min_lantecy
+    if (latency < glob_stats->_stats[thread_id]->_req_msg_min_latency
     [response->response_type()]) {
-        glob_stats->_stats[thread_id]->_req_msg_min_lantecy
+        glob_stats->_stats[thread_id]->_req_msg_min_latency
         [response->response_type()] = latency;
     }
     glob_stats->_stats[thread_id]->_resp_msg_count[ response->response_type() ]++;
