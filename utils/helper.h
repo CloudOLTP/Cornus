@@ -186,7 +186,14 @@ inline uint64_t get_sys_clock() {
 #endif
 }
 
+const std::string WHITESPACE = " \n\r\t\f\v";
+inline std::string ltrim(const std::string &s)
+{
+    size_t start = s.find_first_not_of(WHITESPACE);
+    return (start == std::string::npos) ? "" : s.substr(start);
+}
+
 #define IS_LOG_RESPONSE(type)  \
      (type == SundialResponse::RESP_LOG_YES \
             || type == SundialResponse::RESP_LOG_ABORT \
-            || type== SundialResponse::RESP_LOG_COMMIT) 
+            || type== SundialResponse::RESP_LOG_COMMIT)

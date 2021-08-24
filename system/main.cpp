@@ -154,16 +154,10 @@ int main(int argc, char* argv[])
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
 #endif
         if (i == g_node_id) continue;
-    	//cout << "[Sundial] contacting node-" << i << endl;
         SundialRequest request;
         SundialResponse response;
         request.set_request_type( SundialRequest::SYS_REQ );
-        starttime = get_sys_clock();
         rpc_client->sendRequest(i, request, response);
-        endtime = get_sys_clock() - starttime;
-        INC_FLOAT_STATS(time_debug5, endtime);
-        cout << "[Sundial] network roundtrip to node " << i << ": " <<
-        endtime / 1000 << " us" << endl;
     }
     // Can start only if all other nodes have also finished initialization
 
@@ -200,7 +194,12 @@ int main(int argc, char* argv[])
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
 #endif
         if (i == g_node_id) continue;
+        starttime = get_sys_clock();
         rpc_client->sendRequest(i, request, response);
+        endtime = get_sys_clock() - starttime;
+        INC_FLOAT_STATS(time_debug5, endtime);
+        cout << "[Sundial] network roundtrip to node " << i << ": " <<
+        endtime / 1000 << " us" << endl;
     }
 
     while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
