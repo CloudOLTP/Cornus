@@ -222,7 +222,7 @@ void Stats::output(std::ostream * os)
 
     // debug grpc latency
     for (uint32_t i = 0; i < SundialRequest::NUM_REQ_TYPES; i++) {
-        string msg_name = ltrim(SundialRequest::RequestType_Name(i));
+        string msg_name = ltrim_str(SundialRequest::RequestType_Name(i));
         // use response count since latency is collected when response is
         // received
         STAT_SUM(uint64_t, sum_grpc_msg_count, _resp_msg_count[i]);
