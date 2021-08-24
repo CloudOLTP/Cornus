@@ -90,7 +90,7 @@ SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
     }
     if (latency < glob_stats->_stats[GET_THD_ID]->_req_msg_min_lantecy
     [response->response_type()]) {
-        glob_stats->_stats[GET_THD_ID]->_resp_msg_min_lantecy
+        glob_stats->_stats[GET_THD_ID]->_req_msg_min_lantecy
         [response->response_type()] = latency;
     }
     glob_stats->_stats[GET_THD_ID]->_resp_msg_count[ response.response_type() ] ++;
@@ -143,7 +143,7 @@ response)
     }
     if (latency < glob_stats->_stats[thread_id]->_req_msg_min_lantecy
     [response->response_type()]) {
-        glob_stats->_stats[thread_id]->_resp_msg_min_lantecy
+        glob_stats->_stats[thread_id]->_req_msg_min_lantecy
         [response->response_type()] = latency;
     }
     glob_stats->_stats[thread_id]->_resp_msg_count[ response->response_type() ]++;
