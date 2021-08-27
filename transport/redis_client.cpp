@@ -180,9 +180,6 @@ RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED), tid};
     client.eval(script, keys, args, ne_callback);
     client.commit();
-    // if (txn_id / g_num_nodes == 6808 || txn_id / g_num_nodes == 1206) {
-    //     std::cout << "[debug-" << g_node_id << " txn-" << txn_id << "][RedisClient] log_if_ne_data requested: set " << keys[0] << " to " << args[0] << ", setnx " << keys[1] << " to " << args[1] << endl;
-    // }
     return RCOK;
 }
 

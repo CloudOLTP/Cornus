@@ -211,7 +211,9 @@ int main(int argc, char* argv[])
 #endif
     //assert( txn_table->get_size() == 0 );
     endtime = get_server_clock();
-    cout << "Complete. Total RunTime = " << 1.0 * (endtime - starttime) / BILLION << endl;
+    // endtime and starttime were modified. the following Total RunTime msg may be misleading
+    // cout << "Complete. Total RunTime = " << 1.0 * (endtime - starttime) / BILLION << endl;
+    cout << "Complete." << endl; 
     if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
         glob_stats->print();
 
