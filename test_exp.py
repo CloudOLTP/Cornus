@@ -35,7 +35,7 @@ if __name__ == "__main__":
         args = new_args
     for i, arg in enumerate(args):
         print("[LOG] issue exp {}/{}".format(i+1, len(args)))
-        print("[LOG] arg = {}".format(arg))
+        print("[LOG] arg = {}".format(arg), flush=True)
         if script == "test_distrib.py":
             ret = start_nodes(arg.split(), curr_node)
             if ret != 0:
@@ -43,13 +43,13 @@ if __name__ == "__main__":
             print("[LOG] KILLING CURRENT SERVER ... ")
             # kill the remote servers
             kill_nodes(curr_node)
-            print("[LOG] FINISH EXECUTION ")
+            print("[LOG] FINISH EXECUTION ", flush=True)
         else:
             main(arg)
     if eval_arg("MODE", "release", job, default=True):
         os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
     print("[LOG] FINISH WHOLE EXPERIMENTS")
-    print("[LOG] Start collecting results from remote")
+    print("[LOG] Start collecting results from remote", flush=True)
     f = open('ifconfig.txt')
     num_nodes = 0
     for addr in f:
