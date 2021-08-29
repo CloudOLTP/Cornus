@@ -71,6 +71,6 @@ if __name__ == "__main__":
     suffix = ""
     if eval_arg("FAILURE_ENABLE", "true", job, default=False):
         suffix = " {}".format(job["FAILURE_NODE"])
-    os.system("cd tools; python3 collect_remote_result.py {} {}".format(exp_name, num_nodes)+suffix)
+    os.system("cd tools; python3 collect_remote_result.py {} {}".format(exp_name, num_nodes) + suffix)
     print("[LOG] FINISH collecting results")
     #os.system("python3 send_email.py {}".format(exp_name))
