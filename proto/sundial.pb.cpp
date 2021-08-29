@@ -67,6 +67,8 @@ constexpr SundialRequest::SundialRequest(
   , txn_id_(PROTOBUF_ULONGLONG(0))
   , log_data_size_(PROTOBUF_ULONGLONG(0))
   , node_id_(PROTOBUF_ULONGLONG(0))
+  , request_time_(PROTOBUF_ULONGLONG(0))
+  , thread_id_(PROTOBUF_ULONGLONG(0))
   , request_type_(0)
 {}
 struct SundialRequestDefaultTypeInternal {
@@ -154,6 +156,8 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_sundial_2eproto::offsets[] PRO
   PROTOBUF_FIELD_OFFSET(::sundial_rpc::SundialRequest, log_data_),
   PROTOBUF_FIELD_OFFSET(::sundial_rpc::SundialRequest, node_id_),
   PROTOBUF_FIELD_OFFSET(::sundial_rpc::SundialRequest, nodes_),
+  PROTOBUF_FIELD_OFFSET(::sundial_rpc::SundialRequest, request_time_),
+  PROTOBUF_FIELD_OFFSET(::sundial_rpc::SundialRequest, thread_id_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::sundial_rpc::SundialResponse_TupleData, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -180,8 +184,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 8, -1, sizeof(::sundial_rpc::SundialRequest_TupleData)},
   { 17, -1, sizeof(::sundial_rpc::SundialRequest_NodeData)},
   { 23, -1, sizeof(::sundial_rpc::SundialRequest)},
-  { 36, -1, sizeof(::sundial_rpc::SundialResponse_TupleData)},
-  { 46, -1, sizeof(::sundial_rpc::SundialResponse)},
+  { 38, -1, sizeof(::sundial_rpc::SundialResponse_TupleData)},
+  { 48, -1, sizeof(::sundial_rpc::SundialResponse)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -194,7 +198,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 };
 
 const char descriptor_table_protodef_sundial_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\rsundial.proto\022\013sundial_rpc\"\246\005\n\016Sundial"
+  "\n\rsundial.proto\022\013sundial_rpc\"\317\005\n\016Sundial"
   "Request\022\016\n\006txn_id\030\001 \001(\004\022=\n\014request_type\030"
   "\002 \001(\0162\'.sundial_rpc.SundialRequest.Reque"
   "stType\022>\n\rread_requests\030\003 \003(\0132\'.sundial_"
@@ -203,40 +207,41 @@ const char descriptor_table_protodef_sundial_2eproto[] PROTOBUF_SECTION_VARIABLE
   "TupleData\022\025\n\rlog_data_size\030\005 \001(\004\022\020\n\010log_"
   "data\030\006 \001(\014\022\017\n\007node_id\030\007 \001(\004\0223\n\005nodes\030\010 \003"
   "(\0132$.sundial_rpc.SundialRequest.NodeData"
-  "\032A\n\013ReadRequest\022\013\n\003key\030\001 \001(\004\022\020\n\010index_id"
-  "\030\002 \001(\004\022\023\n\013access_type\030\003 \001(\004\032F\n\tTupleData"
-  "\022\013\n\003key\030\001 \001(\004\022\020\n\010table_id\030\002 \001(\004\022\014\n\004size\030"
-  "\003 \001(\004\022\014\n\004data\030\004 \001(\014\032\027\n\010NodeData\022\013\n\003nid\030\001"
-  " \001(\004\"\266\001\n\013RequestType\022\014\n\010READ_REQ\020\000\022\017\n\013PR"
-  "EPARE_REQ\020\001\022\016\n\nCOMMIT_REQ\020\002\022\r\n\tABORT_REQ"
-  "\020\003\022\013\n\007SYS_REQ\020\004\022\017\n\013LOG_YES_REQ\020\005\022\021\n\rLOG_"
-  "ABORT_REQ\020\006\022\022\n\016LOG_COMMIT_REQ\020\007\022\021\n\rTERMI"
-  "NATE_REQ\020\010\022\021\n\rNUM_REQ_TYPES\020\t\"\342\005\n\017Sundia"
-  "lResponse\022\016\n\006txn_id\030\001 \001(\004\022@\n\rresponse_ty"
-  "pe\030\002 \001(\0162).sundial_rpc.SundialResponse.R"
-  "esponseType\022:\n\ntuple_data\030\003 \003(\0132&.sundia"
-  "l_rpc.SundialResponse.TupleData\022\017\n\007node_"
-  "id\030\004 \001(\004\022>\n\014request_type\030\005 \001(\0162(.sundial"
-  "_rpc.SundialResponse.RequestType\032[\n\tTupl"
-  "eData\022\013\n\003key\030\001 \001(\004\022\020\n\010table_id\030\002 \001(\004\022\014\n\004"
-  "size\030\003 \001(\004\022\014\n\004data\030\004 \001(\014\022\023\n\013access_type\030"
-  "\005 \001(\004\"\266\001\n\013RequestType\022\014\n\010READ_REQ\020\000\022\017\n\013P"
+  "\022\024\n\014request_time\030\t \001(\004\022\021\n\tthread_id\030\n \001("
+  "\004\032A\n\013ReadRequest\022\013\n\003key\030\001 \001(\004\022\020\n\010index_i"
+  "d\030\002 \001(\004\022\023\n\013access_type\030\003 \001(\004\032F\n\tTupleDat"
+  "a\022\013\n\003key\030\001 \001(\004\022\020\n\010table_id\030\002 \001(\004\022\014\n\004size"
+  "\030\003 \001(\004\022\014\n\004data\030\004 \001(\014\032\027\n\010NodeData\022\013\n\003nid\030"
+  "\001 \001(\004\"\266\001\n\013RequestType\022\014\n\010READ_REQ\020\000\022\017\n\013P"
   "REPARE_REQ\020\001\022\016\n\nCOMMIT_REQ\020\002\022\r\n\tABORT_RE"
   "Q\020\003\022\013\n\007SYS_REQ\020\004\022\017\n\013LOG_YES_REQ\020\005\022\021\n\rLOG"
   "_ABORT_REQ\020\006\022\022\n\016LOG_COMMIT_REQ\020\007\022\021\n\rTERM"
-  "INATE_REQ\020\010\022\021\n\rNUM_REQ_TYPES\020\t\"\331\001\n\014Respo"
-  "nseType\022\013\n\007RESP_OK\020\000\022\016\n\nRESP_ABORT\020\001\022\r\n\t"
-  "RESP_FAIL\020\002\022\017\n\013PREPARED_OK\020\003\022\022\n\016PREPARED"
-  "_OK_RO\020\004\022\022\n\016PREPARED_ABORT\020\005\022\007\n\003ACK\020\006\022\014\n"
-  "\010SYS_RESP\020\007\022\020\n\014RESP_LOG_YES\020\010\022\022\n\016RESP_LO"
-  "G_ABORT\020\t\022\023\n\017RESP_LOG_COMMIT\020\n\022\022\n\016NUM_RE"
-  "SP_TYPES\020\0132Z\n\nSundialRPC\022L\n\rcontactRemot"
-  "e\022\033.sundial_rpc.SundialRequest\032\034.sundial"
-  "_rpc.SundialResponse\"\000b\006proto3"
+  "INATE_REQ\020\010\022\021\n\rNUM_REQ_TYPES\020\t\"\342\005\n\017Sundi"
+  "alResponse\022\016\n\006txn_id\030\001 \001(\004\022@\n\rresponse_t"
+  "ype\030\002 \001(\0162).sundial_rpc.SundialResponse."
+  "ResponseType\022:\n\ntuple_data\030\003 \003(\0132&.sundi"
+  "al_rpc.SundialResponse.TupleData\022\017\n\007node"
+  "_id\030\004 \001(\004\022>\n\014request_type\030\005 \001(\0162(.sundia"
+  "l_rpc.SundialResponse.RequestType\032[\n\tTup"
+  "leData\022\013\n\003key\030\001 \001(\004\022\020\n\010table_id\030\002 \001(\004\022\014\n"
+  "\004size\030\003 \001(\004\022\014\n\004data\030\004 \001(\014\022\023\n\013access_type"
+  "\030\005 \001(\004\"\266\001\n\013RequestType\022\014\n\010READ_REQ\020\000\022\017\n\013"
+  "PREPARE_REQ\020\001\022\016\n\nCOMMIT_REQ\020\002\022\r\n\tABORT_R"
+  "EQ\020\003\022\013\n\007SYS_REQ\020\004\022\017\n\013LOG_YES_REQ\020\005\022\021\n\rLO"
+  "G_ABORT_REQ\020\006\022\022\n\016LOG_COMMIT_REQ\020\007\022\021\n\rTER"
+  "MINATE_REQ\020\010\022\021\n\rNUM_REQ_TYPES\020\t\"\331\001\n\014Resp"
+  "onseType\022\013\n\007RESP_OK\020\000\022\016\n\nRESP_ABORT\020\001\022\r\n"
+  "\tRESP_FAIL\020\002\022\017\n\013PREPARED_OK\020\003\022\022\n\016PREPARE"
+  "D_OK_RO\020\004\022\022\n\016PREPARED_ABORT\020\005\022\007\n\003ACK\020\006\022\014"
+  "\n\010SYS_RESP\020\007\022\020\n\014RESP_LOG_YES\020\010\022\022\n\016RESP_L"
+  "OG_ABORT\020\t\022\023\n\017RESP_LOG_COMMIT\020\n\022\022\n\016NUM_R"
+  "ESP_TYPES\020\0132Z\n\nSundialRPC\022L\n\rcontactRemo"
+  "te\022\033.sundial_rpc.SundialRequest\032\034.sundia"
+  "l_rpc.SundialResponse\"\000b\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_sundial_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_sundial_2eproto = {
-  false, false, 1550, descriptor_table_protodef_sundial_2eproto, "sundial.proto", 
+  false, false, 1591, descriptor_table_protodef_sundial_2eproto, "sundial.proto", 
   &descriptor_table_sundial_2eproto_once, nullptr, 0, 6,
   schemas, file_default_instances, TableStruct_sundial_2eproto::offsets,
   file_level_metadata_sundial_2eproto, file_level_enum_descriptors_sundial_2eproto, file_level_service_descriptors_sundial_2eproto,
@@ -1239,6 +1244,20 @@ const char* SundialRequest::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<66>(ptr));
         } else goto handle_unusual;
         continue;
+      // uint64 request_time = 9;
+      case 9:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 72)) {
+          request_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // uint64 thread_id = 10;
+      case 10:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 80)) {
+          thread_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       default: {
       handle_unusual:
         if ((tag & 7) == 4 || tag == 0) {
@@ -1322,6 +1341,18 @@ failure:
       InternalWriteMessage(8, this->_internal_nodes(i), target, stream);
   }
 
+  // uint64 request_time = 9;
+  if (this->request_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(9, this->_internal_request_time(), target);
+  }
+
+  // uint64 thread_id = 10;
+  if (this->thread_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(10, this->_internal_thread_id(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -1387,6 +1418,20 @@ size_t SundialRequest::ByteSizeLong() const {
         this->_internal_node_id());
   }
 
+  // uint64 request_time = 9;
+  if (this->request_time() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_request_time());
+  }
+
+  // uint64 thread_id = 10;
+  if (this->thread_id() != 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+        this->_internal_thread_id());
+  }
+
   // .sundial_rpc.SundialRequest.RequestType request_type = 2;
   if (this->request_type() != 0) {
     total_size += 1 +
@@ -1438,6 +1483,12 @@ void SundialRequest::MergeFrom(const SundialRequest& from) {
   }
   if (from.node_id() != 0) {
     _internal_set_node_id(from._internal_node_id());
+  }
+  if (from.request_time() != 0) {
+    _internal_set_request_time(from._internal_request_time());
+  }
+  if (from.thread_id() != 0) {
+    _internal_set_thread_id(from._internal_thread_id());
   }
   if (from.request_type() != 0) {
     _internal_set_request_type(from._internal_request_type());

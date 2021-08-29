@@ -831,6 +831,8 @@ class SundialRequest PROTOBUF_FINAL :
     kTxnIdFieldNumber = 1,
     kLogDataSizeFieldNumber = 5,
     kNodeIdFieldNumber = 7,
+    kRequestTimeFieldNumber = 9,
+    kThreadIdFieldNumber = 10,
     kRequestTypeFieldNumber = 2,
   };
   // repeated .sundial_rpc.SundialRequest.ReadRequest read_requests = 3;
@@ -930,6 +932,24 @@ class SundialRequest PROTOBUF_FINAL :
   void _internal_set_node_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
   public:
 
+  // uint64 request_time = 9;
+  void clear_request_time();
+  ::PROTOBUF_NAMESPACE_ID::uint64 request_time() const;
+  void set_request_time(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_request_time() const;
+  void _internal_set_request_time(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
+  // uint64 thread_id = 10;
+  void clear_thread_id();
+  ::PROTOBUF_NAMESPACE_ID::uint64 thread_id() const;
+  void set_thread_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint64 _internal_thread_id() const;
+  void _internal_set_thread_id(::PROTOBUF_NAMESPACE_ID::uint64 value);
+  public:
+
   // .sundial_rpc.SundialRequest.RequestType request_type = 2;
   void clear_request_type();
   ::sundial_rpc::SundialRequest_RequestType request_type() const;
@@ -953,6 +973,8 @@ class SundialRequest PROTOBUF_FINAL :
   ::PROTOBUF_NAMESPACE_ID::uint64 txn_id_;
   ::PROTOBUF_NAMESPACE_ID::uint64 log_data_size_;
   ::PROTOBUF_NAMESPACE_ID::uint64 node_id_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 request_time_;
+  ::PROTOBUF_NAMESPACE_ID::uint64 thread_id_;
   int request_type_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_sundial_2eproto;
@@ -1913,6 +1935,46 @@ inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::sundial_rpc::SundialRe
 SundialRequest::nodes() const {
   // @@protoc_insertion_point(field_list:sundial_rpc.SundialRequest.nodes)
   return nodes_;
+}
+
+// uint64 request_time = 9;
+inline void SundialRequest::clear_request_time() {
+  request_time_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SundialRequest::_internal_request_time() const {
+  return request_time_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SundialRequest::request_time() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialRequest.request_time)
+  return _internal_request_time();
+}
+inline void SundialRequest::_internal_set_request_time(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  request_time_ = value;
+}
+inline void SundialRequest::set_request_time(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_request_time(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialRequest.request_time)
+}
+
+// uint64 thread_id = 10;
+inline void SundialRequest::clear_thread_id() {
+  thread_id_ = PROTOBUF_ULONGLONG(0);
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SundialRequest::_internal_thread_id() const {
+  return thread_id_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint64 SundialRequest::thread_id() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialRequest.thread_id)
+  return _internal_thread_id();
+}
+inline void SundialRequest::_internal_set_thread_id(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  
+  thread_id_ = value;
+}
+inline void SundialRequest::set_thread_id(::PROTOBUF_NAMESPACE_ID::uint64 value) {
+  _internal_set_thread_id(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialRequest.thread_id)
 }
 
 // -------------------------------------------------------------------
