@@ -64,7 +64,7 @@ if __name__ == "__main__":
 		if curr_node == num_nodes:
 			num_nodes += 1
 			continue
-		if eval_arg("FAILURE_ENABLE", "true", job, default=False) and curr_node == job["FAILURE_NODE"]:
+		if eval_arg("FAILURE_ENABLE", "true", job, default=False) and num_nodes == job["FAILURE_NODE"]:
 			num_nodes += 1
 			continue
 		# collect result on each server if not a failure node

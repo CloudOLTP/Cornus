@@ -51,6 +51,8 @@ if __name__ == "__main__":
 	output_cnt = i
 	df_list = []
 	for i in range(0, output_cnt):
+		if i == failure_node:
+			continue
 		df = pd.read_csv(exp_name + str(i)+'.csv') 
 		df_list.append(df)
 	df_concat = pd.concat(df_list, ignore_index=True)
