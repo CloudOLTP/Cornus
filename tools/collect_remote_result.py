@@ -50,7 +50,7 @@ if __name__ == "__main__":
 	ifconfig.close()
 	output_cnt = i
 	df_list = []
-	for i in range(0, output_cnt):
+	for i in range(0, num_nodes):
 		if i == failure_node:
 			continue
 		df = pd.read_csv(exp_name + str(i)+'.csv') 

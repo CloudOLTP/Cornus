@@ -13,6 +13,7 @@ script = "test_distrib.py"
 if __name__ == "__main__":
 	job = load_job(sys.argv[1:])
 	assert("CONFIG" in job) 
+	assert("NUM_NODES" in job)
 	exp_name = job["CONFIG"].split('/')[-1].split('.')[0]
 	if "NODE_ID" in job: 
 		curr_node = int(job["NODE_ID"])
@@ -51,10 +52,14 @@ if __name__ == "__main__":
 	print("[LOG] FINISH WHOLE EXPERIMENTS")
 	print("[LOG] Start collecting results from remote", flush=True)
 	f = open('ifconfig.txt')
+	# extrace number of nodes
+	max_num_nodes = job["NUM_NODES"]
+	if isinstance(max_num_nodes, list):
+		max_num_nodes = max(max_num_nodes)
 	num_nodes = 0
 	for addr in f:
-		if num_nodes == job["NUM_NODES"]:
-			print("[LOG] num_nodes == job[\"NUM_NODES\"]. Stop ssh-ing remote.")
+		if num_nodes == max_num_nodes:
+			print("[LOG] num_nodes == max_num_nodes. Stop ssh-ing remote.")
 			break
 		if '#' in addr:
 			continue
@@ -74,6 +79,6 @@ if __name__ == "__main__":
 	suffix = ""
 	if eval_arg("FAILURE_ENABLE", "true", job, default=False):
 		suffix = " {}".format(job["FAILURE_NODE"])
-	os.system("cd tools; python3 collect_remote_result.py {} {}".format(exp_name, num_nodes) + suffix)
+	os.system("cd tools; python3 collect_remote_result.py {} {}".format(exp_name, max_num_nodes + suffix)
 	print("[LOG] FINISH collecting results")
 	#os.system("python3 send_email.py {}".format(exp_name))
