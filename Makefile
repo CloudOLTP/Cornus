@@ -8,7 +8,7 @@ SRC_DIRS = ./ ./benchmarks/ ./concurrency_control/ ./storage/ ./system/ ./transp
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
-CFLAGS=-Wall -g -std=c++11
+CFLAGS = -Wno-unknown-pragmas -Wall -g -std=c++11
 INCLUDE = -I. -I./benchmarks -I./concurrency_control -I./storage -I./system -I./transport -I./proto -I./utils 
 INCLUDE += -I/home/kanwu/vcpkg/installed/x64-linux/include
 #CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -Werror -O3

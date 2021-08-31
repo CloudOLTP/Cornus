@@ -47,9 +47,10 @@ if __name__ == "__main__":
 			print("[LOG] FINISH EXECUTION ", flush=True)
 		else:
 			main(arg)
-	if eval_arg("MODE", "release", job, default=True):
-		os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
 	print("[LOG] FINISH WHOLE EXPERIMENTS")
+	if not eval_arg("MODE", "release", job, default=True):
+		exit()
+	os.system("cd outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv stats.json {}.json".format(exp_name, exp_name))
 	print("[LOG] Start collecting results from remote", flush=True)
 	f = open('ifconfig.txt')
 	# extrace number of nodes
@@ -81,4 +82,3 @@ if __name__ == "__main__":
 		suffix = " {}".format(job["FAILURE_NODE"])
 	os.system("cd tools; python3 collect_remote_result.py {} {}".format(exp_name, max_num_nodes) + suffix)
 	print("[LOG] FINISH collecting results")
-	#os.system("python3 send_email.py {}".format(exp_name))
