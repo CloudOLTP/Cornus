@@ -44,10 +44,12 @@ def run(job=None):
 def parse_output(job):
 	output = open("temp.out")
 	phase = 0
+	success = False
 	for line in output:
 		if phase == 0:
 			if "=Worker Thread=" in line:
 				phase = 1
+				success = True
 				continue
 		elif phase == 1:
 			if "=Input/Output Thread=" in line:
@@ -64,8 +66,9 @@ def parse_output(job):
 				job[key] = val
 				# break
 	output.close()
-	os.system("rm -f temp.out")
-	return job
+	if success:
+		os.system("rm -f temp.out")
+	return job, success
 
 def parse_arg(arg):
     job = {}
@@ -86,10 +89,11 @@ def load_job(arg):
     return job
 
 def collect_result(job):
-    job = parse_output(job)
+    job, success = parse_output(job)
     stats = open("outputs/stats.json", 'a+')
     stats.write(json.dumps(job)+"\n")
     stats.close()
+    return success
 
 def eval_arg(arg, val, job, default=False):
     if arg not in job:
@@ -105,7 +109,21 @@ def main(arg):
         try_compile(job)
         run(job)
         if not (eval_arg("FAILURE_ENABLE", "true", job) and eval_arg("FAILURE_NODE", job["NODE_ID"], job)):
-            collect_result(job)
+            success = collect_result(job)
+			# write to error log
+            if not success:
+                if "EXP_ID" in job:
+                    i = job["EXP_ID"]
+                else:
+                    i = 0
+                if "CONFIG" in job:
+                    exp_name = job["CONFIG"].split('/')[-1].split('.')[0]
+                else:
+                    exp_name = ""
+                error_log = open("log/error_{}.list".format(exp_name), "a+")
+                error_log.write("{}, {}\n".format(i, arg, "\n"))
+                error_log.close()
+                os.system("mv temp.out log/error_{}_{}.out".format(exp_name, i))
     elif job["MODE"] == "debug":
         try_compile(job)
         run(job)

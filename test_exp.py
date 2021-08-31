@@ -35,6 +35,7 @@ if __name__ == "__main__":
 				new_args.append(arg)
 		args = new_args
 	for i, arg in enumerate(args):
+		arg += " EXP_ID={}".format(i)
 		print("[LOG] issue exp {}/{}".format(i+1, len(args)))
 		print("[LOG] arg = {}".format(arg), flush=True)
 		if script == "test_distrib.py":

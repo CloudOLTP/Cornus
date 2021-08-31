@@ -1,0 +1,23 @@
+{
+	"DISTRIBUTED": "true",
+	"NUM_NODES": 4,
+	"NUM_WORKER_THREADS": 8,
+	"NUM_RPC_SERVER_THREADS": 8,
+	"MAX_NUM_ACTIVE_TXNS": 32,
+    "LOG_LOCAL": "false",
+    "LOG_REMOTE": "true",
+    "LOG_DEVICE": "LOG_DVC_AZURE_BLOB",
+    "CONTROLLED_LOCK_VIOLATION": "false",
+    "ENABLE_ADMISSION_CONTROL": "false",
+    "COMMIT_ALG": ["ONE_PC","TWO_PC"],
+    "WORKLOAD": "YCSB",
+    "ZIPF_THETA": 0,
+    "READ_PERC": 0.5,
+    "PERC_REMOTE": 0.1,
+	"DEBUG_FAILURE": "false",
+    "FAILURE_ENABLE": ["true","false"],
+    "FAILURE_NODE": 1,
+    "FAILURE_TIMEPOINT": 5,
+	"RUN_TIME": 15,
+	"AZURE_ISOLATION_ENABLE": ["true","false"]
+}
