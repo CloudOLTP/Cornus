@@ -1,8 +1,8 @@
 {
 	"DISTRIBUTED": "true",
-	"NUM_NODES": 1,
-	"NUM_WORKER_THREADS": 1,
-	"NUM_RPC_SERVER_THREADS": 1,
+	"NUM_NODES": 4,
+	"NUM_WORKER_THREADS": 8,
+	"NUM_RPC_SERVER_THREADS": 8,
 	"MAX_NUM_ACTIVE_TXNS": 32,
     "LOG_LOCAL": "false",
     "LOG_REMOTE": "true",
@@ -14,9 +14,10 @@
     "ZIPF_THETA": 0,
     "READ_PERC": 0.5,
     "PERC_REMOTE": 0.1,
-	"DEBUG_FAILURE": "true",
+	"DEBUG_FAILURE": "false",
     "FAILURE_ENABLE": "true",
     "FAILURE_NODE": 1,
     "FAILURE_TIMEPOINT": 5,
-	"RUN_TIME": 15
+	"RUN_TIME": 15,
+	"AZURE_ISOLATION_ENABLE": "true"
 }
