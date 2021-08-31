@@ -72,15 +72,7 @@ ne_callback(cpp_redis::reply & response) {
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
     uint64_t txnid = response.as_array()[1].as_integer(); // debug
 
-    // if (txnid / g_num_nodes == 6808 || txnid / g_num_nodes == 1206) {
-    //     std::cout << "[debug-" << g_node_id << " txn-" << std::dec << txnid << "][RedisClient] ne_callback, state=" << state << endl;
-    // }
-
     TxnManager * txn = txn_table->get_txn(txnid, false, false);
-
-    // if (txnid / g_num_nodes == 6808 || txnid / g_num_nodes == 1206) {
-    //     std::cout << "[debug-" << g_node_id << " txn-" << std::dec << txnid << "][RedisClient] ne_callback, txn=" << std::hex << txn << endl << std::dec;
-    // }
     
     // status can only be aborted/prepared
     if (state == TxnManager::ABORTED)

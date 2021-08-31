@@ -114,7 +114,7 @@ AzureBlobClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     return RCOK;
 }
 
-// used for termination protocol, req is always LOG_ABORT
+// used for termination protocol, req is always LOG_ABORT, this function needs to be async
 RC
 AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     if (!glob_manager->active)
@@ -130,18 +130,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     azure::storage::blob_request_options options;
     azure::storage::operation_context context;
 
-    // version 0: sync
-    /*
-    TxnManager::State state = TxnManager::ABORTED;
-    try {
-        blob.upload_text(U(std::to_string(TxnManager::ABORTED)), condition, options, context);
-    } catch (const std::exception &e) {
-        std::wcout << U("Error: ") << e.what() << std::endl;
-        utility::string_t text = blob.download_text();
-        state = (TxnManager::State) std::stoi(text);
-    }
-    */
-
+#if COMMIT_ALG == ONE_PC && AZURE_ISOLATION_ENABLE
     // version 1: upload_text_async
     auto t = blob.upload_text_async(U(std::to_string(TxnManager::ABORTED)), condition, options,
                                     context).then([blob, txn_id](pplx::task<void> previous_task) {
@@ -173,11 +162,56 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
         if (txn != NULL)
             txn->rpc_log_semaphore->decr();
     });
+#else
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
+    TxnManager::State state = TxnManager::PREPARED;
+    try {
+        auto t = blob_data.upload_text_async(U(std::to_string(status))).then([blob_status, txn_id]() {
+            TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+            // status can only be aborted/prepared
+            if (state == TxnManager::ABORTED) {
+                if (txn != NULL)
+                    txn->set_txn_state(TxnManager::ABORTED);
+            }
+            // mark as returned.
+            if (txn != NULL)
+                txn->rpc_log_semaphore->decr();
+        });
+    } catch (const std::exception &e) {
+#if !FAILURE_ENABLE
+        std::cout << U("Error [log-if-ne]: ") << e.what() << std::endl;
+#endif
+        // log already exist
+        utility::string_t text = blob_status.download_text();
+        // check if text contain data, if so, take the substring
+        std::size_t pos = text.find(",");
+        if (pos != std::string::npos)
+            state = (TxnManager::State) std::stoi(text.substr(0, pos));
+        else
+            state = (TxnManager::State) std::stoi(text);
+        // status can only be aborted/prepared
+        TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+        // default is commit, only need to set abort or committed
+        if (state == TxnManager::ABORTED) {
+            if (txn != NULL)
+                txn->set_decision(ABORT);
+        } else if (state == TxnManager::COMMITTED) {
+            if (txn != NULL)
+                txn->set_decision(COMMIT);
+        } else if (state != TxnManager::PREPARED) {
+            assert(false);
+        }
+        // mark as returned.
+        if (txn != NULL)
+            txn->rpc_log_semaphore->decr();
+    }
+#endif
 
     return RCOK;
 }
 
-// used for prepare, req is always LOG_YES_REQ
+// used for prepare, req is always LOG_YES_REQ, this function needs to be async
 RC
 AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data) {
     if (!glob_manager->active)
@@ -187,29 +221,10 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
     // step 2: set if not exist, pair: ('status-'+node_id+txn_id, PREPARED)
     // step 3: get status = 'status-'+node_id+txn_id
     // step 4: ab_ne_callback ????? if aborted, set aborted
-
+#if COMMIT_ALG == ONE_PC && AZURE_ISOLATION_ENABLE
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
-
-
-    // version 0: sync
-    /*
-    azure::storage::access_condition condition = azure::storage::access_condition::generate_if_not_exists_condition();
-    azure::storage::blob_request_options options;
-    azure::storage::operation_context context;
-    TxnManager::State state = TxnManager::PREPARED;
-    blob_data.upload_text(U(data));
-    try {
-        blob_status.upload_text(U(std::to_string(TxnManager::PREPARED)), condition, options, context);
-    } catch (const std::exception &e) {
-        std::cout << U("Error: ") << e.what() << std::endl;
-        utility::string_t text = blob_status.download_text();
-        cout << "downloaded as: " << text << endl;
-        state = (TxnManager::State) std::stoi(text);
-    }
-    */
-
     // version 1: upload_tex_async
     auto t = blob_data.upload_text_async(U(data)).then([blob_status, txn_id]() {
         TxnManager::State state = TxnManager::PREPARED;
@@ -221,11 +236,11 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
         } catch (const std::exception &e) {
 #if !FAILURE_ENABLE
             std::cout << U("Error [log-if-ne-data]: ") << e.what() << std::endl;
+            assert(false);
 #endif
             utility::string_t text = blob_status.download_text();
             state = (TxnManager::State) std::stoi(text);
         }
-
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
         // status can only be aborted/prepared
         if (state == TxnManager::ABORTED) {
@@ -236,7 +251,45 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
         if (txn != NULL)
             txn->rpc_log_semaphore->decr();
     });
-
+#else
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
+    TxnManager::State state = TxnManager::PREPARED;
+    try {
+        auto t = blob_data.upload_text_async(U(std::to_string(status) + "," + data)).then([blob_status, txn_id]() {
+            TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+            // status can only be aborted/prepared
+            if (state == TxnManager::ABORTED) {
+                if (txn != NULL)
+                    txn->set_txn_state(TxnManager::ABORTED);
+            }
+            // mark as returned.
+            if (txn != NULL)
+                txn->rpc_log_semaphore->decr();
+        });
+    } catch (const std::exception &e) {
+#if !FAILURE_ENABLE
+        std::cout << U("Error [log-if-ne-data]: ") << e.what() << std::endl;
+#endif
+        // log already exist
+        utility::string_t text = blob_status.download_text();
+        // check if text contain data, if so, take the substring
+        std::size_t pos = text.find(",");
+        if (pos != std::string::npos)
+            state = (TxnManager::State) std::stoi(text.substr(0, pos));
+        else
+            state = (TxnManager::State) std::stoi(text);
+        // status can only be aborted/prepared
+        TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+        if (state == TxnManager::ABORTED) {
+            if (txn != NULL)
+                txn->set_txn_state(TxnManager::ABORTED);
+        }
+        // mark as returned.
+        if (txn != NULL)
+            txn->rpc_log_semaphore->decr();
+    }
+#endif
     return RCOK;
 }
 
@@ -247,12 +300,19 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
     if (!glob_manager->active)
         return FAIL;
 
+#if COMMIT_ALG == ONE_PC && AZURE_ISOLATION_ENABLE
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
 
     blob_data.upload_text(U(data));
     blob_status.upload_text(U(std::to_string(status)));
+#else
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob_data = container
+        .get_block_blob_reference(U("status-" + id));
+    blob_data.upload_text(U(std::to_string(status) + "," + data));
+#endif
 
     return RCOK;
 }
@@ -271,20 +331,23 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
 
-    // TODO may don't want to use the second then task
+#if COMMIT_ALG == ONE_PC && AZURE_ISOLATION_ENABLE
     pplx::task<void> upload_task_data = blob_data.upload_text_async(U(data));
     upload_task_data.then(
             [blob_status, status, txn_id]() -> void {
-                pplx::task<void> upload_task_status = blob_status.upload_text_async(U(std::to_string(status)));
-                upload_task_status.then(
-                        [txn_id]() -> void {
-                            // when upload finish, update log_semaphore
-                            TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-                            if (txn != NULL) {
-                                txn->rpc_log_semaphore->decr();
-                            }
-                        });
+                blob_status.upload_text(U(std::to_string(status)));
+                // when upload finish, update log_semaphore
+                TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+                if (txn != NULL) {
+                    txn->rpc_log_semaphore->decr();
+                }
             });
+#else
+    string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
+    azure::storage::cloud_block_blob blob_data = container
+        .get_block_blob_reference(U("status-" + id));
+    blob_data.upload_text(U(std::to_string(status) + "," + data));
+#endif
     return RCOK;
 }
 
