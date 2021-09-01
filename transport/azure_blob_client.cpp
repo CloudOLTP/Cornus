@@ -215,18 +215,24 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
     // step 2: set if not exist, pair: ('status-'+node_id+txn_id, PREPARED)
     // step 3: get status = 'status-'+node_id+txn_id
     // step 4: ab_ne_callback ????? if aborted, set aborted
+    uint64_t starttime = get_sys_clock();
 #if COMMIT_ALG == ONE_PC && AZURE_ISOLATION_ENABLE
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob_data = container.get_block_blob_reference(U("data-" + id));
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
     // version 1: upload_tex_async
-    auto t = blob_data.upload_text_async(U(data)).then([blob_status, txn_id]() {
+    auto t = blob_data.upload_text_async(U(data)).then([blob_status, txn_id, starttime]() {
         TxnManager::State state = TxnManager::PREPARED;
+        std::cout << "[log-if-ne-data] iso data uploaded already: " <<
+        get_sys_clock() - starttime / 1000000 << "ms" << std::endl;
         try {
             azure::storage::access_condition condition = azure::storage::access_condition::generate_if_not_exists_condition();
             azure::storage::blob_request_options options;
             azure::storage::operation_context context;
             blob_status.upload_text(U(std::to_string(TxnManager::PREPARED)), condition, options, context);
+            std::cout << "[log-if-ne-data] iso status + data uploaded already: "
+                         "" << get_sys_clock() - starttime / 1000000 << "ms"
+                         << std::endl;
         } catch (const std::exception &e) {
 #if !FAILURE_ENABLE
             std::cout << U("[ERROR] [log-if-ne-data]: ") << e.what() << std::endl;
@@ -252,7 +258,10 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
     TxnManager::State state = TxnManager::PREPARED;
     try {
-        auto t = blob_status.upload_text_async(U(std::to_string(state) + "," + data)).then([state, blob_status, txn_id]() {
+        auto t = blob_status.upload_text_async(U(std::to_string(state) + ","
+            + data)).then([starttime, state, blob_status, txn_id]() {
+            std::cout << "[log-if-ne-data] both uploaded already: " <<
+                      get_sys_clock() - starttime / 1000000 << "ms" << std::endl;
             TxnManager *txn = txn_table->get_txn(txn_id, false, false);
         	if (txn != NULL) {
         		// status can only be aborted/prepared
@@ -337,11 +346,16 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                 }
             });
 #else
-    blob_status.upload_text(U(std::to_string(status) + "," + data));
-	TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-	if (txn != NULL) {
-		txn->rpc_log_semaphore->decr();
-	}
+    pplx::task<void> upload_task_data = blob_status.upload_text_async(U(std::to_string(status) + "," + data));
+    upload_task_data.then(
+        [blob_status, status, txn_id]() -> void {
+            blob_status.upload_text(U(std::to_string(status)));
+            // when upload finish, update log_semaphore
+            TxnManager *txn = txn_table->get_txn(txn_id, false, false);
+            if (txn != NULL) {
+                txn->rpc_log_semaphore->decr();
+            }
+        });
 #endif
     return RCOK;
 }

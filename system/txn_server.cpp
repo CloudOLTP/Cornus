@@ -99,9 +99,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
             g_log_sz * 8);
             rpc_log_semaphore->incr();
             #if COMMIT_ALG == ONE_PC
-            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
-            //     printf("[debug-%u, txn-%lu][remote] process_prepare_req, about to logging redis, state=%u\n", g_node_id, _txn_id, this->get_txn_state());
-            // }
             if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
             FAIL) {
                 return FAIL;
