@@ -1,4 +1,4 @@
-for exp in failure_num_nodes num_nodes zipf read_perc 
+for exp in num_nodes read_perc zipf 
 do
 for st in blob iso_blob
 do
