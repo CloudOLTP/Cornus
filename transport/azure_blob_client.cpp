@@ -142,26 +142,26 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
         catch (azure::storage::storage_exception& e)
         {
 #if !FAILURE_ENABLE
-            std::cout << U("Error [log-if-ne]: ") << e.what() << std::endl;
+            std::cout << U("[ERROR] [log-if-ne]: ") << e.what() << std::endl;
 #endif
             utility::string_t text = blob_status.download_text();
             state = (TxnManager::State) std::stoi(text);
         }
 
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-        // default is commit, only need to set abort or committed
-        if (state == TxnManager::ABORTED) {
-            if (txn != NULL)
-                txn->set_decision(ABORT);
-        } else if (state == TxnManager::COMMITTED) {
-            if (txn != NULL)
-                txn->set_decision(COMMIT);
-        } else if (state != TxnManager::PREPARED) {
-            assert(false);
-        }
-        // mark as returned.
-        if (txn != NULL)
+        if (txn != NULL) {
+			// default is commit, only need to set abort or committed
+			if (state == TxnManager::ABORTED) {
+				txn->set_decision(ABORT);
+			} else if (state == TxnManager::COMMITTED) {
+				txn->set_decision(COMMIT);
+			} else if (state != TxnManager::PREPARED) {
+				std::cout << "[WARNING] [log-if-ne] unknown state: " << state << std::endl;
+				assert(false);
+			}
+        	// mark as returned.
             txn->rpc_log_semaphore->decr();
+		}
     });
 #else
     try {
@@ -175,7 +175,7 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
         });
     } catch (const std::exception &e) {
 #if !FAILURE_ENABLE
-        std::cout << U("Error [log-if-ne]: ") << e.what() << std::endl;
+        std::cout << U("[ERROR] [log-if-ne]: ") << e.what() << std::endl;
 #endif
         // log already exist
         utility::string_t text = blob_status.download_text();
@@ -187,22 +187,21 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
             state = (TxnManager::State) std::stoi(text);
         // status can only be aborted/prepared
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-        // default is commit, only need to set abort or committed
-        if (state == TxnManager::ABORTED) {
-            if (txn != NULL)
-                txn->set_decision(ABORT);
-        } else if (state == TxnManager::COMMITTED) {
-            if (txn != NULL)
-                txn->set_decision(COMMIT);
-        } else if (state != TxnManager::PREPARED) {
-            assert(false);
-        }
-        // mark as returned.
-        if (txn != NULL)
+        if (txn != NULL) {
+			// default is commit, only need to set abort or committed
+			if (state == TxnManager::ABORTED) {
+				txn->set_decision(ABORT);
+			} else if (state == TxnManager::COMMITTED) {
+				txn->set_decision(COMMIT);
+			} else if (state != TxnManager::PREPARED) {
+				std::cout << "[WARNING] [log-if-ne] unknown state: " << state << std::endl;
+				assert(false);
+			}
+        	// mark as returned.
             txn->rpc_log_semaphore->decr();
+		}
     }
 #endif
-
     return RCOK;
 }
 
@@ -230,21 +229,23 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
             blob_status.upload_text(U(std::to_string(TxnManager::PREPARED)), condition, options, context);
         } catch (const std::exception &e) {
 #if !FAILURE_ENABLE
-            std::cout << U("Error [log-if-ne-data]: ") << e.what() << std::endl;
+            std::cout << U("[ERROR] [log-if-ne-data]: ") << e.what() << std::endl;
             assert(false);
 #endif
             utility::string_t text = blob_status.download_text();
             state = (TxnManager::State) std::stoi(text);
         }
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-        // status can only be aborted/prepared
-        if (state == TxnManager::ABORTED) {
-            if (txn != NULL)
-                txn->set_txn_state(TxnManager::ABORTED);
-        }
         // mark as returned.
-        if (txn != NULL)
-            txn->rpc_log_semaphore->decr();
+        if (txn != NULL) {
+        	// status can only be aborted/prepared
+        	if (state == TxnManager::ABORTED) {
+                txn->set_txn_state(TxnManager::ABORTED);
+			} else if (state != TxnManager::PREPARED) {
+				std::cout << "[WARNING] [log-if-ne-data] unknown state: " << state << std::endl;
+			}
+			txn->rpc_log_semaphore->decr();
+		}
     });
 #else
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
@@ -253,18 +254,19 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
     try {
         auto t = blob_status.upload_text_async(U(std::to_string(state) + "," + data)).then([state, blob_status, txn_id]() {
             TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-            // status can only be aborted/prepared
-            if (state == TxnManager::ABORTED) {
-                if (txn != NULL)
-                    txn->set_txn_state(TxnManager::ABORTED);
-            }
-            // mark as returned.
-            if (txn != NULL)
-                txn->rpc_log_semaphore->decr();
+        	if (txn != NULL) {
+        		// status can only be aborted/prepared
+        		if (state == TxnManager::ABORTED) {
+                	txn->set_txn_state(TxnManager::ABORTED);
+				} else if (state != TxnManager::PREPARED) {
+					std::cout << "[WARNING] [log-if-ne-data] unknown state: " << state << std::endl;
+				}
+				txn->rpc_log_semaphore->decr();
+			}
         });
     } catch (const std::exception &e) {
 #if !FAILURE_ENABLE
-        std::cout << U("Error [log-if-ne-data]: ") << e.what() << std::endl;
+        std::cout << U("[ERROR] [log-if-ne-data]: ") << e.what() << std::endl;
 #endif
         // log already exist
         utility::string_t text = blob_status.download_text();
@@ -276,13 +278,14 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
             state = (TxnManager::State) std::stoi(text);
         // status can only be aborted/prepared
         TxnManager *txn = txn_table->get_txn(txn_id, false, false);
-        if (state == TxnManager::ABORTED) {
-            if (txn != NULL)
+        if (txn != NULL) {
+        	if (state == TxnManager::ABORTED) {
                 txn->set_txn_state(TxnManager::ABORTED);
-        }
-        // mark as returned.
-        if (txn != NULL)
-            txn->rpc_log_semaphore->decr();
+			} else if (state != TxnManager::PREPARED) {
+				std::cout << "[WARNING] [log-if-ne-data] unknown state: " << state << std::endl;
+			}
+			txn->rpc_log_semaphore->decr();
+		}
     }
 #endif
     return RCOK;
