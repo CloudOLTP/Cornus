@@ -86,6 +86,17 @@ enum StatsFloat {
     STAT_time_debug6,
     STAT_time_debug7,
 
+    STAT_log_if_ne,
+    STAT_log_if_ne_iso,
+    STAT_log_if_ne_data,
+    STAT_log_if_ne_data_iso,
+    STAT_log_sync,
+    STAT_log_sync_data,
+    STAT_log_sync_data_iso,
+    STAT_log_async,
+    STAT_log_async_data,
+    STAT_log_async_data_iso,
+
     NUM_FLOAT_STATS
 };
 
@@ -156,6 +167,18 @@ enum StatsInt {
     STAT_int_aborts_ws2,
 
     STAT_int_saved_by_hist,
+
+    // remote logging
+    STAT_num_log_if_ne,
+    STAT_num_log_if_ne_iso,
+    STAT_num_log_if_ne_data,
+    STAT_num_log_if_ne_data_iso,
+    STAT_num_log_sync,
+    STAT_num_log_sync_data,
+    STAT_num_log_sync_data_iso,
+    STAT_num_log_async,
+    STAT_num_log_async_data,
+    STAT_num_log_async_data_iso,
 
     NUM_INT_STATS
 };
@@ -288,6 +311,18 @@ public:
         "time_debug5",
         "time_debug6",
         "time_debug7",
+
+        // remote logging
+        "log_if_ne",
+        "log_if_ne_iso",
+        "log_if_ne_data",
+        "log_if_ne_data_iso",
+        "log_sync",
+        "log_sync_data",
+        "log_sync_data_iso",
+        "log_async",
+        "log_async_data",
+        "log_async_data_iso",
     };
 
     std::string statsIntName[NUM_INT_STATS] = {
@@ -356,6 +391,18 @@ public:
         "int_aborts_ws2",
 
         "int_saved_by_hist"
+
+        // remote logging
+        "num_log_if_ne",
+        "num_log_if_ne_iso",
+        "num_log_if_ne_data",
+        "num_log_if_ne_data_iso",
+        "num_log_sync",
+        "num_log_sync_data",
+        "num_log_sync_data_iso",
+        "num_log_async",
+        "num_log_async_data",
+        "num_log_async_data_iso",
 
     };
 private:

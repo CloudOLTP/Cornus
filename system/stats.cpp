@@ -240,20 +240,24 @@ void Stats::output(std::ostream * os)
         msg_name << "_req_latency:" << min_grpc_msg_min_latency * 1.0 / 1000 << endl;
     }
 
+    // debug remote log latency
+    STAT_PRINT_AVG_US(double, log_if_ne, float, log_if_ne);
+    STAT_PRINT_AVG_US(double, log_if_ne_data, float, log_if_ne_data);
+    STAT_PRINT_AVG_US(double, log_if_ne_iso, float, log_if_ne_iso);
+    STAT_PRINT_AVG_US(double, log_if_ne_data_iso, float, log_if_ne_data_iso);
+    STAT_PRINT_AVG_US(double, log_sync, float, log_sync);
+    STAT_PRINT_AVG_US(double, log_sync_data, float, log_sync_data);
+    STAT_PRINT_AVG_US(double, log_sync_data_iso, float, log_sync_data_iso);
+    STAT_PRINT_AVG_US(double, log_async, float, log_async);
+    STAT_PRINT_AVG_US(double, log_async_data, float, log_async_data);
+    STAT_PRINT_AVG_US(double, log_async_data_iso, float, log_async_data_iso);
+
     STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
     STAT_SUM(uint64_t, total_remote_prepare, _int_stats[STAT_int_debug2]);
     STAT_SUM(double, total_log_vote, _float_stats[STAT_time_debug2]);
     STAT_SUM(uint64_t, total_commit, _int_stats[STAT_int_debug4]);
     STAT_SUM(double, total_log_commit, _float_stats[STAT_time_debug4]);
     STAT_SUM(double, total_node_communicate, _float_stats[STAT_time_debug5]);
-
-    STAT_SUM(uint64_t, total_affected_txn_co,
-        _int_stats[STAT_num_affected_txn_co]);
-    STAT_SUM(uint64_t, total_affected_txn_pa,
-        _int_stats[STAT_num_affected_txn_pa]);
-    STAT_SUM(double, total_terminate_time_co, _float_stats[STAT_terminate_time_co]);
-    STAT_SUM(double, total_terminate_time_pa, _float_stats[STAT_terminate_time_pa]);
-    uint64_t total_affected_txn = total_affected_txn_co + total_affected_txn_pa;
 
     out << "    " << setw(30) << left << "average_prepare_req_cnt:" <<
     sum_prepare_count * 1.0 / total_prepare << endl;
@@ -270,6 +274,14 @@ void Stats::output(std::ostream * os)
     out << "    " << setw(30) << left << "average_node_communicate:" <<
     total_node_communicate / (g_num_nodes - 1) / 1000 << endl;
 
+
+    STAT_SUM(uint64_t, total_affected_txn_co,
+        _int_stats[STAT_num_affected_txn_co]);
+    STAT_SUM(uint64_t, total_affected_txn_pa,
+        _int_stats[STAT_num_affected_txn_pa]);
+    STAT_SUM(double, total_terminate_time_co, _float_stats[STAT_terminate_time_co]);
+    STAT_SUM(double, total_terminate_time_pa, _float_stats[STAT_terminate_time_pa]);
+    uint64_t total_affected_txn = total_affected_txn_co + total_affected_txn_pa;
 
     out << "    " << setw(30) << left << "average_dist_latency:" << avg_dist_latency / BILLION << endl;
     out << "    " << setw(30) << left << "average_dist_total_time:" << avg_dist_total_time / BILLION << endl;
