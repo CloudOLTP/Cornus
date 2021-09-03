@@ -238,7 +238,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
     TxnManager::State state = TxnManager::PREPARED;
     try {
         auto t = blob_status.upload_text_async(U(std::to_string(state) + ","
-            + data)).then([state, blob_status, txn_id](pplx::task<void> previous_task) {
+            + data)).then([starttime, state, blob_status, txn_id](pplx::task<void> previous_task) {
             previous_task.get(); // to throw exception if exists
             INC_FLOAT_STATS(log_if_ne_data, get_sys_clock() - starttime);
             INC_INT_STATS(num_log_if_ne_data, 1);
