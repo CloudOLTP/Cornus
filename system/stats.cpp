@@ -241,16 +241,16 @@ void Stats::output(std::ostream * os)
     }
 
     // debug remote log latency
-    STAT_PRINT_AVG_US(double, log_if_ne, float, log_if_ne);
-    STAT_PRINT_AVG_US(double, log_if_ne_data, float, log_if_ne_data);
-    STAT_PRINT_AVG_US(double, log_if_ne_iso, float, log_if_ne_iso);
-    STAT_PRINT_AVG_US(double, log_if_ne_data_iso, float, log_if_ne_data_iso);
-    STAT_PRINT_AVG_US(double, log_sync, float, log_sync);
-    STAT_PRINT_AVG_US(double, log_sync_data, float, log_sync_data);
-    STAT_PRINT_AVG_US(double, log_sync_data_iso, float, log_sync_data_iso);
-    STAT_PRINT_AVG_US(double, log_async, float, log_async);
-    STAT_PRINT_AVG_US(double, log_async_data, float, log_async_data);
-    STAT_PRINT_AVG_US(double, log_async_data_iso, float, log_async_data_iso);
+    STAT_PRINT_AVG_US(double, log_if_ne, float, num_log_if_ne);
+    STAT_PRINT_AVG_US(double, log_if_ne_data, float, num_log_if_ne_data);
+    STAT_PRINT_AVG_US(double, log_if_ne_iso, float, num_log_if_ne_iso);
+    STAT_PRINT_AVG_US(double, log_if_ne_data_iso, float, num_log_if_ne_data_iso);
+    STAT_PRINT_AVG_US(double, log_sync, float, num_log_sync);
+    STAT_PRINT_AVG_US(double, log_sync_data, float, num_log_sync_data);
+    STAT_PRINT_AVG_US(double, log_sync_data_iso, float, num_log_sync_data_iso);
+    STAT_PRINT_AVG_US(double, log_async, float, num_log_async);
+    STAT_PRINT_AVG_US(double, log_async_data, float, num_log_async_data);
+    STAT_PRINT_AVG_US(double, log_async_data_iso, float, num_log_async_data_iso);
 
     STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
     STAT_SUM(uint64_t, total_remote_prepare, _int_stats[STAT_int_debug2]);

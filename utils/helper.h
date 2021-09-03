@@ -141,11 +141,11 @@ extern double g_cpu_freq;
         min = _stats[ii]->name < min ? _stats[ii]->name : min;
 
 #define STAT_PRINT_AVG_US(type_n, name_n, tn, name_d) \
-    STAT_SUM(type_n, total_##name_n, _tn_stats[STAT_##name_n]) \
-    STAT_SUM(uint64_t, total_##name_d, _int_stats[STAT_##name_n]) \
+    STAT_SUM(type_n, total_##name_n, _float_stats[STAT_##name_n]) \
+    STAT_SUM(uint64_t, total_##name_d, _int_stats[STAT_##name_d]) \
     if (total_##name_d > 0) { \
         out << "    " << setw(30) << left << "average_" << name_n << ": " << \
-        sum_n * 1.0 / total_##name_d / 1000 << endl; \
+        total_##name_n * 1.0 / total_##name_d / 1000 << endl; \
     }
 
 // Malloc helper
