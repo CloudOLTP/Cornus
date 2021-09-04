@@ -336,7 +336,6 @@ AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
     pplx::task<void> upload_task_data = blob_status.upload_text_async(U(std::to_string(status) + "," + data));
     upload_task_data.then(
         [starttime, blob_status, status, txn_id]() -> void {
-            blob_status.upload_text(U(std::to_string(status)));
             INC_FLOAT_STATS(log_async_data, get_sys_clock() - starttime);
             INC_INT_STATS(num_log_async_data, 1);
             // when upload finish, update log_semaphore
