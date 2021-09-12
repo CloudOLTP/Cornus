@@ -209,14 +209,15 @@ TxnManager::process_decision_request(const SundialRequest* request,
     _cc_manager->cleanup(rc); // release lock after log is received
     _finish_time = get_sys_clock();
 #if FAILURE_ENABLE
-    // TODO: check when a participant call termination protocol
-//    if (_terminate_time != 0) {
-//        INC_FLOAT_STATS(terminate_time_pa, _finish_time - _terminate_time);
-//        INC_INT_STATS(num_affected_txn_pa, 1);
-//        vector<double> &all =
-//                    glob_stats->_stats[GET_THD_ID]->term_latency;
-//        all.push_back(_finish_time - _terminate_time);
-//    }
+    // termination protocol is called when timeout (i.e. receiving terminate
+    // request)
+    if (_terminate_time != 0) {
+        INC_FLOAT_STATS(terminate_time, _finish_time - _terminate_time);
+        INC_INT_STATS(num_affected_txn, 1);
+        vector<double> &all =
+                    glob_stats->_stats[GET_THD_ID]->term_latency;
+        all.push_back(_finish_time - _terminate_time);
+    }
 #endif
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log
@@ -238,18 +239,18 @@ TxnManager::process_terminate_request(const SundialRequest* request,
             // self has not voted yes, log abort and cleanup
 #if LOG_REMOTE
             #if LOG_DEVICE == LOG_DVC_NATIVE
-                send_log_request(g_storage_node_id, SundialRequest::LOG_ABORT_REQ);
-                #elif LOG_DEVICE == LOG_DVC_REDIS
-                if (redis_client->log_sync(g_node_id, get_txn_id(), ABORTED)
-                == FAIL) {
-                    return FAIL;
-                }
-                #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-                if (azure_blob_client->log_sync(g_node_id, get_txn_id(), ABORTED)
-                == FAIL) {
-                    return FAIL;
-                }
-                #endif
+            send_log_request(g_storage_node_id, SundialRequest::LOG_ABORT_REQ);
+            #elif LOG_DEVICE == LOG_DVC_REDIS
+            if (redis_client->log_sync(g_node_id, get_txn_id(), ABORTED)
+            == FAIL) {
+                return FAIL;
+            }
+            #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+            if (azure_blob_client->log_sync(g_node_id, get_txn_id(), ABORTED)
+            == FAIL) {
+                return FAIL;
+            }
+            #endif
 #endif
             _cc_manager->cleanup(ABORT);
             _txn_state = ABORTED;
