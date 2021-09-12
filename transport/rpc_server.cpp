@@ -16,7 +16,7 @@ SundialRPCServerImpl::~SundialRPCServerImpl(){
 
 void
 SundialRPCServerImpl::run() {
-    //std::istringstream in(ifconfig_string);
+    // find self address from ifconfig file
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t num_nodes = 0;
@@ -24,15 +24,8 @@ SundialRPCServerImpl::run() {
         if (line[0] == '#')
             continue;
         else {
-            if (num_nodes == g_node_id) {
-                /*
-                size_t pos = line.find(":");
-                assert(pos != string::npos);
-                string port_str = line.substr(pos + 1, line.length());
-                port = atoi(port_str.c_str()); */
-                //_server_name = line;
+            if (num_nodes == g_node_id)
                 break;
-            }
             num_nodes ++;
         }
     }
@@ -44,23 +37,13 @@ SundialRPCServerImpl::run() {
     // set up multiple server threads to start accepting requests
     // XXX(zhihan): only use one cq as it is thread safe. can switch to more cqs if does not scale 
     //_thread_pool = new pthread_t * [NUM_RPC_SERVER_THREADS];
-#if LOG_NODE
-    #if !WORKER_SERVER_SAME
-    uint32_t num_thds = NUM_STORAGE_RPC_SERVER_THREADS;
-    #else
-    uint32_t num_thds = NUM_WORKER_THREADS;
-    #endif
-#else
     #if !WORKER_SERVER_SAME
     uint32_t num_thds = NUM_RPC_SERVER_THREADS;
     #else
     uint32_t num_thds = NUM_WORKER_THREADS;
     #endif
-#endif
     _thread_pool = new std::thread * [num_thds];
     for (uint32_t i = 0; i < num_thds; i++) {
-        //_thread_pool[i] = new pthread_t;
-        //pthread_create(_thread_pool[i], NULL, HandleRpcs, NULL); 
         _thread_pool[i] = new std::thread(HandleRpcs, this);
     }
     cout <<"[Sundial] rpc server initialized, lisentening on " << line << endl;
@@ -97,20 +80,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         SundialResponse* response) {
 
     usleep(NETWORK_DELAY);
-#if LOG_NODE
-    usleep(LOG_DELAY);
-    if (request->request_type() == SundialRequest::LOG_YES_REQ ||
-        request->request_type() == SundialRequest::LOG_ABORT_REQ ||
-        request->request_type() == SundialRequest::LOG_COMMIT_REQ) {
-        uint64_t time_begin = get_sys_clock();
-        log_manager->log(request, response);
-        INC_FLOAT_STATS(time_debug3, get_sys_clock() - time_begin);
-        INC_INT_STATS(int_debug3, 1);
-        response->set_txn_id(request->txn_id());
-        return;
-    }
-#endif
-
     uint64_t txn_id = request->txn_id();
     SundialResponse::RequestType tpe = (SundialResponse::RequestType) ((int)
         request->request_type());
@@ -120,10 +89,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     RC rc;
     TxnManager * txn;
 
-#if DEBUG_PRINT
-    printf("[node-%u, txn-%lu] received request-%d\n", g_node_id, txn_id,
-        request->request_type());
-#endif
     switch (request->request_type()) {
         case SundialRequest::SYS_REQ:
             glob_manager->receive_sync_request();
@@ -151,9 +116,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             rc = txn->process_terminate_request(request, response);
             txn->unlock();
             txn_table->remove_txn(txn);
-            // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
-            //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][TERM_REQ] txn removed from TxnTable " << endl;
-            // }
             delete txn;
             break;
         case SundialRequest::PREPARE_REQ:
@@ -165,13 +127,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             rc = txn->process_prepare_request(request, response);
             if (txn->get_txn_state() != TxnManager::PREPARED) {
-                // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
-                //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][PREP_REQ] txn in state " << txn->get_txn_state() << endl;
-                // }
                 txn_table->remove_txn(txn);
-                // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
-                //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][PREP_REQ] txn removed from TxnTable " << endl;
-                // }
                 delete txn;
             }
             break;
@@ -183,9 +139,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             rc = txn->process_decision_request(request, response, COMMIT);
             txn_table->remove_txn(txn);
-            // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
-            //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][COMMIT_REQ] txn removed from TxnTable " << endl;
-            // }
             delete txn;
             break;
         case SundialRequest::ABORT_REQ:
@@ -196,9 +149,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             rc = txn->process_decision_request(request, response, ABORT);
             txn_table->remove_txn(txn);
-            // if (txn->get_txn_id() / g_num_nodes == 6808 || txn->get_txn_id() / g_num_nodes == 1206) {
-            //     std::cout << "[debug-" << g_node_id << " txn-" << txn->get_txn_id() << "][server][ABORT_REQ] txn removed from TxnTable " << endl;
-            // }
             delete txn;
             break;
         default:
@@ -237,14 +187,3 @@ SundialRPCServerImpl::CallData::Proceed() {
         delete this;
     }
 }
-
-/*
-void
-SundialRPCServerImpl::Export(net_http::HTTPServerInterface* http_server) {
-    ExportServiceTo(http_server);
-
-    _thread_pool = new ThreadPool(NUM_RPC_SERVER_THREADS);
-    _thread_pool->StartWorkers();
-    SetThreadPool("contactRemote", _thread_pool);
-}
-*/

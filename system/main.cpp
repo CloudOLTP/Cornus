@@ -11,10 +11,6 @@
 #include "manager.h"
 #include "query.h"
 #include "txn_table.h"
-#if LOG_LOCAL
-#include "logging_thread.h"
-#include "log.h"
-#endif
 #if LOG_NODE
 #include "log.h"
 #endif
@@ -30,48 +26,6 @@ void get_node_id();
 // defined in parser.cpp
 void parser(int argc, char ** argv);
 
-#if LOG_NODE
-int main(int argc, char* argv[])
-{
-    parser(argc, argv);
-    // get_node_id(); // for better debug experience
-    cout << "[Sundial] start node " << g_node_id << endl;
-    glob_manager = new Manager;
-    glob_manager->calibrate_cpu_frequency();
-    char log_name[50];
-    strcpy(log_name, "log_node_");
-    strcat(log_name, std::to_string(g_node_id).c_str());
-    log_manager = new LogManager(log_name);
-    log_manager->run_flush_thread();
-    g_total_num_threads = 1; // leave one thread slot to collect stats
-    glob_stats = new Stats;
-    rpc_client = new SundialRPCClient();
-    rpc_server = new SundialRPCServerImpl;
-
-    pthread_t * pthread_rpc = new pthread_t;
-    pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
-    
-    // make sure server is setup before moving on
-    sleep(SYNCHRONIZE_TIME);
-    cout << "[Sundial] Synchronization starts" << endl;
-
-    // Can start only if all other nodes have also finished initialization
-    while (glob_manager->num_sync_requests_received() < g_num_nodes)
-        usleep(1);
-    cout << "[Sundial] Synchronization done" << endl;
-
-
-    while (glob_manager->num_sync_requests_received() < (g_num_nodes) * 2)
-        usleep(1);
-
-    log_manager->stop_flush_thread();
-    delete log_manager;
-    cout << "[Sundial] Complete." << endl;
-    glob_stats->profile_log();
-
-    return 0;
-}
-#else
 int main(int argc, char* argv[])
 {
 
@@ -167,17 +121,9 @@ int main(int argc, char* argv[])
 #endif
     for (uint64_t i = 0; i < g_num_worker_threads - 1; i++)
         pthread_create(pthreads_worker[i], NULL, start_thread, (void *)worker_threads[i]);
-
-#if LOG_LOCAL
-    LoggingThread * logging_thread = new LoggingThread(next_thread_id ++);
-    pthread_t * pthreads_logging = new pthread_t;
-    pthread_create(pthreads_logging, NULL, start_thread, (void *)logging_thread);
-#endif
     assert(next_thread_id == g_total_num_threads);
-
     starttime = get_server_clock();
     start_thread((void *)(worker_threads[g_num_worker_threads - 1]));
-
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)
         pthread_join(*pthreads_worker[i], NULL);
 
@@ -197,7 +143,7 @@ int main(int argc, char* argv[])
         starttime = get_sys_clock();
         rpc_client->sendRequest(i, request, response);
         endtime = get_sys_clock() - starttime;
-        INC_FLOAT_STATS(time_debug5, endtime);
+        INC_FLOAT_STATS(time_rpc, endtime);
         cout << "[Sundial] network roundtrip to node " << i << ": " <<
         endtime / 1000 << " us" << endl;
     }
@@ -206,13 +152,7 @@ int main(int argc, char* argv[])
         usleep(1);
     cout << "[Sundial] End synchronization ends" << endl;
 #endif
-#if LOG_LOCAL
-    pthread_join(*pthreads_logging, NULL);
-#endif
-    //assert( txn_table->get_size() == 0 );
     endtime = get_server_clock();
-    // endtime and starttime were modified. the following Total RunTime msg may be misleading
-    // cout << "Complete. Total RunTime = " << 1.0 * (endtime - starttime) / BILLION << endl;
     cout << "Complete." << endl; 
     if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
         glob_stats->print();
@@ -223,14 +163,8 @@ int main(int argc, char* argv[])
     }
     delete [] pthreads_worker;
     delete [] worker_threads;
-#if LOG_LOCAL
-    delete pthreads_logging;
-    delete logging_thread;
-    delete log_manager;
-#endif
     return 0;
 }
-#endif
 
 void * start_thread(void * thread) {
     ((BaseThread *)thread)->run();

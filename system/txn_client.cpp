@@ -39,63 +39,7 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     if (rc == ABORT) {
         _store_procedure->txn_abort();
 	}
-#if LOG_LOCAL
-    // TODO. Changed from design A to design B
-    // [Design A] the worker thread is detached from the transaction once the log
-    // buffer is filled. The logging thread handles the rest of the commit.
-    // [Design B] the worker thread sleeps until logging finishes and handles the
-    // rest of the commit itself.
-    // Design B is simpler than A for 2PC. Since it is hard to detach a
-    // transaction from an RPC thread during an RPC call.
-    // TODO Need to carefully test performance to make sure design B is not
-    // slower than design A.
-    if (rc == ABORT) {
-        _cc_manager->cleanup(rc);
-        _txn_state = ABORTED;
-        rc = ABORT;
-    } else { // rc == COMMIT
-        char * log_record = NULL;
-        uint32_t log_record_size = _cc_manager->get_log_record(log_record);
-        if (log_record_size > 0) {
-            assert(log_record);
-            log_semaphore->incr();
-            log_manager->log(this, log_record_size, log_record);
-            delete [] log_record;
-            // The worker thread will be waken up by the logging thread after
-            // the logging operation finishes.
-        }
-  #if CONTROLLED_LOCK_VIOLATION
-        //INC_INT_STATS(num_precommits, 1);
-        _cc_manager->process_precommit_phase_coord();
-  #endif
-        _precommit_finish_time = get_sys_clock();
-  #if ENABLE_ADMISSION_CONTROL
-        // now the transaction has precommitted, the current thread is inactive,
-        // need to increase the quota of another thread.
-        //uint64_t wakeup_thread_id = glob_manager->next_wakeup_thread() % g_num_worker_threads;
-        //glob_manager->get_worker_thread( wakeup_thread_id )->incr_quota();
-        glob_manager->wakeup_next_thread();
-  #endif
-        // For read-write transactions, this waits for logging to complete.
-        // For read-only transactions, this waits for dependent transactions to
-        // commit (CLV only).
-        uint64_t tt = get_sys_clock();
-
-        log_semaphore->wait();
-
-        _log_ready_time = get_sys_clock();
-        INC_FLOAT_STATS(log_ready_time, get_sys_clock() - tt);
-
-        dependency_semaphore->wait();
-        INC_FLOAT_STATS(dependency_ready_time, get_sys_clock() - tt);
-
-        rc = COMMIT;
-        _cc_manager->cleanup(rc);
-        _txn_state = COMMITTED;
-    }
-#else
     // if logging didn't happen, process commit phase
-#if LOG_REMOTE
     if (!is_read_only()) {
     #if LOG_DEVICE == LOG_DVC_NATIVE
         SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
@@ -116,11 +60,9 @@ TxnManager::process_commit_phase_singlepart(RC rc)
            return FAIL;
     #endif
     }
-#endif
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
-#endif
     return rc;
 }
 
@@ -130,67 +72,36 @@ TxnManager::process_2pc_phase1()
     // Start Two-Phase Commit
     _decision = COMMIT;
 
-#if LOG_LOCAL
-    char * log_record = NULL;
-    uint32_t log_record_size = _cc_manager->get_log_record(log_record);
-    if (log_record_size > 0) {
-        assert(log_record);
-        log_semaphore->incr();
-        log_manager->log(this, log_record_size, log_record);
-        delete [] log_record;
-    }
-  #if CONTROLLED_LOCK_VIOLATION
-    _cc_manager->process_precommit_phase_coord();
-  #endif
-    _precommit_finish_time = get_sys_clock();
-  #if ENABLE_ADMISSION_CONTROL
-    //uint64_t wakeup_thread_id = glob_manager->next_wakeup_thread() % g_num_worker_threads;
-    //glob_manager->get_worker_thread( wakeup_thread_id )->incr_quota();
-    glob_manager->wakeup_next_thread();
-  #endif
-#endif
-
-#if LOG_REMOTE
-        // asynchronously log prepare for this node
+    // if the entire txn is read-write, log to remote storage
     if (!is_txn_read_only()) {
     #if LOG_DEVICE == LOG_DVC_NATIVE
         SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
         send_log_request(g_storage_node_id, type);
-    #elif LOG_DEVICE == LOG_DVC_REDIS
+    #else
         string data = "[LSN] placehold:" + string('d', num_local_write *
                 g_log_sz * 8);
         rpc_log_semaphore->incr();
-        #if COMMIT_ALG == ONE_PC
-        if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
-        FAIL) {
-            return FAIL;
-        }
-        #else
-        if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
-            data) == FAIL) {
-            return FAIL;
-        }
+    #if COMMIT_ALG == ONE_PC
+        #if LOG_DEVICE == LOG_DVC_REDIS
+        if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) == FAIL)
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        if (azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data) == FAIL)
         #endif
-    #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-        string data = "[LSN] placehold:" + string('d', num_local_write *
-                g_log_sz * 8);
-        rpc_log_semaphore->incr();
-        #if COMMIT_ALG == ONE_PC
-        if (azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
-        FAIL) {
             return FAIL;
-        }
-        #else
+    #else
+        #if LOG_DEVICE == LOG_DVC_REDIS
+        if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data) == FAIL)
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
         if (azure_blob_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
-            data) == FAIL) {
+            data) == FAIL)
             return FAIL;
-        }
         #endif
-    #endif
+    #endif // COMMIT_ALG == ONE_PC
+    #endif // LOG_DEVICE == LOG_DVC_NATIVE
     }
-#endif
 
     SundialRequest::NodeData * participant;
+    int message_sent = 0;
     // send prepare request to participants
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // if any failed or aborted, txn must abort, cannot enter this function
@@ -202,7 +113,6 @@ TxnManager::process_2pc_phase1()
         request.set_txn_id( get_txn_id() );
         request.set_request_type( SundialRequest::PREPARE_REQ);
         request.set_node_id( it->first );
-        // XXX(zhihan): attach participant list
         // attach coordinator
         participant = request.add_nodes();
         participant->set_nid(g_node_id);
@@ -220,32 +130,29 @@ TxnManager::process_2pc_phase1()
         if (rpc_client->sendRequestAsync(this, it->first, request, response)
         == FAIL) {
             return FAIL; // self is down, no msg can be sent out
-        } else {
-            rpc_semaphore->incr();
         }
-    }
-
-    // wait for log prepare to return
-#if LOG_LOCAL
-    log_semaphore->wait();
-#endif
-
-    // check if current node should crash
+        message_sent++;
+        rpc_semaphore->incr();
+        // check if current node should crash
 #if FAILURE_ENABLE
-	uint64_t ts = _worker_thread->get_execution_time();
-    if (ts > g_failure_pt && (g_node_id == FAILURE_NODE)) {
-        if (ATOM_CAS(glob_manager->active, true, false)) {
-#if DEBUG_PRINT || DEBUG_FAILURE
-			printf("[node-%u, txn-%lu] node crashes (execution time = %.2f sec)\n", g_node_id, _txn_id, ts / 1000000000.0);
-#endif
-            glob_manager->failure_protocol();
+        if (message_sent != 1)
+            continue;
+        uint64_t ts = _worker_thread->get_execution_time();
+        if (ts > g_failure_pt && (g_node_id == FAILURE_NODE)) {
+            if (ATOM_CAS(glob_manager->active, true, false)) {
+                #if DEBUG_PRINT || DEBUG_FAILURE
+                printf("[node-%u, txn-%lu] node crashes (execution time = %.2f sec)\n",
+                    g_node_id, _txn_id, ts / 1000000000.0);
+                #endif
+                glob_manager->failure_protocol();
+            }
+            return FAIL;
         }
-        return FAIL;
-    }
 #endif
+    }
 
     // profile: # prepare phase
-    INC_INT_STATS(int_debug3, 1);
+    INC_INT_STATS(num_prepare, 1);
 
     // wait for log if the txn is read/write
     if (!is_txn_read_only())
@@ -298,16 +205,6 @@ TxnManager::handle_prepare_resp(SundialResponse* response) {
 RC
 TxnManager::process_2pc_phase2(RC rc)
 {
-#if LOG_LOCAL
-    std::string record = std::to_string(_txn_id);
-    char * log_record = (char *)record.c_str();
-    uint32_t log_record_size = record.length();
-    log_semaphore->incr();
-    log_manager->log(this, log_record_size, log_record);
-    // OPTIMIZATION: perform local logging and commit request in parallel
-    // log_semaphore->wait();
-#endif
-
     bool remote_readonly = is_read_only() && (rc == COMMIT);
     if (remote_readonly) {
         for (auto it = _remote_nodes_involved.begin();
@@ -328,32 +225,29 @@ TxnManager::process_2pc_phase2(RC rc)
 #if LOG_REMOTE
     #if COMMIT_ALG == TWO_PC
         // 2pc: persistent decision
-        uint64_t starttime = get_sys_clock();
         #if LOG_DEVICE == LOG_DVC_NATIVE
-            SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-                    SundialRequest::LOG_ABORT_REQ;
-            send_log_request(g_storage_node_id, type);
-            rpc_log_semaphore->wait();
+        SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+                SundialRequest::LOG_ABORT_REQ;
+        send_log_request(g_storage_node_id, type);
         #elif LOG_DEVICE == LOG_DVC_REDIS
-            rpc_log_semaphore->incr();
-            if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
-            FAIL) {
-                return FAIL;
-            }
-            rpc_log_semaphore->wait();
+        rpc_log_semaphore->incr();
+        if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
+        FAIL) {
+            return FAIL;
+        }
         #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-            rpc_log_semaphore->incr();
-            if (azure_blob_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
-            FAIL) {
-                return FAIL;
-            }
-            rpc_log_semaphore->wait();
+        rpc_log_semaphore->incr();
+        if (azure_blob_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
+        FAIL) {
+            return FAIL;
+        }
         #endif
-
-        // profile: time spent on a sync log
-        INC_FLOAT_STATS(time_debug4, get_sys_clock() - starttime);
-        INC_INT_STATS(int_debug4, 1);
+        rpc_log_semaphore->wait();
+        // finish after log is stable.
+        _finish_time = get_sys_clock();
     #elif COMMIT_ALG == ONE_PC
+        // finish before sending out logs.
+        _finish_time = get_sys_clock();
         #if LOG_DEVICE == LOG_DVC_NATIVE
             SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
                     SundialRequest::LOG_ABORT_REQ;
@@ -371,7 +265,6 @@ TxnManager::process_2pc_phase2(RC rc)
                 return FAIL;
             }
         #endif
-        INC_INT_STATS(int_debug4, 1);
     #endif
 #endif
 
@@ -397,17 +290,14 @@ TxnManager::process_2pc_phase2(RC rc)
         }
     }
 
-    _finish_time = get_sys_clock();
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
     dependency_semaphore->wait();
-    log_semaphore->wait();
 #if LOG_REMOTE && COMMIT_ALG == ONE_PC
     rpc_log_semaphore->wait();
 #endif
     _cc_manager->cleanup(rc);
     rpc_semaphore->wait();
-
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     return rc;
 }

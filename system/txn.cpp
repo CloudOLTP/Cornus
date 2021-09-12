@@ -80,7 +80,15 @@ TxnManager::update_stats()
     // TODO. collect stats for sub_queries.
     if (is_sub_txn())
         return;
-
+#if FAILURE_ENABLE
+    if (_terminate_time != 0) {
+        INC_FLOAT_STATS(terminate_time, _finish_time - _terminate_time);
+        INC_INT_STATS(num_affected_txn, 1);
+        vector<double> &all =
+            glob_stats->_stats[GET_THD_ID]->term_latency;
+        all.push_back(_finish_time - _terminate_time);
+    }
+#endif
 #if WORKLOAD == TPCC && STATS_ENABLE
     uint32_t type = ((QueryTPCC *)_store_procedure->get_query())->type;
     if (_txn_state == COMMITTED) {
@@ -90,7 +98,6 @@ TxnManager::update_stats()
     } else
         glob_stats->_stats[GET_THD_ID]->_aborts_per_txn_type[ type ]++;
 #endif
-
     if ( _txn_state == COMMITTED ) {
         INC_INT_STATS(num_commits, 1);
         uint64_t latency;
@@ -98,9 +105,6 @@ TxnManager::update_stats()
             INC_FLOAT_STATS(single_part_execute_phase, _commit_start_time - _txn_restart_time);
         #if CONTROLLED_LOCK_VIOLATION
             INC_FLOAT_STATS(single_part_precommit_phase, _precommit_finish_time - _commit_start_time);
-        #endif
-        #if LOG_LOCAL
-            INC_FLOAT_STATS(single_part_log_latency, _log_ready_time - _commit_start_time);
         #endif
             INC_FLOAT_STATS(single_part_commit_phase, _finish_time - _commit_start_time);
             INC_FLOAT_STATS(single_part_abort, _txn_restart_time - _txn_start_time);
@@ -118,7 +122,6 @@ TxnManager::update_stats()
             INC_FLOAT_STATS(multi_part_cleanup_phase, get_sys_clock() - _finish_time);
 
             INC_INT_STATS(num_multi_part_txn, 1);
-            // latency = _commit_start_time - _txn_start_time; // why commit start time?
             latency = _finish_time - _txn_start_time;
             uint64_t total_time = get_sys_clock() - _txn_start_time;
             #if COLLECT_LATENCY
@@ -127,15 +130,6 @@ TxnManager::update_stats()
             vector<double> &all = glob_stats->_stats[GET_THD_ID]->dist_latency;
             all.push_back(latency);
             #endif
-#if FAILURE_ENABLE
-            if (_terminate_time != 0) {
-                INC_FLOAT_STATS(terminate_time_co, _finish_time - _terminate_time);
-                INC_INT_STATS(num_affected_txn_co, 1);
-                vector<double> &all =
-                    glob_stats->_stats[GET_THD_ID]->term_latency;
-                all.push_back(_finish_time - _terminate_time);
-            }
-#endif
         }
 #if COLLECT_LATENCY
         INC_FLOAT_STATS(txn_latency, latency);
@@ -182,9 +176,6 @@ TxnManager::restart() {
 RC
 TxnManager::start()
 {
-#if DEBUG_PRINT
-    printf("[node-%u, txn-%lu] start txn\n", g_node_id, _txn_id);
-#endif
     RC rc = RCOK;
     _txn_state = RUNNING;
     _is_coordinator = true;
@@ -192,56 +183,21 @@ TxnManager::start()
     rc = _store_procedure->execute();
     // Handle single-partition transactions, skip if self failed
     if (is_single_partition()) {
-#if DEBUG_PRINT
-        printf("[node-%u, txn-%lu] process single part\n", g_node_id, _txn_id);
-#endif
         _commit_start_time = get_sys_clock();
         rc = process_commit_phase_singlepart(rc);
     } else {
         if (rc == COMMIT) {
-#if DEBUG_PRINT
-            printf("[node-%u, txn-%lu] prepare phase\n", g_node_id, _txn_id);
-#endif
-            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
-            //     printf("[debug-%u, txn-%lu] pre-prepare phase, txn in state %u\n", g_node_id, _txn_id, this->get_txn_state());
-            // }
             _prepare_start_time = get_sys_clock();
             rc = process_2pc_phase1();
-            // if the remote is readonly, remote txn will be COMMITTED, remote will send back OK_RO (ok-readonly), fetch by TxnManager::handle_prepare_resp. the remote WILL NOT LOG IN REDIS.
-            // then "_remote_nodes_involved[response->node_id()]->state" is set to COMMITTED.
-            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
-            //     printf("[debug-%u, txn-%lu] post-prepare phase, txn in state %u, rc=%u\n", g_node_id, _txn_id, this->get_txn_state(), rc);
-            // }
         }
         if (rc != FAIL) {
-#if DEBUG_PRINT
-            printf("[node-%u, txn-%lu] commit phase\n", g_node_id, _txn_id);
-#endif
-            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
-            //     printf("[debug-%u, txn-%lu] commit phase, txn in state %u\n", g_node_id, _txn_id, this->get_txn_state());
-            // }
             _commit_start_time = get_sys_clock();
             rc = process_2pc_phase2(rc);
-            // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
-            //     printf("[debug-%u, txn-%lu] post-commit phase, txn in state %u, rc=%u\n", g_node_id, _txn_id, this->get_txn_state(), rc);
-            // }
         }
     }
     if (rc != FAIL) {
-#if DEBUG_PRINT
-        if (rc == COMMIT)
-            printf("[node-%u, txn-%lu] txn commit\n", g_node_id, _txn_id);
-        else {
-            assert(rc == ABORT);
-            printf("[node-%u, txn-%lu] txn aborted\n", g_node_id, _txn_id);
-        }
-#endif
         update_stats();
     } else {
-#if DEBUG_PRINT
-        printf("[node-%u, txn-%lu] txn abort, detected self failure\n",
-        g_node_id, _txn_id);
-#endif
         _cc_manager->cleanup(ABORT); // optional, as node already failed
         _txn_state = ABORTED;
     }

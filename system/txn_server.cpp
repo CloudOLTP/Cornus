@@ -42,9 +42,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 #if DEBUG_PRINT
     printf("[node-%u, txn-%lu] prepare request\n", g_node_id, _txn_id);
 #endif
-    // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
-    //     printf("[debug-%u, txn-%lu][remote] pre-process_prepare_req, state=%u\n", g_node_id, _txn_id, this->get_txn_state());
-    // }
     if (!glob_manager->active) {
         _txn_state = ABORTED;
         return FAIL;
@@ -52,11 +49,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     assert(_txn_state == RUNNING);
     RC rc = RCOK;
     uint32_t num_tuples = request->tuple_data_size();
-#if LOG_LOCAL
-    std::string record;
-    char * log_record = NULL;
-    uint32_t log_record_size = 0;
-#endif
     // copy data to the write set.
     for (uint32_t i = 0; i < num_tuples; i++) {
         uint64_t key = request->tuple_data(i).key();
@@ -74,20 +66,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         // prepare request ensure all the nodes attached are rw
         _remote_nodes_involved[node_id]->is_readonly = false;
     }
-#if LOG_LOCAL
-    log_record_size = _cc_manager->get_log_record(log_record);
-    if (log_record_size > 0) {
-        assert(log_record);
-        log_semaphore->incr();
-        log_manager->log(this, log_record_size, log_record);
-        delete [] log_record;
-    }
-#if CONTROLLED_LOCK_VIOLATION
-    _cc_manager->process_precommit_phase_coord();
-#endif
-    log_semaphore->wait();
-#endif
-
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0) {
 #if LOG_REMOTE
@@ -126,9 +104,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
             #endif  // ONE_PC
         #endif  // LOG_DEVICE
         rpc_log_semaphore->wait();
-        // profile: avg time on logging a sync vote
-        INC_FLOAT_STATS(time_debug2, get_sys_clock() - starttime);
-        INC_INT_STATS(int_debug2, 1);
 #endif
     }
 
@@ -140,9 +115,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         _txn_state = COMMITTED;
         _cc_manager->cleanup(COMMIT); // release lock after log is received
         response->set_response_type( SundialResponse::PREPARED_OK_RO );
-        // if (this->get_txn_id() / g_num_nodes == 6808 || this->get_txn_id() / g_num_nodes == 1206) {
-        //     printf("[debug-%u, txn-%lu][remote] process_prepare_req, readonly node, state=%u\n", g_node_id, _txn_id, this->get_txn_state());
-        // }
         return rc;
     }
     response->set_response_type( SundialResponse::PREPARED_OK );
@@ -167,11 +139,6 @@ TxnManager::process_read_request(const SundialRequest* request,
 
     RC rc = RCOK;
     uint32_t num_tuples = request->tuple_data_size();
-#if LOG_LOCAL
-    std::string record;
-    char * log_record = NULL;
-    uint32_t log_record_size = 0;
-#endif
     num_tuples = request->read_requests_size();
     for (uint32_t i = 0; i < num_tuples; i++) {
         uint64_t key = request->read_requests(i).key();
@@ -214,13 +181,6 @@ TxnManager::process_decision_request(const SundialRequest* request,
     if (!glob_manager->active) {
         return FAIL;
     }
-#if LOG_LOCAL
-    record = std::to_string(_txn_id);
-    log_record = (char *)record.c_str();
-    log_record_size = record.length();
-    log_semaphore->incr();
-    log_manager->log(this, log_record_size, log_record);
-#endif
 #if LOG_REMOTE
     #if LOG_DEVICE == LOG_DVC_NATIVE
     SundialRequest::RequestType log_type = (request->request_type() ==
@@ -249,20 +209,18 @@ TxnManager::process_decision_request(const SundialRequest* request,
     _cc_manager->cleanup(rc); // release lock after log is received
     _finish_time = get_sys_clock();
 #if FAILURE_ENABLE
-    if (_terminate_time != 0) {
-        INC_FLOAT_STATS(terminate_time_pa, _finish_time - _terminate_time);
-        INC_INT_STATS(num_affected_txn_pa, 1);
-        vector<double> &all =
-                    glob_stats->_stats[GET_THD_ID]->term_latency;
-        all.push_back(_finish_time - _terminate_time);
-    }
+    // TODO: check when a participant call termination protocol
+//    if (_terminate_time != 0) {
+//        INC_FLOAT_STATS(terminate_time_pa, _finish_time - _terminate_time);
+//        INC_INT_STATS(num_affected_txn_pa, 1);
+//        vector<double> &all =
+//                    glob_stats->_stats[GET_THD_ID]->term_latency;
+//        all.push_back(_finish_time - _terminate_time);
+//    }
 #endif
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log
     // optimization)
-#if LOG_LOCAL
-    log_semaphore->wait();
-#endif
     response->set_response_type( SundialResponse::ACK );
     return rc;
 }

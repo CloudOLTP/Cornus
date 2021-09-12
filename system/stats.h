@@ -61,8 +61,7 @@ enum StatsFloat {
     STAT_multi_part_cleanup_phase,
 
     // termination time
-    STAT_terminate_time_co,
-    STAT_terminate_time_pa,
+    STAT_terminate_time,
 
     STAT_log_ready_time,
     STAT_dependency_ready_time,
@@ -76,13 +75,11 @@ enum StatsFloat {
 
     // debug stats
     STAT_time_debug1,
-    // log vote
     STAT_time_debug2,
     STAT_time_debug3,
-    // log commit
     STAT_time_debug4,
     // node communication
-    STAT_time_debug5,
+    STAT_time_rpc,
     STAT_time_debug6,
     STAT_time_debug7,
 
@@ -115,8 +112,7 @@ enum StatsInt {
     STAT_num_aborts_remote,
 
     // Txn affected by failure (running termination protocol)
-    STAT_num_affected_txn_co,
-    STAT_num_affected_txn_pa,
+    STAT_num_affected_txn,
 
     // Logging
     STAT_log_num,
@@ -153,7 +149,7 @@ enum StatsInt {
     // remote prepare
     STAT_int_debug2,
     // prepare
-    STAT_int_debug3,
+    STAT_num_prepare,
     // commit
     STAT_int_debug4,
     STAT_int_debug5,
@@ -290,8 +286,7 @@ public:
         "multi_part_cleanup_phase",
     
 		// termination time
-    	"terminate_time_co",
-    	"terminate_time_pa",
+    	"terminate_time",
 
         "log_ready_time",
         "dependency_ready_time",
@@ -308,7 +303,7 @@ public:
         "time_debug2",
         "time_debug3",
         "time_debug4",
-        "time_debug5",
+        "time_rpc",
         "time_debug6",
         "time_debug7",
 
@@ -340,8 +335,7 @@ public:
         "num_aborts_remote",
     
 		// Txn affected by failure (running termination protocol)
-    	"num_affected_txn_co",
-   		"num_affected_txn_pa",
+    	"num_affected_txn",
 
         // Logging
         "log_num",
@@ -377,7 +371,7 @@ public:
 
         "int_debug1",
         "int_debug2",
-        "int_debug3",
+        "num_prepare",
         "int_debug4",
         "int_debug5",
         "int_debug6",

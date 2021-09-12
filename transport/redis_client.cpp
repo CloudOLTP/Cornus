@@ -60,18 +60,22 @@ sync_callback(cpp_redis::reply & response) {
 
 void 
 async_callback(cpp_redis::reply & response) {
-    assert(response.is_integer());
-    TxnManager * txn = txn_table->get_txn(response.as_integer(), false, false);
+    assert(response.is_array());
+    TxnManager * txn = txn_table->get_txn(response.array()[0].as_integer(),
+        false, false);
+    uint64_t starttime = response.array()[1].as_integer();
     // mark as returned. 
     txn->rpc_log_semaphore->decr();
+    INC_FLOAT_STATS(log_async, get_sys_clock() - starttime);
+    INC_INT_STATS(num_log_async, 1);
 }
 
 void 
 ne_callback(cpp_redis::reply & response) {
     assert(response.is_array());
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
-    uint64_t txnid = response.as_array()[1].as_integer(); // debug
-
+    uint64_t txnid = response.as_array()[1].as_integer();
+    uint64_t starttime = response.as_array()[2].as_integer();
     TxnManager * txn = txn_table->get_txn(txnid, false, false);
     
     // status can only be aborted/prepared
@@ -79,6 +83,8 @@ ne_callback(cpp_redis::reply & response) {
         txn->set_txn_state(TxnManager::ABORTED);
     // mark as returned. 
     txn->rpc_log_semaphore->decr();
+    INC_FLOAT_STATS(log_if_ne_data, get_sys_clock() - starttime);
+    INC_INT_STATS(num_log_if_ne_data, 1);
 }
 
 // termination protocol callback
@@ -88,6 +94,7 @@ tp_callback(cpp_redis::reply & response) {
     TxnManager::State state = (TxnManager::State) response.as_array()[0].as_integer();
     TxnManager * txn = txn_table->get_txn(response.as_array()[1].as_integer()
         , false, false);
+    uint64_t starttime = response.as_array()[2].as_integer();
     // default is commit, only need to set abort or committed
     if (state == TxnManager::ABORTED) {
         txn->set_decision(ABORT);
@@ -98,21 +105,27 @@ tp_callback(cpp_redis::reply & response) {
 	}
     // mark as returned.
     txn->rpc_log_semaphore->decr();
+    INC_FLOAT_STATS(log_if_ne, get_sys_clock() - starttime);
+    INC_INT_STATS(num_log_if_ne, 1);
 }
 
 RC
 RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
     if (!glob_manager->active)
         return FAIL;
+    uint64_t starttime = get_sys_clock();
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         return tonumber(ARGV[2])
         )";
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {"status-" + id};
-    std::vector<std::string> args = {std::to_string(status), std::to_string(txn_id)};
+    std::vector<std::string> args = {std::to_string(status),
+                                     std::to_string(txn_id)};
     client.eval(script, keys, args, sync_callback);
     client.sync_commit();
+    INC_FLOAT_STATS(log_sync, get_sys_clock() - starttime);
+    INC_INT_STATS(num_log_sync, 1);
     return RCOK;
 }
 
@@ -120,14 +133,16 @@ RC
 RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     if (!glob_manager->active)
         return FAIL;
+    uint64_t starttime = get_sys_clock();
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
-        return tonumber(ARGV[2])
+        return {tonumber(ARGV[2]), tonumber(ARGV[3])}
         )";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"status-" + id};
-    std::vector<std::string> args = {std::to_string(status), tid};
+    std::vector<std::string> args = {std::to_string(status), tid,
+                                     std::to_string(starttime)};
     client.eval(script, keys, args, async_callback);
     client.commit();
     return RCOK;
@@ -138,17 +153,19 @@ RC
 RedisClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     if (!glob_manager->active)
         return FAIL;
+    uint64_t starttime = get_sys_clock();
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
         redis.call('setnx', KEYS[1], ARGV[1])
         local status = tonumber(redis.call('get', KEYS[1]))
-        return {tonumber(status), tonumber(ARGV[2])}
+        return {tonumber(status), tonumber(ARGV[2]), tonumber(ARGV[3])}
     )";
     string tid = std::to_string(txn_id);
     string key = "status" + std::to_string(node_id) + "-" + std::to_string(txn_id);
     std::vector<std::string> keys = {key};
-    std::vector<std::string> args = {std::to_string(TxnManager::ABORTED), tid};
+    std::vector<std::string> args = {std::to_string(TxnManager::ABORTED),
+                                     tid, std::to_string(starttime)};
     client.eval(script, keys, args, tp_callback);
     client.commit();
     return RCOK;
@@ -159,17 +176,19 @@ RC
 RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     if (!glob_manager->active)
         return FAIL;
+    uint64_t starttime = get_sys_clock();
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         redis.call('setnx', KEYS[2], ARGV[2])
         local status = tonumber(redis.call('get', KEYS[2]))
-        return {tonumber(status), tonumber(ARGV[3])};)";
+        return {tonumber(status), tonumber(ARGV[3]), tonumber(ARGV[4])};)";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"data-" + id, "status" + id};
-    std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED), tid};
+    std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED),
+                                     tid, std::to_string(starttime)};
     client.eval(script, keys, args, ne_callback);
     client.commit();
     return RCOK;
@@ -181,6 +200,7 @@ RedisClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
     string &data) {
     if (!glob_manager->active)
         return FAIL;
+    uint64_t starttime = get_sys_clock();
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
@@ -196,6 +216,8 @@ RedisClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
 									 tid};
     client.eval(script, keys, args, sync_callback);
     client.sync_commit();
+    INC_FLOAT_STATS(log_sync_data, get_sys_clock() - starttime);
+    INC_INT_STATS(num_log_sync_data, 1);
     return RCOK;
 }
 
@@ -204,19 +226,19 @@ RedisClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                            string & data) {
     if (!glob_manager->active)
         return FAIL;
+    uint64_t starttime = get_sys_clock();
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])
         redis.call('set', KEYS[2], ARGV[2])
-        return tonumber(ARGV[3])
+        return {tonumber(ARGV[3]), tonumber(ARGV[4])}
     )";
     string tid = std::to_string(txn_id);
     string id = std::to_string(node_id) + "-" + tid;
     std::vector<std::string> keys = {"data-" + id, "status" + id};
-    std::vector<std::string> args = {data,
-                                     std::to_string(status),
-                                     tid};
+    std::vector<std::string> args = {data, std::to_string(status),
+                                     tid, std::to_string(starttime)};
     client.eval(script, keys, args, async_callback);
     client.commit();
     return RCOK;

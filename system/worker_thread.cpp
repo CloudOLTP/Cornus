@@ -36,12 +36,6 @@ RC WorkerThread::run() {
     glob_manager->init_rand( get_thd_id() );
     glob_manager->set_thd_id( get_thd_id() );
     assert( glob_manager->get_thd_id() == get_thd_id() );
-    //glob_manager->register_worker_thread( get_thd_id(), this );
-#if ENABLE_ADMISSION_CONTROL
-    //_num_complete_txns = 0;
-    if (get_thd_id() >= g_max_num_active_txns)
-        add_to_pool();
-#endif
     pthread_barrier_wait( &global_barrier );
 
     _init_time = get_sys_clock();
@@ -66,19 +60,6 @@ RC WorkerThread::run() {
             // restart a previously aborted transaction
             _native_txn->restart();
         } else {
-  #if ENABLE_ADMISSION_CONTROL
-            uint64_t tt = get_sys_clock();
-            INC_FLOAT_STATS( time_process_txn, tt - last_idle_time );
-            last_idle_time = tt;
-
-            wait();
-
-            tt = get_sys_clock();
-            INC_FLOAT_STATS( time_idle, tt - last_idle_time );
-            last_idle_time = tt;
-            if (!_is_ready)
-                continue;
-  #endif
             // start a new transaction
             QueryBase * query = GET_WORKLOAD->gen_query();
             // txn_id format:
@@ -90,27 +71,12 @@ RC WorkerThread::run() {
             _native_txn = new TxnManager(query, this);
             _native_txn->set_txn_id( txn_id );
             txn_table->add_txn( _native_txn );
-            // if (txn_id / g_num_nodes == 6808 || txn_id / g_num_nodes == 1206) {
-            //     std::cout << "[debug-" << g_node_id << ", txn-" << txn_id << "][native] about to start txn" << endl;
-            // }
-
             _native_txn->start();
-
-            // if (txn_id / g_num_nodes == 6808 || txn_id / g_num_nodes == 1206) {
-            //     std::cout << "[debug-" << g_node_id << ", txn-" << txn_id << "][native] txn executed" << endl;
-            // }
         }
         if (_native_txn->get_txn_state() == TxnManager::COMMITTED
             || (_native_txn->get_store_procedure()->is_self_abort()
                 && _native_txn->get_txn_state() == TxnManager::ABORTED)) {
-#if ENABLE_ADMISSION_CONTROL
-            if (_native_txn->get_txn_state() == TxnManager::COMMITTED)
-                add_to_pool();
-#endif
             txn_table->remove_txn(_native_txn);
-            // if (_native_txn->get_txn_id() / g_num_nodes == 6808 || _native_txn->get_txn_id() / g_num_nodes == 1206) {
-            //     std::cout << "[debug-" << g_node_id << " txn-" << _native_txn->get_txn_id() << "][native] txn removed from TxnTable " << endl;
-            // }
             delete _native_txn;
             _native_txn = NULL;
         } else { // should restart

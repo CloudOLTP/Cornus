@@ -115,10 +115,7 @@ void Stats::clear(uint64_t tid) {
 }
 
 void Stats::profile_log() {
-    STAT_SUM(uint64_t, total_log, _int_stats[STAT_int_debug3]);
-    STAT_SUM(double, total_log_cost, _float_stats[STAT_time_debug3]);
-    total_log_cost = total_log_cost / total_log * 1000000  / BILLION ; // in us.
-    printf("avg log cost: %lf\n", total_log_cost);
+    STAT_SUM(uint64_t, total_log, _int_stats[STAT_num_prepare]);
 }
 
 void Stats::output(std::ostream * os)
@@ -152,12 +149,6 @@ void Stats::output(std::ostream * os)
     STAT_SUM(uint64_t, total_num_multi_part_txns, _int_stats[STAT_num_multi_part_txn]);
     STAT_SUM(uint64_t, total_num_commits, _int_stats[STAT_num_commits]);
     STAT_SUM(double, total_run_time, _float_stats[STAT_run_time]);
-
-    // profile communication cost
-//    STAT_SUM(uint64_t, total_remote_req, _int_stats[STAT_int_debug1]);
-//    STAT_SUM(double, total_remote_req_cost, _float_stats[STAT_time_debug1]);
-//    total_remote_req_cost = total_remote_req_cost / total_remote_req  / 1000;
-//    printf("avg remote cost: %lf\n", total_remote_req_cost); // in us.
 
     assert(total_num_commits > 0);
     out << "=Worker Thread=" << endl;
@@ -229,14 +220,14 @@ void Stats::output(std::ostream * os)
         STAT_MAX(uint64_t, max_grpc_msg_max_latency, _req_msg_max_latency[i]);
         STAT_MIN(uint64_t, min_grpc_msg_min_latency, _req_msg_min_latency[i]);
         STAT_SUM(uint64_t, sum_grpc_msg_avg_latency, _req_msg_avg_latency[i]);
-        cout << "    " << setw(30) << left << "average_" <<
+        cout << "    " << left << "average_" <<
         msg_name << "_req_latency:" << sum_grpc_msg_avg_latency * 1.0 /
         sum_grpc_msg_count / 1000
         << endl;
-        cout << "    " << setw(30) << left << "max_" <<
+        cout << "    " << left << "max_" <<
         msg_name << "_req_latency:" << max_grpc_msg_max_latency * 1.0 / 1000
         << endl;
-        cout << "    " << setw(30) << left << "min_" <<
+        cout << "    " << left << "min_" <<
         msg_name << "_req_latency:" << min_grpc_msg_min_latency * 1.0 / 1000 << endl;
     }
 
@@ -252,12 +243,10 @@ void Stats::output(std::ostream * os)
     STAT_PRINT_AVG_US(double, log_async_data, float, num_log_async_data);
     STAT_PRINT_AVG_US(double, log_async_data_iso, float, num_log_async_data_iso);
 
-    STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_int_debug3]);
-    STAT_SUM(uint64_t, total_remote_prepare, _int_stats[STAT_int_debug2]);
-    STAT_SUM(double, total_log_vote, _float_stats[STAT_time_debug2]);
-    STAT_SUM(uint64_t, total_commit, _int_stats[STAT_int_debug4]);
-    STAT_SUM(double, total_log_commit, _float_stats[STAT_time_debug4]);
-    STAT_SUM(double, total_node_communicate, _float_stats[STAT_time_debug5]);
+    STAT_PRINT_AVG_US(double, terminate_time, float, num_affected_txn);
+
+    STAT_SUM(uint64_t, total_prepare, _int_stats[STAT_num_prepare]);
+    STAT_SUM(double, total_node_communicate, _float_stats[STAT_time_rpc]);
 
     out << "    " << setw(30) << left << "average_prepare_req_cnt:" <<
     sum_prepare_count * 1.0 / total_prepare << endl;
@@ -267,29 +256,13 @@ void Stats::output(std::ostream * os)
     total_prepare_resp_cnt * 1.0 / total_prepare << endl;
     out << "    " << setw(30) << left << "average_prepare_resp_size:" <<
     total_prepare_resp_size * 1.0 / total_prepare << endl;
-    out << "    " << setw(30) << left << "average_log_vote_pa:" <<
-    total_log_vote / total_remote_prepare / 1000 << endl;
-    out << "    " << setw(30) << left << "average_log_commit_co:" <<
-    total_log_commit / total_commit / 1000 << endl;
+    // in us by divided by 1000
     out << "    " << setw(30) << left << "average_node_communicate:" <<
-    total_node_communicate / (g_num_nodes - 1) / 1000 << endl;
-
-
-    STAT_SUM(uint64_t, total_affected_txn_co,
-        _int_stats[STAT_num_affected_txn_co]);
-    STAT_SUM(uint64_t, total_affected_txn_pa,
-        _int_stats[STAT_num_affected_txn_pa]);
-    STAT_SUM(double, total_terminate_time_co, _float_stats[STAT_terminate_time_co]);
-    STAT_SUM(double, total_terminate_time_pa, _float_stats[STAT_terminate_time_pa]);
-    uint64_t total_affected_txn = total_affected_txn_co + total_affected_txn_pa;
+    total_node_communicate * 1.0 / (g_num_nodes - 1) / 1000 << endl;
 
     out << "    " << setw(30) << left << "average_dist_latency:" << avg_dist_latency / BILLION << endl;
     out << "    " << setw(30) << left << "average_dist_total_time:" << avg_dist_total_time / BILLION << endl;
     out << "    " << setw(30) << left << "average_latency:" << avg_latency / BILLION << endl;
-    out << "    " << setw(30) << left << "average_term_latency_co:" <<
-    total_terminate_time_co / total_affected_txn_co / BILLION << endl;
-    out << "    " << setw(30) << left << "average_term_latency_pa:" <<
-    total_terminate_time_pa / total_affected_txn_pa / BILLION << endl;
     // print latency distribution
     out << "    " << setw(30) << left << "90%_latency:"
         << _aggregate_latency[(uint64_t)(total_num_commits * 0.90)] / BILLION << endl;
@@ -313,18 +286,20 @@ void Stats::output(std::ostream * os)
     // print terminate latency distribution
 	if (total_affected_txn > 0) {
     out << "    " << setw(30) << left << "median_term_latency:"
-        << _aggregate_term_latency[(uint64_t)(total_affected_txn * 0.50)] /
+        << _aggregate_term_latency[(uint64_t)(total_num_affected_txn * 0.50)] /
         BILLION << endl;
     out << "    " << setw(30) << left << "25%_term_latency:"
-        << _aggregate_term_latency[(uint64_t)(total_affected_txn * 0.25)] /
+        << _aggregate_term_latency[(uint64_t)(total_num_affected_txn * 0.25)] /
         BILLION << endl;
     out << "    " << setw(30) << left << "75%_term_latency:"
-        << _aggregate_term_latency[(uint64_t)(total_affected_txn * 0.75)] /
+        << _aggregate_term_latency[(uint64_t)(total_num_affected_txn * 0.75)] /
         BILLION << endl;
     out << "    " << setw(30) << left << "99%_term_latency:"
-        << _aggregate_term_latency[(uint64_t)(total_affected_txn * 0.99)] / BILLION << endl;
+        << _aggregate_term_latency[(uint64_t)(total_num_affected_txn * 0.99)] /
+        BILLION << endl;
     out << "    " << setw(30) << left << "max_term_latency:"
-        << _aggregate_term_latency[total_affected_txn - 1] / BILLION << endl;
+        << _aggregate_term_latency[total_num_affected_txn - 1] / BILLION <<
+        endl;
     out << "    " << setw(30) << left << "min_term_latency:"
         << _aggregate_term_latency[0] / BILLION << endl;
     out << endl;
