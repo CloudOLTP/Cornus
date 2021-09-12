@@ -1,6 +1,6 @@
-for exp in zipf #read_perc zipf num_nodes failure_num_nodes
+for exp in failure_num_nodes #read_perc zipf num_nodes failure_num_nodes
 do
-for st in redis_repeated #blob_iso blob 
+for st in redis_repeated blob_repeated #blob_iso blob 
 do
 	exp_name="${exp}_${st}"
 	echo ${exp_name}
