@@ -18,6 +18,7 @@ public:
 
     TxnManager *            get_native_txn() { return _native_txn; }
 	uint64_t                get_execution_time() { return get_sys_clock() - _init_time;};
+	uint64_t                get_init_time() { return _init_time;};
 private:
     //void                  handle_req_finish(TxnManager * &txn_man);
     TxnManager *            _native_txn;

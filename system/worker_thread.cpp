@@ -46,8 +46,7 @@ RC WorkerThread::run() {
     __attribute__((unused)) uint64_t last_idle_time = get_sys_clock();
 
     // Main loop
-    //while (get_sys_clock() - init_time < g_run_time * BILLION || _native_txn) {
-    while (get_sys_clock() - _init_time < g_run_time * BILLION) {
+    while ( (get_sys_clock() - _init_time) < (g_run_time * BILLION)) {
         if (!glob_manager->active) {
             glob_manager->worker_thread_done();
             return FAIL;
@@ -73,6 +72,9 @@ RC WorkerThread::run() {
             txn_table->add_txn( _native_txn );
             _native_txn->start();
         }
+	if ((_native_txn->get_txn_id() > 0) && (_native_txn->get_txn_id() % 100) == 0)
+        printf("[node-%u, txn-%lu] finish native txn at %.2f sec, now=%lu, init=%lu\n", g_node_id, _native_txn->get_txn_id(), (get_sys_clock() - get_init_time()) * 1.0 / BILLION, get_sys_clock(), get_init_time());
+    // Start Two-Phase Commit
         if (_native_txn->get_txn_state() == TxnManager::COMMITTED
             || (_native_txn->get_store_procedure()->is_self_abort()
                 && _native_txn->get_txn_state() == TxnManager::ABORTED)) {
@@ -81,10 +83,13 @@ RC WorkerThread::run() {
             _native_txn = NULL;
         } else { // should restart
             assert(_native_txn->get_txn_state() == TxnManager::ABORTED);
-            uint64_t sleep_time = g_abort_penalty * glob_manager->rand_double(); // in nanoseconds
+            double sleep_time = g_abort_penalty * glob_manager->rand_double(); // in nanoseconds
+			printf("[node-%u, txn-%lu] aborted and sleep for %.2f us\n", g_node_id, _native_txn->get_txn_id(), sleep_time / 1000);
             usleep(sleep_time / 1000);
         }
     }
+	uint64_t tmp_runtime = get_sys_clock();
+	printf("[Sundial] node-%lu worker-%lu finishes execution (runtime = %.2f sec, now=%lu, init=%lu), last_txn=%lu.\n", g_node_id, _thd_id, (tmp_runtime - _init_time) * 1.0 / BILLION, tmp_runtime, _init_time, _native_txn->get_txn_id());
     // clean up txn for last non-committed txn
     if (_native_txn && _native_txn->get_txn_state() == TxnManager::ABORTED) {
         txn_table->remove_txn(_native_txn);
@@ -92,7 +97,8 @@ RC WorkerThread::run() {
         _native_txn = NULL;
     }
     glob_manager->worker_thread_done();
-    INC_FLOAT_STATS(run_time, get_sys_clock() - _init_time);
+	uint64_t thd_runtime = get_sys_clock() - _init_time;
+    INC_FLOAT_STATS(run_time, thd_runtime);
     return RCOK;
 }
 

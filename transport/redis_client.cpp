@@ -31,7 +31,7 @@ RedisClient::RedisClient() {
             break;
         }
     }
-    std::cout << "[Sundial] kan connecting to redis server at " << line.substr(0, line.find(" ")) << std::endl;
+    std::cout << "[Sundial] connecting to redis server at " << line.substr(0, line.find(" ")) << std::endl;
 	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
 	size_t port;
 	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
@@ -61,9 +61,9 @@ sync_callback(cpp_redis::reply & response) {
 void 
 async_callback(cpp_redis::reply & response) {
     assert(response.is_array());
-    TxnManager * txn = txn_table->get_txn(response.array()[0].as_integer(),
+    TxnManager * txn = txn_table->get_txn(response.as_array()[0].as_integer(),
         false, false);
-    uint64_t starttime = response.array()[1].as_integer();
+    uint64_t starttime = response.as_array()[1].as_integer();
     // mark as returned. 
     txn->rpc_log_semaphore->decr();
     INC_FLOAT_STATS(log_async, get_sys_clock() - starttime);

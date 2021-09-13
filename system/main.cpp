@@ -48,10 +48,10 @@ int main(int argc, char* argv[])
     pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
     #if LOG_DEVICE == LOG_DVC_REDIS
         // assume a shared logging but store different node's info to different key
-        cout << "creat Redis client!!!!!!!" << endl;
+        cout << "[Sundial] creating Redis client" << endl;
         redis_client = new RedisClient();
     #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-        cout << "creat Azure client!!!!!!!" << endl;
+        cout << "[Sundial] creating Azure Blob client" << endl;
         azure_blob_client = new AzureBlobClient();
     #endif
 #endif

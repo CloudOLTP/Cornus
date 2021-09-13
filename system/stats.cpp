@@ -284,7 +284,7 @@ void Stats::output(std::ostream * os)
             << _aggregate_dist_latency[total_num_multi_part_txns - 1] / BILLION << endl;
     }
     // print terminate latency distribution
-	if (total_affected_txn > 0) {
+	if (total_num_affected_txn > 0) {
     out << "    " << setw(30) << left << "median_term_latency:"
         << _aggregate_term_latency[(uint64_t)(total_num_affected_txn * 0.50)] /
         BILLION << endl;

@@ -69,7 +69,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0) {
 #if LOG_REMOTE
-        uint64_t starttime = get_sys_clock();
         #if LOG_DEVICE == LOG_DVC_NATIVE
             send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
         #elif LOG_DEVICE == LOG_DVC_REDIS
