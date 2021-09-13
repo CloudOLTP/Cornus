@@ -6,15 +6,17 @@
 #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
 #include "azure_blob_client.h"
 #endif
+#include "stats.h"
 
 char            ifconfig_file[80]       = "ifconfig.txt";
-
+Stats *             glob_stats;
 
 // Distributed DBMS
 // ================
 uint32_t        g_num_nodes             = NUM_NODES;
 uint32_t        g_node_id               = NUM_NODES;
 uint32_t        g_num_rpc_recv = 0;
+uint32_t        g_total_num_threads = NUM_WORKER_THREADS;
 
 SundialRPCClient *  rpc_client;
 SundialRPCServerImpl * rpc_server;
