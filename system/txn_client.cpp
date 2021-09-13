@@ -92,10 +92,9 @@ TxnManager::process_2pc_phase1()
         #if LOG_DEVICE == LOG_DVC_REDIS
         if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data) == FAIL)
         #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-        if (azure_blob_client->log_async_data(g_node_id, get_txn_id(), PREPARED,
-            data) == FAIL)
-            return FAIL;
+        if (azure_blob_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data) == FAIL)
         #endif
+            return FAIL;
     #endif // COMMIT_ALG == ONE_PC
     #endif // LOG_DEVICE == LOG_DVC_NATIVE
     }
@@ -216,8 +215,8 @@ TxnManager::process_2pc_phase2(RC rc)
         }
     }
     if (remote_readonly) { // no logging and remote message at all
-        _cc_manager->cleanup(rc);
         _finish_time = get_sys_clock();
+        _cc_manager->cleanup(rc);
         _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
         return rc;
     }
