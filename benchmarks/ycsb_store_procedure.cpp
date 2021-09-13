@@ -75,10 +75,6 @@ YCSBStoreProcedure::execute()
             remote_request->key = req->key;
             remote_request->table_id = 0;
             remote_requests[home_node].push_back(remote_request);
-			if (_txn->get_txn_id() == 1719)
-				printf("[DEBUG] node-%lu 1719 try to acquire %lu\n", g_node_id, req->key);
-			if (_txn->get_txn_id() == 1718)
-				printf("[DEBUG] node-%lu 1718 try to acquire %lu\n", g_node_id, req->key);
         }
     }
     // send remote package, if abort return abort

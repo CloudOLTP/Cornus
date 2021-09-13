@@ -72,8 +72,8 @@ RC WorkerThread::run() {
             txn_table->add_txn( _native_txn );
             _native_txn->start();
         }
-//	if ((_native_txn->get_txn_id() > 0) && (_native_txn->get_txn_id() % 100) == 0)
-//        printf("[node-%u, txn-%lu] finish native txn at %.2f sec, now=%lu, init=%lu\n", g_node_id, _native_txn->get_txn_id(), (get_sys_clock() - get_init_time()) * 1.0 / BILLION, get_sys_clock(), get_init_time());
+	if ((_native_txn->get_txn_id() > 0) && (_native_txn->get_txn_id() % 100) == 0)
+        printf("[node-%u, txn-%lu] finish native txn at %.2f sec, now=%lu, init=%lu\n", g_node_id, _native_txn->get_txn_id(), (get_sys_clock() - get_init_time()) * 1.0 / BILLION, get_sys_clock(), get_init_time());
     // Start Two-Phase Commit
         if (_native_txn->get_txn_state() == TxnManager::COMMITTED
             || (_native_txn->get_store_procedure()->is_self_abort()
