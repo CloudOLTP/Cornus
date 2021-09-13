@@ -180,6 +180,8 @@ TxnManager::start()
     RC rc = RCOK;
     _txn_state = RUNNING;
     _is_coordinator = true;
+	if ((_txn_id == 1444) || (_txn_id == 1445))
+	printf("[debug] txn-%lu starts\n", _txn_id);
     // running transaction on the host node
     rc = _store_procedure->execute();
     // Handle single-partition transactions, skip if self failed
@@ -202,6 +204,8 @@ TxnManager::start()
         _cc_manager->cleanup(ABORT); // optional, as node already failed
         _txn_state = ABORTED;
     }
+	if ((_txn_id == 1444) || (_txn_id == 1445))
+	printf("[debug] txn-%lu stops due to %d\n", _txn_id, rc);
     return rc;
 }
 

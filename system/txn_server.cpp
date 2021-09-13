@@ -105,6 +105,8 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     }
 
     // log msg no matter it is readonly or not
+	if (_txn_id == 1445)
+    printf("[debug] txn 1445 handle prepare (num_tuples=%lu)\n", num_tuples);
     if (num_tuples != 0) {
         _txn_state = PREPARED;
     } else {
@@ -189,9 +191,14 @@ TxnManager::process_read_request(const SundialRequest* request,
 RC
 TxnManager::process_decision_request(const SundialRequest* request,
                                  SundialResponse* response, RC rc) {
+	if (_txn_id == 1445)
+    printf("[debug] txn 1445 handle decision (rc=%d)\n",rc);
     if (!glob_manager->active) {
         return FAIL;
     }
+
+	if (_txn_id == 1445)
+    printf("[debug] txn 1445 handle decision (rc=%d) - 1\n",rc);
 
     #if LOG_DEVICE == LOG_DVC_NATIVE
     SundialRequest::RequestType log_type = (request->request_type() ==
@@ -213,8 +220,12 @@ TxnManager::process_decision_request(const SundialRequest* request,
         return FAIL;
     }
     #endif
+	if (_txn_id == 1445)
+    printf("[debug] txn 1445 handle decision - 2 (rc=%d)\n",rc);
     rpc_log_semaphore->wait();
     dependency_semaphore->wait();
+	if (_txn_id == 1445)
+    printf("[debug] txn 1445 handle decision -3 (rc=%d)\n",rc);
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     _cc_manager->cleanup(rc); // release lock after log is received
     _finish_time = get_sys_clock();

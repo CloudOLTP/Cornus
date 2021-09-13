@@ -42,11 +42,6 @@ LockManager::get_row(row_t * row, access_t type, uint64_t key)
         // locked.
         for (vector<AccessLock>::iterator it = _access_set.begin(); it != _access_set.end(); it ++)
             if (it->row == row) {
-                //debug:
-                // it->data = new char [it->row->get_tuple_size()];
-                // memcpy(it->data, it->row->get_data(), it->row->get_tuple_size());
-                // return rc;
-                //end debug
                 printf("remote key cnt: %d\n", remote_key);
                 printf("access key: %ld\n", key);
                 printf("currnt key: ");
@@ -203,22 +198,6 @@ LockManager::process_precommit_phase_coord()
     for (auto access : _access_set)
         if (access.type == WR)
             access.row->copy(access.data);
-
-    // DEBUG
-    /*for (int i = 0; i < _index_access_set.size(); i ++)
-        for (int j = i + 1; j < _index_access_set.size(); j ++) {
-            if (_index_access_set[i].manager == _index_access_set[j].manager) {
-                cout << "size=" << _index_access_set.size() << endl;
-                cout << "[" << i << "]: "
-                     << "type=" << _index_access_set[i].type << ", key=" << _index_access_set[i].key
-                     << ", index=" << _index_access_set[i].index->get_index_id() << endl;
-                cout << "[" << j << "]: "
-                     << "type=" << _index_access_set[j].type << ", key=" << _index_access_set[j].key
-                     << ", index=" << _index_access_set[j].index->get_index_id() << endl;
-            }
-            assert(_index_access_set[i].manager != _index_access_set[j].manager);
-        }*/
-
     for (auto access : _index_access_set)
         access.manager->lock_release(_txn, COMMIT);
     for (auto access : _access_set)
@@ -264,30 +243,24 @@ void
 LockManager::cleanup(RC rc)
 {
     assert(rc == COMMIT || rc == ABORT);
+	if (_txn->get_txn_id() == 1444 || _txn->get_txn_id() == 1445)
+	printf("[cleanup] txn-%lu cleanup(%d)\n", _txn->get_txn_id(), rc);
     if (rc == ABORT) {
         for (auto access : _access_set)
             access.row->manager->lock_release(_txn, rc);
         for (auto access : _index_access_set)
             access.manager->lock_release(_txn, rc);
     } else { // rc == COMMIT
-    #if !CONTROLLED_LOCK_VIOLATION
         commit_insdel();
-    #endif
         for (auto access : _access_set) {
-    #if CONTROLLED_LOCK_VIOLATION
-            access.row->manager->lock_cleanup(_txn);
-    #else
             if (access.type == WR)
                 access.row->copy(access.data);
             access.row->manager->lock_release(_txn, rc);
-    #endif
+	if (_txn->get_txn_id() == 1444 || _txn->get_txn_id() == 1445)
+	printf("[cleanup] txn-%lu cleanup(%d) key=%lu\n", _txn->get_txn_id(), rc, access.key);
         }
         for (auto access : _index_access_set) {
-    #if CONTROLLED_LOCK_VIOLATION
-            access.manager->lock_cleanup(_txn);
-    #else
             access.manager->lock_release(_txn, rc);
-    #endif
         }
     }
     for (auto access : _access_set) {

@@ -74,8 +74,10 @@ Row_lock::lock_get(LockType type, TxnManager * txn, bool need_latch)
                 rc = ABORT;
         }
     } else {
-        if (!_locking_set.empty() && conflict_lock(type, _locking_set.begin()->type))
+        if (!_locking_set.empty() && conflict_lock(type, _locking_set.begin()->type)) {
             rc = ABORT;
+			printf("[cc] node-%lu txn-%lu txn fail to get lock due to txn-%lu\n", g_node_id, txn->get_txn_id(), _locking_set.begin()->txn->get_txn_id());
+		}
         else
             _locking_set.insert( LockEntry {type, txn} );
     }
