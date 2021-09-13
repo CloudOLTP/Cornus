@@ -83,9 +83,6 @@ RC WorkerThread::run() {
             _native_txn = NULL;
         } else { // should restart
             _native_txn->num_aborted++;
-            // debug: alert for too many aborts
-            if (NUM_WORKER_THREADS == 1 && _native_txn->num_aborted > 0)
-                assert(false);
             assert(_native_txn->get_txn_state() == TxnManager::ABORTED);
             double sleep_time = g_abort_penalty * glob_manager->rand_double(); // in nanoseconds
 			printf("[node-%u, txn-%lu] aborted and sleep for %.2f us\n", g_node_id, _native_txn->get_txn_id(), sleep_time / 1000);

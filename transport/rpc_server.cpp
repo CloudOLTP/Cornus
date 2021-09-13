@@ -100,12 +100,19 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 txn->set_txn_id(txn_id);
                 txn_table->add_txn(txn);
             }
+			// for failure case
             // only read and terminate need latch since
             // (1) read can only be concurrent with read and terminate
             // (2) read does not remove txn from txn table when getting txn
             txn->lock();
             rc = txn->process_read_request(request, response);
             txn->unlock();
+			#if !FAILURE_ENABLE
+			if (rc == ABORT) {
+				txn_table->remove_txn(txn);
+            	delete txn;
+			}
+			#endif
             break;
         case SundialRequest::TERMINATE_REQ:
             txn = txn_table->get_txn(txn_id, true);
@@ -147,6 +154,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
+			if (txn->get_txn_id() == 1719 || txn->get_txn_id() == 1718)
+				printf("[DEBUG] node-%lu txn-%lu receive abort request", g_node_id, txn->get_txn_id());
             rc = txn->process_decision_request(request, response, ABORT);
             txn_table->remove_txn(txn);
             delete txn;

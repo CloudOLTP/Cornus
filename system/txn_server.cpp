@@ -128,11 +128,13 @@ TxnManager::process_read_request(const SundialRequest* request,
         return FAIL;
     }
 
+#if FAILURE_ENABLE
     // is already aborted by terminate request
     if (_txn_state != RUNNING) {
         response->set_response_type(SundialResponse::RESP_ABORT);
         return ABORT;
     }
+#endif
 
     RC rc = RCOK;
     uint32_t num_tuples = request->tuple_data_size();
@@ -145,23 +147,18 @@ TxnManager::process_read_request(const SundialRequest* request,
         INDEX * index = GET_WORKLOAD->get_index(index_id);
         set<row_t *> * rows = NULL;
         rc = get_cc_manager()->index_read(index, key, rows, 1);
-        if (rc == ABORT) {
-            printf("[node-%lu, txn-%lu] server fail to get index=%lu key=%lu"
-                   "\n", g_node_id, _txn_id, index_id, key);
-            if (NUM_WORKER_THREADS == 1)
-                assert(false);
-            break;
-        }
         row_t * row = *rows->begin();
         get_cc_manager()->remote_key += 1;
         rc = get_cc_manager()->get_row(row, access_type, key);
         if (rc == ABORT) {
             printf("[node-%lu, txn-%lu] server fail to get row index=%lu "
                    "key=%lu\n", g_node_id, _txn_id, index_id, key);
-            if (NUM_WORKER_THREADS == 1)
-                assert(false);
             break;
         }
+		if (_txn_id == 1719 || _txn_id == 1718) {
+            printf("[node-%lu, txn-%lu] server get row index=%lu "
+                   "key=%lu\n", g_node_id, _txn_id, index_id, key);
+		}
         uint64_t table_id = row->get_table_id();
         SundialResponse::TupleData * tuple = response->add_tuple_data();
         uint64_t tuple_size = row->get_tuple_size();
@@ -173,10 +170,15 @@ TxnManager::process_read_request(const SundialRequest* request,
     }
 
     if (rc == ABORT) {
+#if FAILURE_ENABLE
         if(_txn_state != ABORTED) {
             _cc_manager->cleanup(ABORT);
             _txn_state = ABORTED;
         }
+#else
+		 _cc_manager->cleanup(ABORT);
+         _txn_state = ABORTED;
+#endif
         response->set_response_type( SundialResponse::RESP_ABORT );
     } else {
         response->set_response_type(SundialResponse::RESP_OK);
