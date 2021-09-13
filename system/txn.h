@@ -104,6 +104,7 @@ public:
     // =====
     void              update_stats();
     uint64_t          num_local_write;
+    uint64_t          num_aborted;
 
     // Debug
     void              print_state()       {};

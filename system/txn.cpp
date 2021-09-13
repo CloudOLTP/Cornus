@@ -44,6 +44,7 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     _net_wait_time = 0;
     _terminate_time = 0;
     num_local_write = 0;
+    num_aborted = 0;
 
     _is_sub_txn = false;
     _is_single_partition = true;

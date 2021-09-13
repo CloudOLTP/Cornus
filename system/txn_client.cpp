@@ -222,7 +222,6 @@ TxnManager::process_2pc_phase2(RC rc)
         return rc;
     }
 
-#if LOG_REMOTE
     #if COMMIT_ALG == TWO_PC
         // 2pc: persistent decision
         #if LOG_DEVICE == LOG_DVC_NATIVE
@@ -266,7 +265,7 @@ TxnManager::process_2pc_phase2(RC rc)
             }
         #endif
     #endif
-#endif
+
 
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // No need to run this phase if the remote sub-txn has already committed
@@ -293,7 +292,7 @@ TxnManager::process_2pc_phase2(RC rc)
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
     dependency_semaphore->wait();
-#if LOG_REMOTE && COMMIT_ALG == ONE_PC
+#if COMMIT_ALG == ONE_PC
     rpc_log_semaphore->wait();
 #endif
     _cc_manager->cleanup(rc);

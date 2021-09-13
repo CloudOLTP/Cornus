@@ -68,7 +68,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     }
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0) {
-#if LOG_REMOTE
         #if LOG_DEVICE == LOG_DVC_NATIVE
             send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
         #elif LOG_DEVICE == LOG_DVC_REDIS
@@ -103,7 +102,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
             #endif  // ONE_PC
         #endif  // LOG_DEVICE
         rpc_log_semaphore->wait();
-#endif
     }
 
     // log msg no matter it is readonly or not
@@ -147,11 +145,23 @@ TxnManager::process_read_request(const SundialRequest* request,
         INDEX * index = GET_WORKLOAD->get_index(index_id);
         set<row_t *> * rows = NULL;
         rc = get_cc_manager()->index_read(index, key, rows, 1);
-        if (rc == ABORT) break;
+        if (rc == ABORT) {
+            printf("[node-%lu, txn-%lu] server fail to get index=%lu key=%lu"
+                   "\n", g_node_id, _txn_id, index_id, key);
+            if (NUM_WORKER_THREADS == 1)
+                assert(false);
+            break;
+        }
         row_t * row = *rows->begin();
         get_cc_manager()->remote_key += 1;
         rc = get_cc_manager()->get_row(row, access_type, key);
-        if (rc == ABORT) break;
+        if (rc == ABORT) {
+            printf("[node-%lu, txn-%lu] server fail to get row index=%lu "
+                   "key=%lu\n", g_node_id, _txn_id, index_id, key);
+            if (NUM_WORKER_THREADS == 1)
+                assert(false);
+            break;
+        }
         uint64_t table_id = row->get_table_id();
         SundialResponse::TupleData * tuple = response->add_tuple_data();
         uint64_t tuple_size = row->get_tuple_size();
@@ -180,7 +190,7 @@ TxnManager::process_decision_request(const SundialRequest* request,
     if (!glob_manager->active) {
         return FAIL;
     }
-#if LOG_REMOTE
+
     #if LOG_DEVICE == LOG_DVC_NATIVE
     SundialRequest::RequestType log_type = (request->request_type() ==
         SundialRequest::COMMIT_REQ)? SundialRequest::LOG_COMMIT_REQ :
@@ -202,7 +212,6 @@ TxnManager::process_decision_request(const SundialRequest* request,
     }
     #endif
     rpc_log_semaphore->wait();
-#endif
     dependency_semaphore->wait();
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     _cc_manager->cleanup(rc); // release lock after log is received
@@ -236,7 +245,6 @@ TxnManager::process_terminate_request(const SundialRequest* request,
     switch (_txn_state) {
         case RUNNING:
             // self has not voted yes, log abort and cleanup
-#if LOG_REMOTE
             #if LOG_DEVICE == LOG_DVC_NATIVE
             send_log_request(g_storage_node_id, SundialRequest::LOG_ABORT_REQ);
             #elif LOG_DEVICE == LOG_DVC_REDIS
@@ -250,7 +258,6 @@ TxnManager::process_terminate_request(const SundialRequest* request,
                 return FAIL;
             }
             #endif
-#endif
             _cc_manager->cleanup(ABORT);
             _txn_state = ABORTED;
             return ABORT;
