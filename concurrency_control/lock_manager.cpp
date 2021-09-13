@@ -243,8 +243,6 @@ void
 LockManager::cleanup(RC rc)
 {
     assert(rc == COMMIT || rc == ABORT);
-	if (_txn->get_txn_id() == 1444 || _txn->get_txn_id() == 1445)
-	printf("[cleanup] txn-%lu cleanup(%d)\n", _txn->get_txn_id(), rc);
     if (rc == ABORT) {
         for (auto access : _access_set)
             access.row->manager->lock_release(_txn, rc);
@@ -256,8 +254,6 @@ LockManager::cleanup(RC rc)
             if (access.type == WR)
                 access.row->copy(access.data);
             access.row->manager->lock_release(_txn, rc);
-	if (_txn->get_txn_id() == 1444 || _txn->get_txn_id() == 1445)
-	printf("[cleanup] txn-%lu cleanup(%d) key=%lu\n", _txn->get_txn_id(), rc, access.key);
         }
         for (auto access : _index_access_set) {
             access.manager->lock_release(_txn, rc);

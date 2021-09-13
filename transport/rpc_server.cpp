@@ -80,8 +80,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         SundialResponse* response) {
 
     uint64_t txn_id = request->txn_id();
-	if (txn_id == 1445)
-		printf("[DEBUG] node-%lu txn-%lu receive rpc request %d\n", g_node_id, txn_id, (int) request->request_type());
     SundialResponse::RequestType tpe = (SundialResponse::RequestType) ((int)
         request->request_type());
     response->set_request_type(tpe);
@@ -110,8 +108,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn->unlock();
 			#if !FAILURE_ENABLE
 			if (rc == ABORT) {
-	if (txn_id == 1445)
-		printf("[DEBUG] node-%lu txn-%lu rm from txn table %d\n", g_node_id, txn_id, (int) request->request_type());
 				txn_table->remove_txn(txn);
             	delete txn;
 			}
@@ -142,17 +138,11 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             break;
         case SundialRequest::COMMIT_REQ:
-	if (txn_id == 1445)
-		printf("[DEBUG] node-%lu txn-%lu receive commit request %d\n", g_node_id, txn_id, (int) request->request_type());
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
-	if (txn_id == 1445)
-		printf("HOW COULD?!\n");
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
-	if (txn_id == 1445)
-		printf("[DEBUG] node-%lu txn-%lu == txn-%lu\n", g_node_id, txn_id, txn->get_txn_id());
             rc = txn->process_decision_request(request, response, COMMIT);
             txn_table->remove_txn(txn);
             delete txn;
@@ -163,8 +153,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
-			if (txn->get_txn_id() == 1719 || txn->get_txn_id() == 1718)
-				printf("[DEBUG] node-%lu txn-%lu receive abort request", g_node_id, txn->get_txn_id());
             rc = txn->process_decision_request(request, response, ABORT);
             txn_table->remove_txn(txn);
             delete txn;
