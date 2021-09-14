@@ -24,7 +24,7 @@ RC WorkerThread::run() {
         // txn_id format:
         //     | unique number | worker_thread_id | node_id |
         uint64_t txn_id = max_txn_id ++;
-        txn_id = txn_id * g_num_worker_threads + _thd_id;
+        txn_id = txn_id * g_total_num_threads + _thd_id;
         txn_id = txn_id * g_num_nodes + g_node_id;
         _native_txn = new TxnManager(this);
         _native_txn->set_txn_id( txn_id );

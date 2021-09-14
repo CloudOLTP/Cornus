@@ -29,16 +29,21 @@
 #include <math.h>
 #include <chrono>
 
+using std::cout;
+using std::endl;
+using std::string;
 
 class Stats;
 class SundialRPCClient;
 class SundialRPCServerImpl;
+class TxnTable;
 
 extern uint32_t         g_num_nodes;
 extern uint32_t         g_node_id;
 extern uint32_t         g_num_rpc_recv;
 extern uint32_t         g_total_num_threads;
 extern Stats *          glob_stats;
+extern TxnTable *       txn_table;
 extern char           ifconfig_file[];
 enum RC {RCOK, COMMIT, ABORT, WAIT, LOCAL_MISS, SPECULATE, ERROR, FINISH, FAIL};
 

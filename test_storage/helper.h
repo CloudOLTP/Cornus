@@ -5,7 +5,10 @@
 #ifndef SUNDIAL_TEST_STORAGE_HELPER_H_
 #define SUNDIAL_TEST_STORAGE_HELPER_H_
 
+#include <iostream>
 #include "global.h"
+
+#define BILLION 1000000000UL
 
 #define ATOM_ADD(dest, value) \
     __sync_fetch_and_add(&(dest), value)
@@ -24,17 +27,16 @@
     stringstream sstream; sstream << msg; cout << sstream.str();
 
 #define COMPILER_BARRIER asm volatile("" ::: "memory");
+#define PAUSE __asm__ ( "pause;" );
 
 // STATS helper
 // ============
 
 #define INC_FLOAT_STATS(name, value) { \
-    if (STATS_ENABLE) \
-        glob_stats->_stats[get_thd_id()]->_float_stats[STAT_##name] += value; }
+        glob_stats->_stats[0]->_float_stats[STAT_##name] += value; }
 
 #define INC_INT_STATS(name, value) {{ \
-    if (STATS_ENABLE) \
-        glob_stats->_stats[get_thd_id()]->_int_stats[STAT_##name] += value; }}
+        ATOM_ADD(glob_stats->_stats[0]->_int_stats[STAT_##name],value); }}
 
 #define STAT_SUM(type, sum, name) \
     type sum = 0; \

@@ -4,6 +4,7 @@
 #include <queue>
 #include <stack>
 #include "thread.h"
+#include "helper.h"
 
 class TxnManager;
 

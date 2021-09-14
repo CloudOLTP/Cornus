@@ -1,5 +1,7 @@
 #include "rpc_server.h"
 #include "global.h"
+#include "txn.h"
+#include "txn_table.h"
 
 void
 SundialRPCServerImpl::run() {
@@ -62,8 +64,23 @@ SundialRPCServerImpl::contactRemote(ServerContext* context, const SundialRequest
 void
 SundialRPCServerImpl::processContactRemote(ServerContext* context, const SundialRequest* request,
         SundialResponse* response) {
-	g_num_rpc_recv++;
-    return;
+	if (request->request_type() != SundialRequest::PREPARE_REQ) {
+		g_num_rpc_recv++;
+		return;
+	}
+	uint64_t txn_id = request->txn_id();
+	TxnManager * txn = txn_table->get_txn(txn_id, false);
+	if (txn == NULL) {
+		txn = new TxnManager();
+        txn->set_txn_id(txn_id);
+        txn_table->add_txn(txn);
+		txn->set_decision(COMMIT);
+	}
+	RC rc = txn->process_prepare_request(request, response);
+    if (rc == ABORT) {
+		txn_table->remove_txn(txn);
+		delete txn;
+    }
 }
 
 

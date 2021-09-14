@@ -7,6 +7,7 @@
 #include "semaphore_sync.h"
 #include <pthread.h>
 
+class WorkerThread;
 class TxnManager
 {
 public:
@@ -29,8 +30,7 @@ public:
 
     void              set_txn_id(uint64_t txn_id) { _txn_id = txn_id; }
     uint64_t          get_txn_id()          { return _txn_id; }
-    uint64_t          get_thd_id()          { return
-    _worker_thread->get_thd_id(); }
+    uint64_t          get_thd_id();
 
     State             get_txn_state()       { return _txn_state; }
     void              set_txn_state(State state) { _txn_state = state; }
@@ -49,11 +49,7 @@ public:
     // Distributed transactions
     // ========================
 public:
-    // client
-    RC start();
-
     // server
-    RC process_remote_request(const SundialRequest* request, SundialResponse* response);
     RC process_prepare_request(const SundialRequest* request, SundialResponse*
     response);
 

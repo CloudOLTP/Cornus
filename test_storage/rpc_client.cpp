@@ -1,5 +1,8 @@
 #include "global.h"
+#include "txn_table.h" 
+#include "txn.h" 
 #include "rpc_client.h"
+#include "stats.h"
 
 SundialRPCClient::SundialRPCClient() {
     _servers = new SundialRPCClientStub * [g_num_nodes];

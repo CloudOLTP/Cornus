@@ -8,7 +8,7 @@
 #include "redis_client.h"
 #include "txn.h"
 #include "txn_table.h"
-#include "manager.h"
+#include "stats.h"
 
 void async_callback(cpp_redis::reply & response);
 void ne_callback(cpp_redis::reply & response);
@@ -110,8 +110,6 @@ tp_callback(cpp_redis::reply & response) {
 
 RC
 RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
-    if (!glob_manager->active)
-        return FAIL;
     uint64_t starttime = get_sys_clock();
     auto script = R"(
         redis.call('set', KEYS[1], ARGV[1])

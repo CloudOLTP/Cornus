@@ -10,7 +10,7 @@
 #include "azure_blob_client.h"
 #include "txn.h"
 #include "txn_table.h"
-#include "manager.h"
+#include "stats.h"
 
 AzureBlobClient::AzureBlobClient() {
     const utility::string_t storage_connection_string(
@@ -168,8 +168,6 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
 // used for prepare, req is always LOG_YES_REQ, this function needs to be async
 RC
 AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data) {
-    if (!glob_manager->active)
-        return FAIL;
 
     // step 1: set, pair: ('data-'+node_id+txn_id, data)
     // step 2: set if not exist, pair: ('status-'+node_id+txn_id, PREPARED)
@@ -263,8 +261,6 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
 RC
 AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
                                string &data) {
-    if (!glob_manager->active)
-        return FAIL;
     uint64_t starttime = get_sys_clock();
     string id = std::to_string(node_id) + "-" + std::to_string(txn_id);
     azure::storage::cloud_block_blob blob_status = container.get_block_blob_reference(U("status-" + id));
@@ -286,8 +282,6 @@ AzureBlobClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
 RC
 AzureBlobClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
                                 string &data) {
-    if (!glob_manager->active)
-        return FAIL;
 
     // step 1: set, pair: ('data-'+node_id+txn_id, data)
     // step 2: set  pair: ('status-'+node_id+txn_id, PREPARED)

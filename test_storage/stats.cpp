@@ -30,7 +30,6 @@ void Stats_thd::clear() {
 ////////////////////////////////////////////////
 Stats::Stats()
 {
-    _num_cp = 0;
     _stats = new Stats_thd * [g_total_num_threads];
     for (uint32_t i = 0; i < g_total_num_threads; i++) {
         _stats[i] = (Stats_thd *) _mm_malloc(sizeof(Stats_thd), 64);
@@ -50,9 +49,7 @@ void Stats::init(uint64_t thread_id) {
 }
 
 void Stats::clear(uint64_t tid) {
-    if (STATS_ENABLE) {
         _stats[tid]->clear();
-    }
 }
 
 

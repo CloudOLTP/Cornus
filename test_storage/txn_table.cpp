@@ -4,7 +4,7 @@
 
 TxnTable::TxnTable()
 {
-    _txn_table_size = g_num_nodes * g_num_worker_threads;
+    _txn_table_size = g_num_nodes * g_total_num_threads;
     _buckets = new Bucket * [_txn_table_size];
     for (uint32_t i = 0; i < _txn_table_size; i++) {
         _buckets[i] = (Bucket *) _mm_malloc(sizeof(Bucket), 64);

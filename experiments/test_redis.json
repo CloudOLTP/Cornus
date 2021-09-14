@@ -1,6 +1,6 @@
 {
   "DISTRIBUTED": "true",
-  "NUM_NODES": 2,
+  "NUM_NODES": 4,
   "NUM_WORKER_THREADS": 8,
   "NUM_RPC_SERVER_THREADS": 8,
   "MAX_NUM_ACTIVE_TXNS": 16,
@@ -12,8 +12,8 @@
   "COMMIT_ALG": "TWO_PC",
   "WORKLOAD": "YCSB",
   "ZIPF_THETA": 0,
-  "READ_PERC": 0,
-  "RUN_TIME": 10,
+  "READ_PERC": 0.5,
+  "RUN_TIME": 30,
   "PERC_REMOTE": 0.5,
   "FAILURE_ENABLE": "false",
   "FAILURE_NODE":1,

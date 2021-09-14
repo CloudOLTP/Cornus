@@ -7,9 +7,11 @@
 #include "azure_blob_client.h"
 #endif
 #include "stats.h"
+#include "txn_table.h"
 
 char            ifconfig_file[80]       = "ifconfig.txt";
 Stats *             glob_stats;
+TxnTable *          txn_table;
 
 // Distributed DBMS
 // ================

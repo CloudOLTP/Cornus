@@ -12,6 +12,9 @@
 #include "azure_blob_client.h"
 #endif
 #include "semaphore_sync.h"
+#include "stats.h"
+#include "txn_table.h"
+#include "worker_thread.h"
 
 void * start_thread(void *);
 void * start_rpc_server(void *);
@@ -45,11 +48,12 @@ int main(int argc, char* argv[])
 #endif
 
     glob_stats = new Stats;
+	txn_table = new TxnTable();
 
     uint32_t next_thread_id = 0;
-    worker_threads = new WorkerThread * [g_total_num_threads];
+    WorkerThread ** worker_threads = new WorkerThread * [g_total_num_threads];
     pthread_t ** pthreads_worker = new pthread_t * [g_total_num_threads];
-    for (uint32_t i = 0; i < g_num_worker_threads; i++) {
+    for (uint32_t i = 0; i < g_total_num_threads; i++) {
         worker_threads[i] = new WorkerThread(next_thread_id ++);
         pthreads_worker[i] = new pthread_t;
     }
