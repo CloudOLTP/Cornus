@@ -103,6 +103,7 @@ tp_callback(cpp_redis::reply & response) {
 		assert(false);
 	}
     // mark as returned.
+	//printf("node-%lu txn-%lu decr semaphore\n", g_node_id, response.as_array()[1].as_integer());
     txn->rpc_log_semaphore->decr();
     INC_FLOAT_STATS(log_if_ne, get_sys_clock() - starttime);
     INC_INT_STATS(num_log_if_ne, 1);
@@ -146,6 +147,7 @@ RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
 // used for termination protocol, req is always LOG_ABORT
 RC
 RedisClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
+	// printf("node-%lu txn-%lu log if ne\n", g_node_id, txn_id);
     uint64_t starttime = get_sys_clock();
     // log format - key-value
     // key: "type(data/status)-node_id-txn_id"

@@ -20,7 +20,8 @@ RC WorkerThread::run() {
     // calculate which client thread this worker thread corresponds to.
     uint64_t max_txn_id = 0;
     // Main loop
-    while ( (get_sys_clock() - _init_time) < 10) {
+	_init_time = get_sys_clock();
+    while ( (get_sys_clock() - _init_time) < 10 * BILLION) {
         // txn_id format:
         //     | unique number | worker_thread_id | node_id |
         uint64_t txn_id = max_txn_id ++;

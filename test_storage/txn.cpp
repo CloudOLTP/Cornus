@@ -30,7 +30,7 @@ TxnManager::~TxnManager()
     delete terminate_semaphore;
 }
 
-RC TxnManager::start() {
+RC TxnManager::start() { 
     // send prepare request for 2/3 of the nodes
     for (uint64_t i = 0; i < g_num_nodes; i++) {
         if (i == g_node_id || (i % 3 == 2))
@@ -58,7 +58,9 @@ RC TxnManager::start() {
     rpc_log_semaphore->wait();
     INC_FLOAT_STATS(terminate, get_sys_clock() - starttime);
     INC_INT_STATS(num_terminate, 1);
+	printf("waiting for rpc semaphore\n");
     rpc_semaphore->wait();
+	printf("finished waiting for rpc semaphore\n");
     return _decision;
 }
 

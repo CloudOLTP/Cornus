@@ -1,4 +1,8 @@
 # a list of servers; each on a new line
+compute1:50051
+compute2:50051
+compute3:50051
+compute4:50051
 compute5:50051
 compute6:50051
 compute7:50051

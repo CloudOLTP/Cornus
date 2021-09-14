@@ -72,6 +72,7 @@ void Stats::output(std::ostream * os)
     STAT_PRINT_AVG_US(double, terminate, float, num_terminate);
     STAT_PRINT_AVG_US(double, rpc, float, num_rpc);
 
+	/*
     // print terminate latency distribution
     out << "    " << left << "median_term_latency:"
         << _aggregate_term_latency[(uint64_t)(total_num_terminate * 0.50)] /
@@ -91,6 +92,7 @@ void Stats::output(std::ostream * os)
     out << "    "  << left << "min_term_latency:"
         << _aggregate_term_latency[0] / BILLION << endl;
     out << endl;
+	*/
 }
 
 void Stats::print()

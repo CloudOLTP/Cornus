@@ -13,7 +13,7 @@ INCLUDE = -I. -I../proto
 INCLUDE += -I/home/kanwu/vcpkg/installed/x64-linux/include
 CFLAGS += $(INCLUDE) -D NOGRAPHITE=1 -Og -g -fpermissive
 
-LDFLAGS = -Wall -L. -L./libs -pthread -g -lrt -std=c++11 -Og -ljemalloc
+LDFLAGS = -Wall -L. -L../libs -pthread -g -lrt -std=c++11 -Og -ljemalloc
 #LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
 #           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed -ldl\
 #           -lcpp_redis -ltacopie
