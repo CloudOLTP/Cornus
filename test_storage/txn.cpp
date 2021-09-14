@@ -45,7 +45,7 @@ RC TxnManager::start() {
     }
 */
     // terminate txn
-    uint64_t starttime = 0;
+    uint64_t starttime = get_sys_clock();
     for (uint32_t i = 0; i < g_num_nodes; i++) {
         if (i == g_node_id)
             continue;
@@ -63,6 +63,7 @@ RC TxnManager::start() {
     vector<double> &all =
             glob_stats->_stats[0]->term_latency;
     all.push_back(term_time);
+	//printf("%.2f,", term_time / 1000000.0); // ms
     return _decision;
 }
 
