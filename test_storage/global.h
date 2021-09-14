@@ -53,7 +53,7 @@ extern SundialRPCServerImpl * rpc_server;
 class RedisClient;
 extern RedisClient *      redis_client;
 #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-extern AzureBlobClient;
+class AzureBlobClient;
 extern AzureBlobClient *      azure_blob_client;
 #endif
 #endif //SUNDIAL_TEST_GRPC_GLOBAL_H_
