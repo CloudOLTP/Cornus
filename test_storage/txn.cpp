@@ -32,6 +32,7 @@ TxnManager::~TxnManager()
 
 RC TxnManager::start() { 
     // send prepare request for 2/3 of the nodes
+/*
     for (uint64_t i = 0; i < g_num_nodes; i++) {
         if (i == g_node_id || (i % 3 == 2))
             continue;
@@ -41,8 +42,8 @@ RC TxnManager::start() {
         request.set_request_type( SundialRequest::PREPARE_REQ);
         request.set_node_id(i);
         rpc_client->sendRequestAsync(i, request, response);
-        rpc_semaphore->incr();
     }
+*/
     // terminate txn
     uint64_t starttime = 0;
     for (uint32_t i = 0; i < g_num_nodes; i++) {
@@ -56,11 +57,12 @@ RC TxnManager::start() {
 #endif
     }
     rpc_log_semaphore->wait();
-    INC_FLOAT_STATS(terminate, get_sys_clock() - starttime);
+	uint64_t term_time = get_sys_clock() - starttime;
+    INC_FLOAT_STATS(terminate, term_time);
     INC_INT_STATS(num_terminate, 1);
-	printf("waiting for rpc semaphore\n");
-    rpc_semaphore->wait();
-	printf("finished waiting for rpc semaphore\n");
+    vector<double> &all =
+            glob_stats->_stats[0]->term_latency;
+    all.push_back(term_time);
     return _decision;
 }
 

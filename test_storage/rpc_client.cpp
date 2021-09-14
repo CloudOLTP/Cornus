@@ -89,5 +89,5 @@ SundialRPCClient::sendRequestDone(SundialResponse * response)
     uint64_t txn_id = response->txn_id();
     TxnManager * txn;
     txn = txn_table->get_txn(txn_id);
-    txn->rpc_semaphore->decr();
+    //txn->rpc_semaphore->decr();
 }
