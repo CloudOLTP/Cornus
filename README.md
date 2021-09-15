@@ -21,12 +21,12 @@ Setup Redis & GRPC
 - setup just redis (if used as storage node) ```cd tools; ./setup_redis.sh```
     
 
-Setup Storage Node
--------------------
+Setup Storage Service
+----------------------
 
 Edit ifconfig.txt on master ***compute node***, after "=l", use the ip of the (master) storage node (if you use multiple replicas)
 
-### Redis Configuration
+### Customized Redis Setup
 
 Open ```redis.conf``` to setup of Redis:
 
@@ -40,7 +40,7 @@ on Master
 on Replica
 - set ```replicaof <ip of the master> <port>```
 
-### Execution 
+On Master, start the service
 ```
 cd src/
 ./redis-server ../redis.conf
@@ -115,4 +115,4 @@ make -j16
 Output 
 ------
 
-The output data should be mostly self-explanatory. More details can be found in system/stats.cpp.
+The output file is stored in ```outputs/```. The output data should be mostly self-explanatory. More details can be found in system/stats.cpp.
