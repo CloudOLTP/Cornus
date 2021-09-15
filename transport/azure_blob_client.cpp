@@ -118,9 +118,6 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
         }
         catch (azure::storage::storage_exception& e)
         {
-#if !FAILURE_ENABLE
-            std::cout << U("[ERROR] [log-if-ne]: ") << e.what() << std::endl;
-#endif
             utility::string_t text = blob_status.download_text();
             state = (TxnManager::State) std::stoi(text);
         }
@@ -155,9 +152,6 @@ AzureBlobClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
 			}
         });
     } catch (const std::exception &e) {
-#if !FAILURE_ENABLE
-        std::cout << U("[ERROR] [log-if-ne]: ") << e.what() << std::endl;
-#endif
         // log already exist
         utility::string_t text = blob_status.download_text();
         // check if text contain data, if so, take the substring
@@ -213,10 +207,7 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
             INC_FLOAT_STATS(log_if_ne_data_iso, get_sys_clock() - starttime);
             INC_INT_STATS(num_log_if_ne_data_iso, 1);
         } catch (const std::exception &e) {
-#if !FAILURE_ENABLE
-            std::cout << U("[ERROR] [log-if-ne-data]: ") << e.what() << std::endl;
-            assert(false);
-#endif
+			// possible for normal case if it is an aborted txn...
             utility::string_t text = blob_status.download_text();
             state = (TxnManager::State) std::stoi(text);
         }
@@ -254,9 +245,6 @@ AzureBlobClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string &data)
 			}
         });
     } catch (const std::exception &e) {
-#if !FAILURE_ENABLE
-        std::cout << U("[ERROR] [log-if-ne-data]: ") << e.what() << std::endl;
-#endif
         // log already exist
         utility::string_t text = blob_status.download_text();
         // check if text contain data, if so, take the substring
