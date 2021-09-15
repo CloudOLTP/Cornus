@@ -36,7 +36,7 @@ DEPS = $(CPPS:.cpp=.d)
 
 all : run_test_network
 
-run_test_network : $(OBJS)
+run_test : $(OBJS)
 	$(CC) -no-pie -o $@ $^ $(LDFLAGS)
 
 -include $(OBJS:%.o=%.d)
@@ -49,4 +49,4 @@ run_test_network : $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f rundb $(OBJS) $(DEPS) 
+	rm -f run_test $(OBJS) $(DEPS) 

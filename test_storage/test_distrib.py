@@ -25,7 +25,7 @@ def start_nodes(curr_node):
         if curr_node != num_nodes:
             # start server remotely
             addr = addr.split(':')[0]
-            os.system("ssh {} 'sudo pkill run_test_network'".format(addr))
+            os.system("ssh {} 'sudo pkill run_test'".format(addr))
             ret = os.system("ssh {} 'cd ~/Sundial/test_storage/ ; export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH ; sudo {}' & ".format(addr, cmd))
             if ret != 0:
                 err_msg = "error executing server"
