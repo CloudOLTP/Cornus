@@ -11,9 +11,6 @@
 #include "manager.h"
 #include "query.h"
 #include "txn_table.h"
-#if LOG_NODE
-#include "log.h"
-#endif
 #include "rpc_server.h"
 #include "rpc_client.h"
 #include "redis_client.h"
@@ -31,10 +28,6 @@ int main(int argc, char* argv[])
 
     parser(argc, argv);
     cout << "[Sundial] start node " << g_node_id << endl;
-#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    g_storage_node_id = g_num_nodes_and_storage - 1 - g_node_id;
-#endif
-
     g_total_num_threads = g_num_worker_threads;
 
     glob_manager = new Manager;
@@ -54,11 +47,6 @@ int main(int argc, char* argv[])
         cout << "[Sundial] creating Azure Blob client" << endl;
         azure_blob_client = new AzureBlobClient();
     #endif
-#endif
-
-#if LOG_LOCAL
-    g_total_num_threads ++;
-    log_manager = new LogManager();
 #endif
 
     glob_stats = new Stats;
@@ -101,12 +89,7 @@ int main(int argc, char* argv[])
 #if DISTRIBUTED
     cout << "[Sundial] Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
-#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
-    	cout << "[Sundial] contacting node-" << i << endl;
-#else
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
-#endif
         if (i == g_node_id) continue;
         SundialRequest request;
         SundialResponse response;
@@ -114,7 +97,6 @@ int main(int argc, char* argv[])
         rpc_client->sendRequest(i, request, response);
     }
     // Can start only if all other nodes have also finished initialization
-
     while (glob_manager->num_sync_requests_received() < g_num_nodes - 1)
         usleep(1);
     cout << "[Sundial] Synchronization done" << endl;
@@ -134,11 +116,7 @@ int main(int argc, char* argv[])
     SundialResponse response;
     request.set_request_type( SundialRequest::SYS_REQ );
     // Notify other nodes the completion of the current node.
-#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++) {
-#else
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
-#endif
         if (i == g_node_id) continue;
         starttime = get_sys_clock();
         rpc_client->sendRequest(i, request, response);

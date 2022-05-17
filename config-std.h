@@ -2,7 +2,6 @@
 
 // System Setup
 // ==========
-#define LOG_NODE                        false // init as native log node
 #define DISTRIBUTED                     false
 #define NUM_NODES                       1
 

@@ -11,10 +11,6 @@
 Stats *             glob_stats;
 Manager *           glob_manager;
 
-#if LOG_LOCAL || LOG_NODE
-LogManager *        log_manager;
-#endif
-
 bool volatile       warmup_finish = false;
 bool volatile       enable_thread_mem_pool = false;
 pthread_barrier_t   global_barrier;

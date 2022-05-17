@@ -58,10 +58,6 @@ typedef uint64_t ts_t; // time stamp type
 extern Stats *          glob_stats;
 extern Manager *        glob_manager;
 
-#if LOG_LOCAL || LOG_NODE
-extern LogManager *     log_manager;
-#endif
-
 extern bool volatile    warmup_finish;
 extern bool volatile    enable_thread_mem_pool;
 extern pthread_barrier_t global_barrier;
