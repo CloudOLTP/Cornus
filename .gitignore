@@ -4,10 +4,11 @@
 **.swp
 **.swo
 **.pyc
-rundb
+**.log
 __pycache__
 .vscode
+info.txt
 outputs/*.json
 tools/*.csv
-config.h
-*.log
+src/config.h
+src/rundb

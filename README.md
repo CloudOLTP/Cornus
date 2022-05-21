@@ -15,11 +15,22 @@ Xiangyao Yu, George Bezerra, Andrew Pavlo, Srinivas Devadas, Michael Stonebraker
 Staring into the Abyss: An Evaluation of Concurrency Control with One Thousand Cores  
 VLDB 2014
 
-Setup Redis & GRPC
--------------
-- setup both ```./setup.sh ```
-- setup just redis (if used as storage node) ```cd tools; ./setup_redis.sh```
-    
+Install dependency
+------------------
+- install locally: ```python3 install.py install_local```
+- copy current directory to other compute nodes and install remotely ```python3 
+  install.py install_remote```
+
+Setup SSH Key Authorization
+---------------------------
+- assume there's a public key at <root>/.ssh/id_ed25519.pub
+  - generate ssh key [link](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+- make sure each node can access the other node through sudo and you have 
+  already tried so that there will not have pop-up question 
+  asking about whether to add the ip address
+- setup locally: ```python3 install.py setkey_local```
+- copy current directory to other compute nodes and install remotely ```python3
+  install.py setkey_remote```
 
 Setup Storage Service
 ----------------------
@@ -28,6 +39,15 @@ Edit ifconfig.txt on master ***compute node***, after "=l", use the ip of the (m
 
 ### Customized Redis Setup
 
+Install redis
+```
+git clone https://github.com/redis/redis.git
+cd redis
+make
+cd
+mkdir redis_data/
+```
+
 Open ```redis.conf``` to setup of Redis:
 
 on Master
@@ -35,7 +55,8 @@ on Master
 - set up ```protected-mode``` (e.g. password), you can use ```protected-mode no``` but it is dangerous for public cloud
 - set ```appendonly yes```
 - set ```fsync always```
-- set ```dir=<your desired path for log>```
+- set ```dir <your desired path for log>```
+- set ```requirepass sundial-dev```
     
 on Replica
 - set ```replicaof <ip of the master> <port>```
@@ -53,8 +74,10 @@ Edit ifconfig.txt, before "=l", one line corresponds to one compute instance.
 
 To use automatic test script, please make sure:
 - compute nodes have ssh access to each other (i.e. added to each other's authorized keys)
-- run ```./tools/conf.sh``` to setup lib path
-- run ```./run_proto.sh``` to generate proto files used for grpc
+
+To set up library path and proto on all compute nodes:
+```python3 install.py config_local```
+```python3 install.py config_remote```
 
 Configuration & Execution
 --------------------------

@@ -1,0 +1,90 @@
+syntax = "proto3";
+package sundial_rpc;
+
+service SundialRPC {
+    rpc contactRemote(SundialRequest) returns (SundialResponse) {}
+}
+
+message SundialRequest {
+    enum RequestType {
+        READ_REQ = 0;
+        PREPARE_REQ = 1;
+        COMMIT_REQ = 2;
+        ABORT_REQ = 3;
+        SYS_REQ = 4;
+        LOG_YES_REQ = 5;
+        LOG_ABORT_REQ = 6;
+        LOG_COMMIT_REQ = 7;
+        TERMINATE_REQ = 8;
+        NUM_REQ_TYPES = 9;
+    }
+    message ReadRequest {
+        uint64 key = 1;
+        uint64 index_id = 2;
+        uint64 access_type = 3;
+    }
+    message TupleData {
+        uint64 key = 1;
+        uint64 table_id = 2;
+        uint64 size = 3;
+        bytes data = 4;
+    }
+    message NodeData {
+        uint64 nid = 1;
+    }
+
+    uint64                  txn_id        = 1;
+    RequestType             request_type  = 2;
+    repeated ReadRequest    read_requests = 3;
+    repeated TupleData      tuple_data    = 4;
+    uint64                  log_data_size = 5;
+    bytes                   log_data      = 6;
+    uint64                  node_id       = 7;
+    repeated NodeData       nodes         = 8;
+    uint64                  request_time  = 9;
+    uint64                  thread_id     = 10;
+}
+
+message SundialResponse {
+    enum RequestType {
+        READ_REQ = 0;
+        PREPARE_REQ = 1;
+        COMMIT_REQ = 2;
+        ABORT_REQ = 3;
+        SYS_REQ = 4;
+        LOG_YES_REQ = 5;
+        LOG_ABORT_REQ = 6;
+        LOG_COMMIT_REQ = 7;
+        TERMINATE_REQ = 8;
+        NUM_REQ_TYPES = 9;
+    }
+    enum ResponseType {
+        RESP_OK = 0;
+        RESP_ABORT = 1;
+        RESP_FAIL = 2;
+        PREPARED_OK = 3;
+        PREPARED_OK_RO = 4;
+        PREPARED_ABORT = 5;
+        ACK = 6;
+        SYS_RESP = 7;
+        RESP_LOG_YES = 8;
+        RESP_LOG_ABORT = 9;
+        RESP_LOG_COMMIT = 10;
+        NUM_RESP_TYPES = 11;
+    }
+    message TupleData {
+        uint64 key = 1;
+        uint64 table_id = 2;
+        uint64 size = 3;
+        bytes data = 4;
+        uint64 access_type = 5;
+    }
+    uint64                  txn_id        = 1;
+    ResponseType            response_type = 2;
+    repeated TupleData      tuple_data    = 3;
+    uint64                  node_id       = 4;
+    RequestType             request_type  = 5;
+}
+
+
+

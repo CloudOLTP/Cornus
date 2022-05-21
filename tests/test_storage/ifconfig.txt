@@ -1,0 +1,13 @@
+# a list of servers; each on a new line
+compute1:50051
+compute2:50051
+compute3:50051
+compute4:50051
+compute5:50051
+compute6:50051
+compute7:50051
+compute8:50051
+=l
+# compute1:6379
+cornusredis.redis.cache.windows.net:6379 GiJPjtKcoOlNel4GCWZctbysmmml1KkkXG6OikkrKPs=
+# 128.105.144.81:6379

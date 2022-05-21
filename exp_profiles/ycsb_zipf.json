@@ -1,0 +1,21 @@
+{
+	"DISTRIBUTED": "true",
+	"NUM_NODES": 2,
+	"NUM_WORKER_THREADS": 16,
+	"NUM_RPC_SERVER_THREADS": 16,
+	"MAX_NUM_ACTIVE_TXNS": 32,
+    "LOG_LOCAL": "false",
+    "LOG_REMOTE": "true",
+    "LOG_DEVICE": "LOG_DVC_REDIS",
+    "CONTROLLED_LOCK_VIOLATION": "false",
+    "ENABLE_ADMISSION_CONTROL": "false",
+    "COMMIT_ALG": ["ONE_PC", "TWO_PC"],
+    "WORKLOAD": "YCSB",
+    "ZIPF_THETA": [0, 0.3, 0.5, 0.7, 0.9],
+    "READ_PERC": 0.5,
+    "RUN_TIME": 15,
+    "PERC_REMOTE": [0.5],
+    "FAILURE_ENABLE": ["false"],
+    "FAILURE_TIMEPOINT": 10,
+    "i": [0, 1, 2]
+}
