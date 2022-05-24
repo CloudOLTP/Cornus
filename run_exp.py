@@ -6,9 +6,37 @@
 # the last argument is the index of current node corresponding to the ifconfig.txt
 import os, sys, re, os.path
 import subprocess, datetime, time, signal, json, paramiko
+import threading
 
 
 ifconfig = "src/ifconfig.txt"
+
+
+class myThread (threading.Thread):
+
+	def __init__(self, conn, cmd, exit_on_err=False, print_stdout=True):
+		threading.Thread.__init__(self)
+		self.conn = conn
+		self.cmd = cmd
+		self.exit_on_err = exit_on_err
+		self.print_stdout = print_stdout
+
+	def run(self):
+		print("executing remotely: " + self.cmd)
+		stdin, stdout, stderr = self.conn[1].exec_command(self.cmd)
+		if stderr.read() == b'':
+			if not self.print_stdout:
+				return 0
+			for line in stdout.readlines():
+				print("[remote-{}] ".format(self.conn[0]) + line.strip())
+		else:
+			print ("error executing: {}".format(self.cmd))
+			print(stderr.read())
+			if self.exit_on_err:
+				exit(0)
+			return 1
+		return 0
+
 
 
 def load_environment(fname="info.txt"):
@@ -33,6 +61,7 @@ def load_environment(fname="info.txt"):
 
 # system methods
 def exec(cmd, exit_on_err=False):
+	print("executing: " + cmd)
 	try:
 		subprocess.run(cmd, shell=True, check=True)
 	except Exception as e:
@@ -44,11 +73,14 @@ def exec(cmd, exit_on_err=False):
 	return 0
 
 
-def remote_exec(conn, cmd, exit_on_err=False):
-	stdin, stdout, stderr = conn.exec_command(cmd)
+def remote_exec(conn, cmd, exit_on_err=False, print_stdout=True):
+	print("executing remotely: " + cmd)
+	stdin, stdout, stderr = conn[1].exec_command(cmd)
 	if stderr.read() == b'':
+		if not print_stdout:
+			return 0
 		for line in stdout.readlines():
-			print(line.strip()) # strip the trailing line breaks
+			print("[remote-{}] ".format(conn[0]) + line.strip())
 	else:
 		print ("error executing: {}".format(cmd))
 		print(stderr.read())
@@ -56,13 +88,6 @@ def remote_exec(conn, cmd, exit_on_err=False):
 			exit(0)
 		return 1
 	return 0
-	# except Exception as e:
-	# 	print ("error executing: {}".format(cmd))
-	# 	print(e)
-	# 	if exit_on_err:
-	# 		exit(0)
-	# 	return 1
-	#return exec("ssh {} '{}'".format(addr, cmd), exit_on_err)
 
 
 # job loading methods
@@ -135,7 +160,7 @@ def load_ipaddr(curr_node, env):
 		con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 		con.load_system_host_keys()
 		con.connect(addr.split(":")[0], username=env["user"],key_filename="{}.ssh/id_ed25519".format(env["home"]))
-		nodes[itr] = (addr.split(":")[0], con)
+		nodes[itr] = (addr.split(":")[0], (itr, con))
 		itr += 1
 	f.close()
 	return nodes
@@ -212,10 +237,13 @@ def log_to_errors(job, fname):
 		exp_name = job["CONFIG"].split('/')[-1].split('.')[0]
 	else:
 		exp_name = "unnamed"
-	error_log = open("log/error_{}.list".format(exp_name), "a+")
-	error_log.write("{}, {}\n".format(i, arg))
+	logpath = "../log/"
+	logfile = "error_{}.list".format(exp_name)
+	os.makedirs(logpath, exist_ok=True)
+	error_log = open(logpath + logfile, "a+")
+	error_log.write("{}, {}\n".format(i, job))
 	error_log.close()
-	os.system("cp {} log/error_{}_{}.out".format(fname, exp_name, i))
+	os.system("cp {} {}error_{}_{}.out".format(fname, logpath, exp_name, i))
 
 
 def start_nodes(env, job, nodes, curr_node, compile_only=True):
@@ -225,9 +253,10 @@ def start_nodes(env, job, nodes, curr_node, compile_only=True):
 	# try compile locally
 	os.chdir("{}src/".format(env["repo"]))
 	exec("sudo pkill rundb;")
-	exec("make clean > {}temp.out 2>&1".format(env["repo"]), exit_on_err=True)
-	exec("{}tools/compile.sh > {}temp.out 2>&1".format(env["repo"]),
-		 env["repo"], exit_on_err=True)
+	exec("make clean > {}temp.out 2>&1".format(env["repo"], env["repo"]),
+		 exit_on_err=True)
+	exec("{}tools/compile.sh > {}temp.out 2>&1".format(env["repo"],
+		 env["repo"]), exit_on_err=True)
 	exec("rm -f {}outputs/temp.out".format(env["repo"]))
 
 	# compile remotely
@@ -237,38 +266,47 @@ def start_nodes(env, job, nodes, curr_node, compile_only=True):
 			env["user"], nodes[itr][0], env["repo"]), exit_on_err=True)
 		# compile
 		remote_exec(nodes[itr][1], "sudo pkill rundb; ")
-		remote_exec(nodes[itr][1], "cd {}src; {}tools/compile.sh".format(
-			env["repo"], env["repo"]), exit_on_err=True)
+		remote_exec(nodes[itr][1], "{}tools/compile.sh".format(
+			env["repo"]), exit_on_err=True, print_stdout=False)
 	if compile_only:
 		return
 
 	# execute
+	threads = []
 	for itr in nodes:
 		print("[LOG] starting node {}".format(itr))
 		# start server remotely
-		full_cmd = "cd {}tools ; ./run.sh -Gn{} | tee {}outputs/temp.out".format(
-			env["repo"], itr, env["repo"])
-		ret = remote_exec(nodes[itr][1], full_cmd)
-		if ret != 0:
-			kill_nodes(env["user"], nodes)
-			exit(0)
+		# use another thread to do it asynchronously
+		full_cmd = """cd {}tools ; ./run.sh -Gn{} | tee {}outputs/temp.out
+		""".format(env["repo"], itr, env["repo"])
+		thread = myThread(nodes[itr][1], full_cmd)
+		thread.start()
+		threads.append(thread)
+		#ret = remote_exec(nodes[itr][1], full_cmd)
+
+
 	# start server locally
 	os.chdir(env["repo"]+"tools")
-	exec("./run.sh -Gn{} | tee {}outputs/temp-{}.out".format(
+	ret = exec("""./run.sh -Gn{} | tee {}outputs/temp-{}.out""".format(
 		curr_node, env["repo"], curr_node))
+	if ret != 0:
+		kill_nodes(env["user"], nodes)
+		exit(0)
+
+	# wait for completion
+	for t in threads:
+		t.join()
 
 	# process results
 	# copy temp from every non-failed node and rename it
 	for itr in nodes:
 		addr = nodes[itr][0]
 		# copy config file
-		exec("scp {}@{}:{}temp.out {}outputs/temp-{}.out".format(
+		exec("scp {}@{}:{}outputs/temp.out {}outputs/temp-{}.out".format(
 			env["user"], addr, env["repo"], env["repo"], itr))
 	# then execute process command for each one.
 	for itr in nodes:
 		job["NODE_ID"] = itr
-		if job.get("MODE", "compile") != "release":
-			continue
 		# if not successfully parsing, write to log
 		if not parse_output(env, job, "{}outputs/temp-{}.out".format(
 				env["repo"], itr)):
@@ -294,14 +332,16 @@ def test_exp(env, nodes, curr_node, job):
 	args = generate_args(job)
 
 	# execute experiments
+	mode = job.get("MODE", "debug")
 	for i, arg in enumerate(args):
 		arg += " EXP_ID={}".format(i)
 		print("[LOG] issue exp {}/{}".format(i+1, len(args)))
 		print("[LOG] arg = {}".format(arg), flush=True)
-		start_nodes(env, load_job(arg.split()), nodes, curr_node)
+		start_nodes(env, load_job(arg.split()), nodes, curr_node,
+					compile_only=(mode=="compile"))
 	print("[LOG] FINISH WHOLE EXPERIMENTS", flush=True)
 
-	if job.get("MODE", "debug") != "release":
+	if mode != "release":
 		exit(0)
 
 	# process result on current node

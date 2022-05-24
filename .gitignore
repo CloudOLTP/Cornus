@@ -5,6 +5,7 @@
 **.swo
 **.pyc
 **.log
+.idea/
 __pycache__
 .vscode
 info.txt
