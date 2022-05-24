@@ -311,6 +311,10 @@ def start_nodes(env, job, nodes, curr_node, compile_only=True):
 		if not parse_output(env, job, "{}outputs/temp-{}.out".format(
 				env["repo"], itr)):
 			log_to_errors(job, "{}outputs/temp-{}.out".format(env["repo"],itr))
+	# process self results
+	if not parse_output(env, job, "{}outputs/temp-{}.out".format(
+			env["repo"], curr_node)):
+		log_to_errors(job, "{}outputs/temp-{}.out".format(env["repo"], curr_node))
 
 
 def test(env, nodes, curr_node, job):
@@ -341,35 +345,35 @@ def test_exp(env, nodes, curr_node, job):
 					compile_only=(mode=="compile"))
 	print("[LOG] FINISH WHOLE EXPERIMENTS", flush=True)
 
-	if mode != "release":
+	if mode == "compile":
 		exit(0)
 
 	# process result on current node
 	exec("cd {}outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv "
 	  "stats.json {}.json".format(env["repo"], exp_name, exp_name))
 
-	# process results on remote nodes
-	print("[LOG] Start processing results on remote node", flush=True)
-	for itr in nodes:
-		# skip failed node
-		if job.get("FAILURE_ENABLE", "false") == "true" and itr == job["FAILURE_NODE"]:
-			continue
-		# process result on each server if not a failure node
-		remote_exec(nodes[itr][1], "cd {}outputs/; python3 collect_stats.py; "
-			 "mv stats.csv {}.csv; mv stats.json {}.json".format(env["repo"],
-																 exp_name,
-																 exp_name))
+	# # process results on remote nodes
+	# print("[LOG] Start processing results on remote node", flush=True)
+	# for itr in nodes:
+	# 	# skip failed node
+	# 	if job.get("FAILURE_ENABLE", "false") == "true" and itr == job["FAILURE_NODE"]:
+	# 		continue
+	# 	# process result on each server if not a failure node
+	# 	remote_exec(nodes[itr][1], "cd {}outputs/; python3 collect_stats.py; "
+	# 		 "mv stats.csv {}.csv; mv stats.json {}.json".format(env["repo"],
+	# 															 exp_name,
+	# 															 exp_name))
 	print("[LOG] FINISH processing results", flush=True)
 
-	# collect results from remote nodes
-	print("[LOG] Start collecting results on remote node", flush=True)
-	suffix = ""
-	if job.get("FAILURE_ENABLE", "false") == "true":
-		suffix = " {}".format(job["FAILURE_NODE"])
-	exec("cd {}tools; python3 remote_collect.py {} {}".format(env["repo"],
-															  exp_name,
-															num_nodes) + suffix)
-	print("[LOG] FINISH collecting results")
+	# # collect results from remote nodes
+	# print("[LOG] Start collecting results on remote node", flush=True)
+	# suffix = ""
+	# if job.get("FAILURE_ENABLE", "false") == "true":
+	# 	suffix = " {}".format(job["FAILURE_NODE"])
+	# exec("cd {}tools; python3 remote_collect.py {} {}".format(env["repo"],
+	# 														  exp_name,
+	# 														num_nodes) + suffix)
+	# print("[LOG] FINISH collecting results")
 
 
 if __name__ == "__main__":
