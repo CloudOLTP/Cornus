@@ -10,6 +10,7 @@ def load_environment(fname="info.txt"):
 	env = {
 		"home": os.path.expanduser('~')
 	}
+	env["home"] = env["home"] + "/"
 	if os.path.exists(fname):
 		lines = [line.strip() for line in open(fname)]
 		env["user"] = lines[0]
@@ -19,8 +20,8 @@ def load_environment(fname="info.txt"):
 		env["user"] = input("enter user name: ")
 		f.write(env["user"] + "\n")
 		env["repo"] = os.getcwd()
-		if input("confirm home directory : {}, y/n? ".format(env["repo"])) != "y":
-			env["repo"] = input("enter home directory: ")
+		if input("confirm path of the repo: {}, y/n? ".format(env["repo"])) != "y":
+			env["repo"] = input("enter new path: ")
 		if env["repo"][-1] != "/":
 			env["repo"] = env["repo"] + "/"
 		f.write(env["repo"] + "\n")
@@ -67,8 +68,15 @@ class myThread (threading.Thread):
 		if self.cmd == "install_local":
 			if self.node_id != curr_node_id:
 				return
-			self.exec("cd tools; ./setup_basic.sh; source setup_grpc.sh; "
-					  "./setup_redis.sh; ")
+			self.exec("cd tools; chmod +x setup_basic.sh; "
+					  "chmod +x setup_grpc.sh; "
+					  "chmod +x setup_redis.sh; "
+					  "chmod +x setup_conf.sh; "
+					  "chmod +x setup_env.sh; "
+					  "chmod +x setup_proto.sh; "
+					  "chmod +x compile.sh; "
+					  "chmod +x run.sh; ")
+			self.exec("cd tools; ./setup_grpc.sh; ./setup_redis.sh; ")
 		elif self.cmd == "install_remote":
 			# remote command
 			if self.node_id == curr_node_id:
@@ -76,27 +84,28 @@ class myThread (threading.Thread):
 			self.exec("scp -r {} {}@{}:{};".format(self.homedir, self.usr,
 												self.ipaddr, self.homedir))
 			self.remote_exec("cd Sundial-Private; cd tools; "
-							 "./setup_basic.sh; source setup_grpc.sh; "
+							 #"./setup_basic.sh; "
+							 "./setup_grpc.sh; "
 							 "./setup_redis.sh; ")
 		elif self.cmd == "config_local":
 			if self.node_id != curr_node_id:
 				return
 			self.exec("sudo {}tools/setup_conf.sh {}src ; ".format(
 				self.homedir, self.homedir))
-			self.exec("{}tools/setup_proto.sh {}src/proto; ".format(
-				self.homedir, self.homedir))
+			self.exec("{}tools/setup_proto.sh {}src/proto {}tools ; ".format(
+				self.homedir, self.homedir, self.homedir))
 		elif self.cmd == "config_remote":
 			if self.node_id == curr_node_id:
 				return
 			self.remote_exec("sudo {}tools/setup_conf.sh {}src ; ".format(
 				self.homedir, self.homedir))
-			self.remote_exec("{}tools/setup_proto.sh {}src/proto; ".format(
-				self.homedir, self.homedir))
+			self.remote_exec("{}tools/setup_proto.sh {}src/proto {}tools ; "
+							 "".format(self.homedir, self.homedir, self.homedir))
 		elif self.cmd == "setkey_remote":
 			if self.node_id == curr_node_id:
 				return
-			self.remote_exec("cd {}; sudo python3 install.py "
-							 "setkey_local".format(self.homedir))
+			self.remote_exec("cd {}; sudo python3 install.py setkey_local {}".format(
+				self.homedir, self.node_id))
 		elif self.cmd == "setkey_local":
 			if self.node_id != curr_node_id:
 				return
@@ -107,12 +116,6 @@ class myThread (threading.Thread):
 				self.exec("sudo cat {}.ssh/id_ed25519.pub " \
 							"| sudo ssh {} \"cat >> {}.ssh/authorized_keys\"".format(
 					self.root, addr, self.root))
-		elif self.cmd == "config_local":
-			if self.node_id != curr_node_id:
-				return
-			self.exec("sudo ./tools/setup_conf.sh {}src ; ".format(
-				self.homedir))
-			self.exec("./tools/setup_proto.sh; ")
 		elif self.cmd == "sync":
 			if self.node_id == curr_node_id:
 				return
@@ -135,8 +138,11 @@ if __name__ == "__main__":
 	cmd = sys.argv[1]
 	env = load_environment()
 	# set current node
-	if input("current node id = 0, y/n? ") != "y":
-		curr_node_id = int(input("enter a different id: "))
+	if len(sys.argv) > 2:
+		curr_node_id = int(sys.argv[2])
+	else:
+		if input("current node id = 0, y/n? ") != "y":
+			curr_node_id = int(input("enter a different id: "))
 	# go through each node to complete the task
 	threads = []
 	addrs = load_ipaddr("src/ifconfig.txt")

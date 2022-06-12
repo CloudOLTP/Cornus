@@ -1,4 +1,6 @@
-cd ../..
+#!/bin/bash
+
+cd $HOME
 # Clone the project
 git clone https://github.com/cpp-redis/cpp_redis.git
 # Go inside the project directory

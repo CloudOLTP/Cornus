@@ -66,6 +66,13 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         // prepare request ensure all the nodes attached are rw
         _remote_nodes_involved[node_id]->is_readonly = false;
     }
+
+#if EARLY_LOCK_RELEASE
+    _cc_manager->retire(); // release lock after log is received
+    // enforce dependency if early lock release, regardless of txn type
+    dependency_semaphore->wait();
+#endif
+
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0) {
         #if LOG_DEVICE == LOG_DVC_NATIVE
@@ -106,6 +113,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 
     // log msg no matter it is readonly or not
     if (num_tuples != 0) {
+        // read-write
         _txn_state = PREPARED;
     } else {
         // readonly remote nodes
@@ -210,7 +218,6 @@ TxnManager::process_decision_request(const SundialRequest* request,
     #endif
 
     rpc_log_semaphore->wait();
-    dependency_semaphore->wait();
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     _cc_manager->cleanup(rc); // release lock after log is received
     _finish_time = get_sys_clock();

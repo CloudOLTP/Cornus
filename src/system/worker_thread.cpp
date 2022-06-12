@@ -56,6 +56,10 @@ RC WorkerThread::run() {
             last_stats_cp_time += STATS_CP_INTERVAL * 1000000;
         }
         if (_native_txn) {
+#if DEBUG_ELR
+            printf("[node-%u, txn-%lu] restart.\n",
+                 g_node_id, _native_txn->get_txn_id());
+#endif
             // restart a previously aborted transaction
             _native_txn->restart();
         } else {
@@ -69,20 +73,24 @@ RC WorkerThread::run() {
 
             _native_txn = new TxnManager(query, this);
             _native_txn->set_txn_id( txn_id );
+#if DEBUG_ELR
+            printf("[node-%u, txn-%lu] start.\n",
+                   g_node_id, _native_txn->get_txn_id());
+#endif
             txn_table->add_txn( _native_txn );
             _native_txn->start();
         }
-	#if DEBUG_PRINT
-	if ((_native_txn->get_txn_id() > 0) && (_native_txn->get_txn_id() % 100) == 0)
-        printf("[node-%u, txn-%lu] finish native txn at %.2f sec, now=%lu, init=%lu\n", g_node_id, _native_txn->get_txn_id(), (get_sys_clock() - get_init_time()) * 1.0 / BILLION, get_sys_clock(), get_init_time());
-	#endif
-    // Start Two-Phase Commit
+#if DEBUG_ELR
+        printf("[node-%u, txn-%lu] finish native txn (state=%d).\n",
+               g_node_id, _native_txn->get_txn_id(),
+               _native_txn->get_txn_state());
+#endif
         if (_native_txn->get_txn_state() == TxnManager::COMMITTED
             || (_native_txn->get_store_procedure()->is_self_abort()
                 && _native_txn->get_txn_state() == TxnManager::ABORTED)) {
             txn_table->remove_txn(_native_txn);
             delete _native_txn;
-            _native_txn = NULL;
+            _native_txn = nullptr;
         } else { // should restart
             _native_txn->num_aborted++;
             assert(_native_txn->get_txn_state() == TxnManager::ABORTED);

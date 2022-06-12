@@ -61,11 +61,14 @@ Row_lock::lock_get(LockType type, TxnManager * txn, bool need_latch)
     RC rc = RCOK;
     if (need_latch) latch();
 #if CC_ALG == NO_WAIT
-    LockEntry * entry = NULL;
-    for (std::set<LockEntry>::iterator it = _locking_set.begin(); it != _locking_set.end(); it ++)
+    LockEntry * entry = nullptr;
+    for (auto it = _locking_set.begin(); it != _locking_set.end(); it++) {
         if (it->txn == txn)
-            entry = (LockEntry *) &(*it);
-    if (entry) { // the txn is alreayd a lock owner
+            entry = &(*it);
+    }
+
+    if (entry) { // the txn is already a lock owner
+        // upgrade lock from share to exclusive
         if (entry->type != type) {
             assert(type == LOCK_EX && entry->type == LOCK_SH);
             if (_locking_set.size() == 1)
@@ -75,12 +78,35 @@ Row_lock::lock_get(LockType type, TxnManager * txn, bool need_latch)
         }
     } else {
         if (!_locking_set.empty() && conflict_lock(type, _locking_set.begin()->type)) {
+            // conflict with existing lock owner
             rc = ABORT;
-		}
-        else
-            _locking_set.insert( LockEntry {type, txn} );
+        }
+        else {
+#if !EARLY_LOCK_RELEASE
+            // add to owner
+            _locking_set.push_back(LockEntry{type, txn});
+#else
+            bool isHead = true;
+            // check weak queue, increment commit semaphore if has any writes
+            for (auto it : _weak_locking_queue) {
+                assert(it.txn != txn);
+                if (it.type == LOCK_EX) {
+                    txn->dependency_semaphore->incr();
+                    isHead = false;
+#if DEBUG_ELR
+                    printf("[row_lock-%p] txn-%lu increase semaphore, type = %d, "
+                           "due to (txn-%lu, type-%d), size=%zu\n", this,
+                           txn->get_txn_id(), type,
+                           it.txn->get_txn_id(), it.type, _weak_locking_queue.size());
+#endif
+                    break;
+                }
+            }
+            _locking_set.push_back(LockEntry{type, txn, isHead});
+#endif // #if !EARLY_LOCK_RELEASE
+        }
     }
-#else // CC_ALG == WAIT_DIE
+#else // #if CC_ALG == WAIT_DIE
     /*LockEntry * entry = NULL;
     for (std::set<LockEntry>::iterator it = _locking_set.begin();
          it != _locking_set.end(); it ++) {
@@ -146,15 +172,14 @@ Row_lock::lock_get(LockType type, TxnManager * txn, bool need_latch)
 }
 
 RC
-Row_lock::lock_release(TxnManager * txn, RC rc)
-{
+Row_lock::lock_release(TxnManager * txn, RC rc) {
     assert(rc == COMMIT || rc == ABORT);
     latch();
-  #if CC_ALG == NO_WAIT
-    //printf("txn=%ld releases this=%ld\n", txn->get_txn_id(), (uint64_t)this);
-    LockEntry entry = {LOCK_NONE, NULL};
-    for (std::set<LockEntry>::iterator it = _locking_set.begin();
-         it != _locking_set.end(); it ++) {
+#if CC_ALG == NO_WAIT
+#if !EARLY_LOCK_RELEASE
+    LockEntry entry = {LOCK_NONE, nullptr};
+    for (auto it = _locking_set.begin();
+         it != _locking_set.end(); it++) {
         if (it->txn == txn) {
             entry = *it;
             assert(entry.txn);
@@ -162,37 +187,127 @@ Row_lock::lock_release(TxnManager * txn, RC rc)
             break;
         }
     }
-    #if CONTROLLED_LOCK_VIOLATION
-    // NOTE
-    // entry.txn can be NULL. This happens because Row_lock manager locates in
-    // each bucket of the hash index. Records with different keys may map to the
-    // same bucket and therefore share the manager. They will all call lock_release()
-    // during commit. Namely, one txn may call lock_release() multiple times on
-    // the same Row_lock manager. For now, we simply ignore calls except the
-    // first one.
-    if (rc == COMMIT && entry.txn) {
-        // DEBUG
-        /*if (!entry.txn) {
-            cout << "txn_id=" << txn->get_txn_id() << ", _row=" << (int64)_row << endl;
-            for (auto en : _locking_set)
-                cout << "en.txn_id=" << en.txn->get_txn_id() << ", en.type=" << en.type << endl;
-        }
-        assert(entry.txn);*/
-        _weak_locking_queue.push_back( LockEntry {entry.type, txn} );
-        for (auto en : _weak_locking_queue) {
-            if (en.txn == entry.txn)
-                break;
-            if ( conflict_lock(entry.type, en.type) ) {
-                // if the current txn has any pending dependency, incr_semaphore
-                txn->dependency_semaphore->incr();
+#else
+#if DEBUG_ELR
+    printf("[row_lock-%p] try to remove txn-%lu from weak queue (current "
+           "length = %zu)\n",
+           this, txn->get_txn_id(), _weak_locking_queue.size());
+    assert(_weak_locking_queue.empty() || _weak_locking_queue.front().isHead);
+#endif
+    LockEntry entry = {LOCK_NONE, nullptr, true};
+    bool found = false;
+    if (rc == ABORT) {
+        for (auto it = _locking_set.begin();
+             it != _locking_set.end(); it++) {
+            if (it->txn == txn) {
+                entry = *it;
+#if DEBUG_ELR
+                assert(entry.txn);
+                printf("[row_lock-%p] remove txn-%lu from owners\n",
+                       this, txn->get_txn_id());
+#endif
+                _locking_set.erase(it);
+                found = true;
                 break;
             }
         }
     }
-    #endif
-
-  #else // CC_ALG == WAIT_DIE
-
+    // 2. try to remove from weak lock queue if not found in locking set
+    //  case 1 - EX (to remove), EX
+    //  case 2 - EX (to remove), SH
+    //  case 3 - SH, SH (to remove), EX
+    //  case 4 - SH, SH, EX (to remove), SH, EX
+    bool decremented = false;
+    if (!found) {
+        for (size_t i = 0; i < _weak_locking_queue.size(); i++) {
+            auto it = _weak_locking_queue[i];
+            if (it.txn == txn) {
+                found = true;
+                // found the entry to remove: i-th object
+                // if releasing write lock, decrement dependency from i+1 until
+                // encountering the first write lock (inclusive)
+                if (it.type == LOCK_EX) {
+                    if (!it.isHead) {
+                        // not head, must due to abort, no need to decrement
+#if DEBUG_ELR
+                        printf("[row_lock-%p] txn-%lu, type = %d, "
+                            "is not head. \n", this, txn->get_txn_id(), it
+                            .type);
+                        if (rc != ABORT) {
+                            printf("[row_lock-%p] txn-%lu, type = %d, "
+                                   "is not head AND not committed. \n", this,
+                                   txn->get_txn_id(), it.type);
+                            printf("weak queue: \n");
+                            for (auto en : _weak_locking_queue) {
+                                printf("(txn-%lu, type-%d, isHead-%d), ", en
+                                    .txn->get_txn_id(), en.type, en.isHead);
+                            }
+                            printf("\nlocking queue: \n");
+                            for (auto en : _locking_set) {
+                                printf("(txn-%lu, type-%d, isHead-%d), ", en
+                                    .txn->get_txn_id(), en.type, en.isHead);
+                            }
+                            printf("\n");
+                            fflush(stdout);
+                        }
+                        assert(rc == ABORT);
+#endif
+                        decremented = true;
+                        break;
+                    }
+                    for (size_t j = i + 1; j < _weak_locking_queue.size();
+                         j++) {
+#if DEBUG_ELR
+                        printf(
+                            "[row_lock-%p] txn-%lu decrease semaphore, type = %d, "
+                            "due to (txn-%lu, type-%d) releases locks\n",
+                            this,
+                            _weak_locking_queue[j].txn->get_txn_id(),
+                            _weak_locking_queue[j].type,
+                            txn->get_txn_id(),
+                            it.type);
+#endif
+                        _weak_locking_queue[j].txn->dependency_semaphore->decr();
+                        _weak_locking_queue[j].isHead = true;
+                        if (_weak_locking_queue[j].type == LOCK_EX) {
+                            decremented = true;
+                            break;
+                        }
+                    }
+                } else {
+                    // no need to decrement for removing reads
+                    decremented = true;
+                }
+                // remove from weak queue
+                _weak_locking_queue.erase(
+                    _weak_locking_queue.begin() + (int) i);
+#if DEBUG_ELR
+                printf("[row_lock-%p] remove txn-%lu from weak queue (current "
+                       "length = %zu)\n",
+                       this, txn->get_txn_id(), _weak_locking_queue.size());
+#endif
+                break;
+            }
+        }
+    }
+    // decrement dependency in owner until encounter EX
+    if (found && !decremented) {
+        for (auto itr = _locking_set.begin(); itr != _locking_set.end();
+        itr++) {
+            itr->txn->dependency_semaphore->decr();
+            itr->isHead = true;
+#if DEBUG_ELR
+            printf("[row_lock-%p] txn-%lu decrease semaphore in owners, type = "
+                   "%d, isHead = %d, due to txn-%lu releases locks\n",
+                   this, itr->txn->get_txn_id(), itr->type, itr->isHead,
+                   txn->get_txn_id());
+            assert(_locking_set.begin()->isHead);
+#endif
+        }
+    }
+    assert(found);
+#endif
+#else // CC_ALG == WAIT_DIE
     /*LockEntry entry {LOCK_NONE, NULL};
     // remove from locking set
     for (std::set<LockEntry>::iterator it = _locking_set.begin();
@@ -251,55 +366,47 @@ Row_lock::lock_release(TxnManager * txn, RC rc)
         } else
             done = true;
     }*/
-  #endif
+#endif
     unlatch();
     return RCOK;
 }
 
-#if CONTROLLED_LOCK_VIOLATION
-// In the current CLV architecture, if a txn calls lock_cleanup(), it must be
-// the first txn in the _weak_locking_queue; we simply dequeue it.
-// However, the complication comes when some readonly txns depend on a
-// dequeueing txn. In this case, we need to check whether all the dependency
-// information of the readonly txn has been cleared and commit it if so.
+#if EARLY_LOCK_RELEASE
 RC
-Row_lock::lock_cleanup(TxnManager * txn) //, std::set<TxnManager *> &ready_readonly_txns)
+Row_lock::lock_retire(TxnManager * txn)
 {
+    // NOTE
+    // entry.txn can be NULL. This happens because Row_lock manager locates in
+    // each bucket of the hash index. Records with different keys may map to the
+    // same bucket and therefore share the manager. They will all call lock_release()
+    // during commit. Namely, one txn may call lock_release() multiple times on
+    // the same Row_lock manager. For now, we simply ignore calls except the
+    // first one.
+    assert(CC_ALG == NO_WAIT);
     latch();
-
-    //assert(!_weak_locking_queue.empty());
-    // Find the transaction in the _weak_locking_queue and remove it.
-    auto it = _weak_locking_queue.begin();
-    for (; it != _weak_locking_queue.end(); it ++) {
-        if (it->txn == txn)
+    // find the entry in locking set
+    for (auto it = _locking_set.begin(); it != _locking_set.end(); it ++) {
+        if (it->txn == txn) {
+            auto entry = *it;
+            assert(entry.txn);
+            // move into weak queue
+            _weak_locking_queue.push_back( LockEntry {entry.type, txn, entry
+            .isHead} );
+#if DEBUG_ELR
+            printf("[row_lock-%p] txn-%lu retire lock, type = %d, "
+                   "isHead = %d, queue_size = "
+                   "%zu\n", this, txn->get_txn_id(), entry.type,
+                   entry.isHead, _weak_locking_queue.size());
+            assert(entry.isHead == _weak_locking_queue[_weak_locking_queue
+            .size() - 1].isHead);
+#endif
+            _locking_set.erase(it);
             break;
+        } // if (it->txn == txn
     }
-    // txn does not exist in the _weak_locking_queue when two index nodes map to
-    // the same hash bucket. Only one entry is inserted into _weak_locking_queue.
-    // Cleanup for the second index node will miss.
-    if ( it != _weak_locking_queue.end() ) {
-        LockType type = it->type;
-        if (type == LOCK_EX) assert( it == _weak_locking_queue.begin() );
-        if (type == LOCK_SH)
-            for (auto it2 = _weak_locking_queue.begin(); it2 != it; it2 ++)
-                assert( it2->type == LOCK_SH);
-        _weak_locking_queue.erase( it );
-
-        // notify dependent transactions
-        // If the new leading lock is LOCK_EX, wake it up.
-        // Else if the removed txn has LOCK_EX, wake up leading txns with LOCK_SH
-        if (_weak_locking_queue.front().type == LOCK_EX)
-            _weak_locking_queue.front().txn->dependency_semaphore->decr();
-        else if (type == LOCK_EX) {
-            for (auto entry : _weak_locking_queue) {
-                if (entry.type == LOCK_SH)
-                    entry.txn->dependency_semaphore->decr();
-                else
-                    break;
-            }
-        }
-    }
-
+#if DEBUG_ELR
+    assert(_weak_locking_queue.empty() || _weak_locking_queue.front().isHead);
+#endif
     unlatch();
     return RCOK;
 }

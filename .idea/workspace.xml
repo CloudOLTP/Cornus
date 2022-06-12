@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
-    <generated />
+    <generated>
+      <config projectName="Sundial-Private" targetName="rundb" />
+      <config projectName="Sundial-Private" targetName="Makefile" />
+      <config projectName="Sundial-Private" targetName="all" />
+    </generated>
   </component>
   <component name="CMakeSettings">
     <configurations>
@@ -10,11 +17,31 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="963a16de-0926-4f99-88c8-98a9f80fa508" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/exp_profiles/test_elr.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/exp_profiles/test_local.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Sundial.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Sundial.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config-std.h" beforeDir="false" afterPath="$PROJECT_DIR$/config-std.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/system/global.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/global.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/system/global.h" beforeDir="false" afterPath="$PROJECT_DIR$/system/global.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/system/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/system/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/install.py" beforeDir="false" afterPath="$PROJECT_DIR$/install.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_exp.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_exp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/concurrency_control/lock_manager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/lock_manager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/concurrency_control/lock_manager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/lock_manager.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/concurrency_control/row_lock.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/row_lock.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/config-std.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/config-std.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ifconfig.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/ifconfig.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/cc_manager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/cc_manager.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/txn.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/txn_client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_client.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/txn_server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_server.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/worker_thread.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/worker_thread.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/setup_env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/setup_env.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/setup_grpc.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/setup_grpc.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/setup_proto.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/setup_proto.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/setup_redis.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/setup_redis.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,14 +51,57 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+    <projectState path="$PROJECT_DIR$/src">
+      <ProjectState />
+    </projectState>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
   </component>
   <component name="IgnoredFileRootStore">
     <option name="generatedRoots">
       <set>
         <option value="$PROJECT_DIR$/.idea" />
       </set>
+    </option>
+  </component>
+  <component name="MakefileLocalSettings">
+    <option name="availableProjects">
+      <map>
+        <entry>
+          <key>
+            <ExternalProjectPojo>
+              <option name="name" value="Sundial-Private" />
+              <option name="path" value="$PROJECT_DIR$/src" />
+            </ExternalProjectPojo>
+          </key>
+          <value>
+            <list>
+              <ExternalProjectPojo>
+                <option name="name" value="Sundial-Private" />
+                <option name="path" value="$PROJECT_DIR$/src" />
+              </ExternalProjectPojo>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="projectSyncType">
+      <map>
+        <entry key="$PROJECT_DIR$/src" value="RE_IMPORT" />
+      </map>
     </option>
   </component>
   <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
@@ -41,11 +111,14 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/exp_profiles" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -53,18 +126,75 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_package_manager_path" value="npm" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/exp_profiles" />
       <recent name="$PROJECT_DIR$" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/tools" />
+      <recent name="$PROJECT_DIR$/outputs/vldb2023" />
+    </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Gradle./Users/scarlet/Documents/GitHub/Sundial-Private">
+    <configuration name="Makefile" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="Makefile" CONFIG_NAME="Makefile" version="1">
+      <method v="2">
+        <option name="CLION.COMPOUND.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="all" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="all" CONFIG_NAME="all" version="1">
+      <method v="2">
+        <option name="CLION.COMPOUND.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="rundb" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="rundb" CONFIG_NAME="rundb" version="1">
+      <method v="2">
+        <option name="CLION.COMPOUND.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration name="/Users/scarlet/Documents/GitHub/Sundial-Private" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list />
+        </option>
+        <option name="vmOptions" value="" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Gradle./Users/scarlet/Documents/GitHub/Sundial-Private" />
+      <item itemvalue="Makefile Application.all" />
+      <item itemvalue="Makefile Application.Makefile" />
+      <item itemvalue="Makefile Application.rundb" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle./Users/scarlet/Documents/GitHub/Sundial-Private" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
@@ -86,7 +216,13 @@
       <workItem from="1624734299363" duration="440000" />
       <workItem from="1624804346401" duration="309000" />
       <workItem from="1625027212882" duration="2773000" />
-      <workItem from="1652806508702" duration="225000" />
+      <workItem from="1652806508702" duration="3321000" />
+      <workItem from="1652812790834" duration="4261000" />
+      <workItem from="1653056613079" duration="23800000" />
+      <workItem from="1653166985558" duration="599000" />
+      <workItem from="1654547346268" duration="19000" />
+      <workItem from="1654614170707" duration="43594000" />
+      <workItem from="1654970579414" duration="11786000" />
     </task>
     <servers />
   </component>
@@ -104,5 +240,9 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

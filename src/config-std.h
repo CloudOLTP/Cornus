@@ -19,6 +19,7 @@
 #define STATS_CP_INTERVAL               1000 // in ms
 #define DEBUG_PRINT                     false
 #define DEBUG_FAILURE                   false
+#define DEBUG_ELR                       false
 #define SYNCHRONIZE_TIME                15
 
 // Execution Model
@@ -44,6 +45,7 @@
 
 // [Two Phase Locking]
 #define NO_LOCK                         false // NO_LOCK=true : used to model H-Store
+#define EARLY_LOCK_RELEASE              false
 // [TIMESTAMP]
 #define TS_ALLOC                        TS_CLOCK
 #define TS_BATCH_ALLOC                  false

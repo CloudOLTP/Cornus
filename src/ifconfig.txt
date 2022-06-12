@@ -1,7 +1,8 @@
 # a list of servers; each on a new line
 node-0:50051
 node-1:50051
+node-2:50051
 =l
-128.105.144.22:6379 sundial-dev
+128.105.144.116:6379 sundial-dev
 # cornus-redis-replication.redis.cache.windows.net:6379 SQU0wAWeBbOkOxjtIHhQsyHksrVpVt3xkTJtmEtp8rM=
 # cornusredis.redis.cache.windows.net:6379 GiJPjtKcoOlNel4GCWZctbysmmml1KkkXG6OikkrKPs=

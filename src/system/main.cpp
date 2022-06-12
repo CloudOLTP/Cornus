@@ -39,6 +39,7 @@ int main(int argc, char* argv[])
     rpc_server = new SundialRPCServerImpl;
     pthread_t * pthread_rpc = new pthread_t;
     pthread_create(pthread_rpc, NULL, start_rpc_server, NULL);
+#endif
     #if LOG_DEVICE == LOG_DVC_REDIS
         // assume a shared logging but store different node's info to different key
         cout << "[Sundial] creating Redis client" << endl;
@@ -47,7 +48,6 @@ int main(int argc, char* argv[])
         cout << "[Sundial] creating Azure Blob client" << endl;
         azure_blob_client = new AzureBlobClient();
     #endif
-#endif
 
     glob_stats = new Stats;
 

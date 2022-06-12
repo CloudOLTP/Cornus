@@ -30,15 +30,8 @@ public:
     // Return value: size of the log record.
     uint32_t      get_log_record(char *& record);
 
-#if CONTROLLED_LOCK_VIOLATION
-    // This function is called right after the transaction is appended to the log buffer.
-    RC            process_precommit_phase_coord();
-
-    //void          increment_dependency()  { ATOM_ADD(_num_pending_tuples, 1); }
-    // returns true if the dependency is clear
-    //bool          decrement_dependency() {
-    //    return ATOM_SUB(_num_pending_tuples, 1) == 1;
-    //}
+#if EARLY_LOCK_RELEASE
+    void          retire();
 #endif
 
 private:

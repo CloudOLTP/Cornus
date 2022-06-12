@@ -55,6 +55,10 @@ public:
     // the following function will cleanup the txn. e.g., release locks, etc.
     virtual void      cleanup(RC rc) { assert(false); }
 
+#if EARLY_LOCK_RELEASE
+    virtual void      retire() { assert(false); }
+#endif
+
     StoreProcedure *  get_store_procedure();
 
     ////////// for txn waiting /////////////

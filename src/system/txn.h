@@ -28,7 +28,7 @@ public:
         ABORTED,
         FAILED
     };
-    TxnManager() : TxnManager(NULL, NULL) {};
+    TxnManager() : TxnManager(nullptr, nullptr) {};
     TxnManager(QueryBase * query, WorkerThread * thread);
     virtual ~TxnManager();
 

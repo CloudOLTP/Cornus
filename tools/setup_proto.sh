@@ -1,3 +1,7 @@
+#!/bin/bash
+
+cd $2
+source ./setup_env.sh
 dirname=$1
 fname="sundial"
 echo "directory of proto: ${dirname}"

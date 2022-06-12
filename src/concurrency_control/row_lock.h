@@ -23,8 +23,8 @@ public:
     virtual void    init(row_t * row);
     RC              lock_get(LockType type, TxnManager * txn, bool need_latch = true);
     RC              lock_release(TxnManager * txn, RC rc);
-#if CONTROLLED_LOCK_VIOLATION
-    RC              lock_cleanup(TxnManager * txn); //, std::set<TxnManager *> &ready_readonly_txns);
+#if EARLY_LOCK_RELEASE
+    RC              lock_retire(TxnManager * txn);
 #endif
 
     void            latch();
@@ -33,10 +33,18 @@ public:
     uint32_t        _max_num_waits;
     LockType        _lock_type;
 protected:
+#if !EARLY_LOCK_RELEASE
     struct LockEntry {
         LockType type;
         TxnManager * txn;
     };
+#else
+    struct LockEntry {
+        LockType type;
+        TxnManager * txn;
+        bool isHead;
+    };
+#endif
     #define LOCK_MAN(txn) ((LockManager *) (txn)->get_cc_manager())
     // only store timestamp which uniquely identifies a txn.
     // for NO_WAIT, store the txn_id
@@ -47,12 +55,13 @@ protected:
     std::set<LockEntry, Compare>        _locking_set;
     std::set<LockEntry, Compare>        _waiting_set;
 #else // CC_ALG == NO_WAIT
-    struct Compare {
-        bool operator() (const LockEntry &en1, const LockEntry &en2) const { return &en1 < &en2; }
-    };
-    std::set<LockEntry, Compare>        _locking_set;
+//    struct Compare {
+//        bool operator() (const LockEntry &en1, const LockEntry &en2) const { return &en1 < &en2; }
+//    };
+//    std::set<LockEntry, Compare>        _locking_set;
+    std::vector<LockEntry>              _locking_set;
 #endif
-#if CONTROLLED_LOCK_VIOLATION
+#if EARLY_LOCK_RELEASE
     // locks in weak_locking_set can be violated.
     std::vector<LockEntry>              _weak_locking_queue;
 #endif

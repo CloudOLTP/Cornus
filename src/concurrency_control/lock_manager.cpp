@@ -48,7 +48,7 @@ LockManager::get_row(row_t * row, access_t type, uint64_t key)
                 for (vector<AccessLock>::iterator jj = _access_set.begin(); jj != _access_set.end(); jj ++)
                     printf(" %ld", jj->key);
                 printf("\n");
-		        fflush(stdout);
+                fflush(stdout);
                 assert(false);
             }
         AccessLock ac;
@@ -81,16 +81,17 @@ LockManager::get_row(row_t * row, access_t type, char * &data, uint64_t key)
 char *
 LockManager::get_data( uint64_t key, uint32_t table_id)
 {
-    for (vector<AccessLock>::iterator it = _access_set.begin(); it != _access_set.end(); it ++)
-        if (it->key == key && it->table_id == table_id)
-            return it->data;
+    for (auto & it : _access_set)
+        if (it.key == key && it.table_id == table_id)
+            return it.data;
 
-    for (vector<AccessLock>::iterator it = _remote_set.begin(); it != _remote_set.end(); it ++)
-        if (it->key == key && it->table_id == table_id)
-            return it->data;
+    for (auto & it : _remote_set)
+        if (it.key == key && it.table_id == table_id)
+            return it.data;
 
+    // data not found
     assert(false);
-    return NULL;
+    return nullptr;
 }
 
 RC
@@ -108,7 +109,7 @@ LockManager::index_get_permission(access_t type, INDEX * index, uint64_t key, ui
                 return RCOK;
             } else {
                 assert( (ac->type == RD)
-                       && (type == INS || type == DEL) );
+                            && (type == INS || type == DEL) );
                 ac->type = type;
                 rc = ac->manager->lock_get(Row_lock::LOCK_EX, _txn);
                 return rc;
@@ -175,10 +176,10 @@ LockManager::get_log_record(char *& record)
     for (auto access : _access_set) {
         access_t type = access.type;
         if (type == WR) {
-          buffer.put( &access.table_id );
-          buffer.put( &access.key );
-          buffer.put( &access.data_size );
-          buffer.put( access.row->get_data(), access.data_size );
+            buffer.put( &access.table_id );
+            buffer.put( &access.key );
+            buffer.put( &access.data_size );
+            buffer.put( access.row->get_data(), access.data_size );
         }
     }
     uint32_t size = buffer.size();
@@ -188,25 +189,9 @@ LockManager::get_log_record(char *& record)
 }
 
 
-#if CONTROLLED_LOCK_VIOLATION
-RC
-LockManager::process_precommit_phase_coord()
-{
-    // the transaction tries to commit.
-    // the actual index and data changes should happen at precommit time.
-    commit_insdel();
-    for (auto access : _access_set)
-        if (access.type == WR)
-            access.row->copy(access.data);
-    for (auto access : _index_access_set)
-        access.manager->lock_release(_txn, COMMIT);
-    for (auto access : _access_set)
-        access.row->manager->lock_release(_txn, COMMIT);
-
-    return RCOK;
-}
-#endif
-
+/*
+ * commit insert / delete
+ */
 RC
 LockManager::commit_insdel()
 {
@@ -227,7 +212,7 @@ LockManager::commit_insdel()
         row->get_table()->get_indexes( &indexes );
         for (auto idx : indexes)
             idx->remove( row );
-        for (vector<AccessLock>::iterator it = _access_set.begin();
+        for (auto it = _access_set.begin();
              it != _access_set.end(); it ++)
         {
             if (it->row == row) {
@@ -244,26 +229,30 @@ LockManager::cleanup(RC rc)
 {
     assert(rc == COMMIT || rc == ABORT);
     if (rc == ABORT) {
-        for (auto access : _access_set)
+        for (const auto& access : _access_set)
             access.row->manager->lock_release(_txn, rc);
         for (auto access : _index_access_set)
             access.manager->lock_release(_txn, rc);
     } else { // rc == COMMIT
+#if !EARLY_LOCK_RELEASE
         commit_insdel();
-        for (auto access : _access_set) {
+#endif
+        for (const auto& access : _access_set) {
+#if !EARLY_LOCK_RELEASE
             if (access.type == WR)
-                access.row->copy(access.data);
+        access.row->copy(access.data);
+#endif
             access.row->manager->lock_release(_txn, rc);
         }
         for (auto access : _index_access_set) {
             access.manager->lock_release(_txn, rc);
         }
     }
-    for (auto access : _access_set) {
+    for (const auto& access : _access_set) {
         assert(access.data);
         delete [] access.data;
     }
-    for (auto access : _remote_set) {
+    for (const auto& access : _remote_set) {
         assert(access.data);
         delete [] access.data;
     }
@@ -277,6 +266,24 @@ LockManager::cleanup(RC rc)
     _deletes.clear();
     _index_access_set.clear();
 }
+
+#if EARLY_LOCK_RELEASE
+void
+LockManager::retire()
+{
+    // the actual index and data changes should happen at precommit time.
+    commit_insdel();
+    for (auto access : _access_set) {
+        // make data visible
+        if (access.type == WR)
+            access.row->copy(access.data);
+        access.row->manager->lock_retire(_txn);
+    }
+    for (auto access : _index_access_set) {
+        access.manager->lock_retire(_txn);
+    }
+}
+#endif
 
 // Distributed transactions
 // ========================

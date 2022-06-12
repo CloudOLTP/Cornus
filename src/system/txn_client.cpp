@@ -38,23 +38,22 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 {
     if (rc == ABORT) {
         _store_procedure->txn_abort();
-	}
+    }
+    // create log record
+    string data = "[LSN] placehold:" + string('d', num_local_write *
+                                                       g_log_sz * 8);
+#if EARLY_LOCK_RELEASE
+    _cc_manager->retire(); // release lock after log is received
+    // enforce dependency if early lock release, regardless of txn type
+    dependency_semaphore->wait();
+#endif
     // if logging didn't happen, process commit phase
     if (!is_read_only()) {
-    #if LOG_DEVICE == LOG_DVC_NATIVE
-        SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-                SundialRequest::LOG_ABORT_REQ;
-        send_log_request(g_storage_node_id, type);
-        rpc_log_semaphore->wait();
-    #elif LOG_DEVICE == LOG_DVC_REDIS
-       string data = "[LSN] placehold:" + string('d', num_local_write *
-                g_log_sz * 8);
+    #if LOG_DEVICE == LOG_DVC_REDIS
        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
            data) == FAIL)
            return FAIL;
     #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-       string data = "[LSN] placehold:" + string('d', num_local_write *
-                g_log_sz * 8);
        if (azure_blob_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
            data) == FAIL)
            return FAIL;
@@ -72,12 +71,14 @@ TxnManager::process_2pc_phase1()
     // Start Two-Phase Commit
     _decision = COMMIT;
 
+#if EARLY_LOCK_RELEASE
+    _cc_manager->retire(); // release lock after log is received
+    // enforce dependency if early lock release, regardless of txn type
+    dependency_semaphore->wait();
+#endif
+
     // if the entire txn is read-write, log to remote storage
     if (!is_txn_read_only()) {
-    #if LOG_DEVICE == LOG_DVC_NATIVE
-        SundialRequest::RequestType type = SundialRequest::LOG_YES_REQ; // always vote yes for now
-        send_log_request(g_storage_node_id, type);
-    #else
         string data = "[LSN] placehold:" + string('d', num_local_write *
                 g_log_sz * 8);
         rpc_log_semaphore->incr();
@@ -96,7 +97,6 @@ TxnManager::process_2pc_phase1()
         #endif
             return FAIL;
     #endif // COMMIT_ALG == ONE_PC
-    #endif // LOG_DEVICE == LOG_DVC_NATIVE
     }
 
     SundialRequest::NodeData * participant;
@@ -290,7 +290,6 @@ TxnManager::process_2pc_phase2(RC rc)
 
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log optimization)
-    dependency_semaphore->wait();
 #if COMMIT_ALG == ONE_PC
     rpc_log_semaphore->wait();
 #endif
