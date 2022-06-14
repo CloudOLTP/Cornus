@@ -189,13 +189,10 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
     }
 #else
 #if DEBUG_ELR
-    printf("[row_lock-%p] try to remove txn-%lu from weak queue (current "
-           "length = %zu)\n",
-           this, txn->get_txn_id(), _weak_locking_queue.size());
     assert(_weak_locking_queue.empty() || _weak_locking_queue.front().isHead);
 #endif
     LockEntry entry = {LOCK_NONE, nullptr, true};
-    bool found = false;
+    bool found_in_owner = false;
     if (rc == ABORT) {
         for (auto it = _locking_set.begin();
              it != _locking_set.end(); it++) {
@@ -207,7 +204,7 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
                        this, txn->get_txn_id());
 #endif
                 _locking_set.erase(it);
-                found = true;
+                found_in_owner = true;
                 break;
             }
         }
@@ -218,11 +215,12 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
     //  case 3 - SH, SH (to remove), EX
     //  case 4 - SH, SH, EX (to remove), SH, EX
     bool decremented = false;
-    if (!found) {
+    bool found_in_weak = false;
+    if (!found_in_owner) {
         for (size_t i = 0; i < _weak_locking_queue.size(); i++) {
             auto it = _weak_locking_queue[i];
             if (it.txn == txn) {
-                found = true;
+                found_in_weak = true;
                 // found the entry to remove: i-th object
                 // if releasing write lock, decrement dependency from i+1 until
                 // encountering the first write lock (inclusive)
@@ -291,7 +289,7 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
         }
     }
     // decrement dependency in owner until encounter EX
-    if (found && !decremented) {
+    if (found_in_weak && !decremented) {
         for (auto itr = _locking_set.begin(); itr != _locking_set.end();
         itr++) {
             itr->txn->dependency_semaphore->decr();
@@ -305,7 +303,7 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
 #endif
         }
     }
-    assert(found);
+    assert(found_in_weak || found_in_owner);
 #endif
 #else // CC_ALG == WAIT_DIE
     /*LockEntry entry {LOCK_NONE, NULL};

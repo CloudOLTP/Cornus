@@ -17,31 +17,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="963a16de-0926-4f99-88c8-98a9f80fa508" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/exp_profiles/test_elr.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/exp_profiles/test_local.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/Sundial.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Sundial.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/install.py" beforeDir="false" afterPath="$PROJECT_DIR$/install.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run_exp.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_exp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/concurrency_control/lock_manager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/lock_manager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/concurrency_control/lock_manager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/lock_manager.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/concurrency_control/row_lock.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/row_lock.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/config-std.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/config-std.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ifconfig.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/ifconfig.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/system/cc_manager.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/cc_manager.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/system/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/system/txn.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/system/txn_client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_client.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/system/txn_server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_server.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/system/worker_thread.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/worker_thread.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/setup_env.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/setup_env.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/setup_grpc.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/setup_grpc.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/setup_proto.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/setup_proto.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/setup_redis.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/setup_redis.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -222,7 +201,7 @@
       <workItem from="1653166985558" duration="599000" />
       <workItem from="1654547346268" duration="19000" />
       <workItem from="1654614170707" duration="43594000" />
-      <workItem from="1654970579414" duration="11786000" />
+      <workItem from="1654970579414" duration="19675000" />
     </task>
     <servers />
   </component>
