@@ -43,9 +43,18 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     string data = "[LSN] placehold:" + string('d', num_local_write *
                                                        g_log_sz * 8);
 #if EARLY_LOCK_RELEASE
+#if DEBUG_ELR
+    printf("[txn-%lu] retire locks; \n", _txn_id);
+#endif
     _cc_manager->retire(); // release lock after log is received
     // enforce dependency if early lock release, regardless of txn type
+#if DEBUG_ELR
+    printf("[txn-%lu] waiting for dependency semaphore; \n", _txn_id);
+#endif
     dependency_semaphore->wait();
+#if DEBUG_ELR
+    printf("[txn-%lu] finished waiting for dependency semaphore; \n", _txn_id);
+#endif
 #endif
     // if logging didn't happen, process commit phase
     if (!is_read_only()) {

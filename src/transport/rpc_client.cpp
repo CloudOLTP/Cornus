@@ -151,6 +151,10 @@ response)
     glob_stats->_stats[thread_id]->_resp_msg_size[ response->response_type() ] += response->SpaceUsedLong();
 
     uint64_t txn_id = response->txn_id();
+#if DEBUG_PRINT
+    printf("[node-%u, txn-%lu] receive remote reply\n", g_node_id,
+           txn_id);
+#endif
     TxnManager * txn;
     switch (response->request_type()) {
         case SundialResponse::PREPARE_REQ :

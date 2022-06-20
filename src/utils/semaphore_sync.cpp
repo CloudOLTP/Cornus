@@ -10,21 +10,24 @@ SemaphoreSync::SemaphoreSync()
     _semaphore = 0;
 }
 
-void
+uint32_t
 SemaphoreSync::incr()
 {
     pthread_mutex_lock(_mutex);
-    _semaphore ++;
+    uint32_t sem = ++_semaphore;
     pthread_mutex_unlock(_mutex);
+    return sem;
 }
 
-void
+uint32_t
 SemaphoreSync::decr() {
     pthread_mutex_lock(_mutex);
+    assert(_semaphore != 0);
     uint32_t sem = --_semaphore;
     pthread_mutex_unlock(_mutex);
     if (sem == 0)
         pthread_cond_signal(_cond);
+    return sem;
 }
 
 void

@@ -93,25 +93,29 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             glob_manager->receive_sync_request();
             return;
         case SundialRequest::READ_REQ:
+#if DEBUG_PRINT
+          printf("[node-%u, txn-%lu] receive remote read request\n", g_node_id,
+                 txn_id);
+#endif
             txn = txn_table->get_txn(txn_id, false);
             if (txn  == NULL) {
                 txn = new TxnManager();
                 txn->set_txn_id(txn_id);
                 txn_table->add_txn(txn);
             }
-			// for failure case
+            // for failure case
             // only read and terminate need latch since
             // (1) read can only be concurrent with read and terminate
             // (2) read does not remove txn from txn table when getting txn
             txn->lock();
             rc = txn->process_read_request(request, response);
             txn->unlock();
-			#if !FAILURE_ENABLE
-			if (rc == ABORT) {
-				txn_table->remove_txn(txn);
-            	delete txn;
-			}
-			#endif
+#if !FAILURE_ENABLE
+            if (rc == ABORT) {
+              txn_table->remove_txn(txn);
+              delete txn;
+            }
+#endif
             break;
         case SundialRequest::TERMINATE_REQ:
             txn = txn_table->get_txn(txn_id, true);
@@ -125,6 +129,11 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             break;
         case SundialRequest::PREPARE_REQ:
+#if DEBUG_PRINT
+          printf("[remote txn-%lu] receive remote prepare request\n",
+                 g_node_id,
+                 txn_id);
+#endif
             txn = txn_table->get_txn(txn_id, false);
             if (txn == NULL) {
                 // txn already cleaned up
@@ -138,6 +147,11 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             break;
         case SundialRequest::COMMIT_REQ:
+#if DEBUG_PRINT
+          printf("[remote txn-%lu] receive remote commit request\n",
+                 g_node_id,
+                 txn_id);
+#endif
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
                 response->set_response_type(SundialResponse::ACK);
@@ -148,6 +162,10 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             break;
         case SundialRequest::ABORT_REQ:
+#if DEBUG_PRINT
+          printf("[remote txn-%lu] receive remote abort request\n", g_node_id,
+                 txn_id);
+#endif
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
                 response->set_response_type(SundialResponse::ACK);

@@ -91,12 +91,13 @@ Row_lock::lock_get(LockType type, TxnManager * txn, bool need_latch)
             for (auto it : _weak_locking_queue) {
                 assert(it.txn != txn);
                 if (it.type == LOCK_EX) {
-                    txn->dependency_semaphore->incr();
+                    uint32_t sem = txn->dependency_semaphore->incr();
                     isHead = false;
 #if DEBUG_ELR
-                    printf("[row_lock-%p] txn-%lu increase semaphore, type = %d, "
+                    printf("[row_lock-%p] txn-%lu increase semaphore to %u, "
+                           "type = %d, "
                            "due to (txn-%lu, type-%d), size=%zu\n", this,
-                           txn->get_txn_id(), type,
+                           txn->get_txn_id(), sem, type,
                            it.txn->get_txn_id(), it.type, _weak_locking_queue.size());
 #endif
                     break;
@@ -189,6 +190,12 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
     }
 #else
 #if DEBUG_ELR
+    if (rc == COMMIT) {
+      printf("[row_lock-%p] txn-%lu try to release its lock\n",
+             this, txn->get_txn_id());
+    }
+#endif
+#if DEBUG_ELR
     assert(_weak_locking_queue.empty() || _weak_locking_queue.front().isHead);
 #endif
     LockEntry entry = {LOCK_NONE, nullptr, true};
@@ -200,8 +207,6 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
                 entry = *it;
 #if DEBUG_ELR
                 assert(entry.txn);
-                printf("[row_lock-%p] remove txn-%lu from owners\n",
-                       this, txn->get_txn_id());
 #endif
                 _locking_set.erase(it);
                 found_in_owner = true;
@@ -228,26 +233,6 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
                     if (!it.isHead) {
                         // not head, must due to abort, no need to decrement
 #if DEBUG_ELR
-                        printf("[row_lock-%p] txn-%lu, type = %d, "
-                            "is not head. \n", this, txn->get_txn_id(), it
-                            .type);
-                        if (rc != ABORT) {
-                            printf("[row_lock-%p] txn-%lu, type = %d, "
-                                   "is not head AND not committed. \n", this,
-                                   txn->get_txn_id(), it.type);
-                            printf("weak queue: \n");
-                            for (auto en : _weak_locking_queue) {
-                                printf("(txn-%lu, type-%d, isHead-%d), ", en
-                                    .txn->get_txn_id(), en.type, en.isHead);
-                            }
-                            printf("\nlocking queue: \n");
-                            for (auto en : _locking_set) {
-                                printf("(txn-%lu, type-%d, isHead-%d), ", en
-                                    .txn->get_txn_id(), en.type, en.isHead);
-                            }
-                            printf("\n");
-                            fflush(stdout);
-                        }
                         assert(rc == ABORT);
 #endif
                         decremented = true;
@@ -255,18 +240,20 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
                     }
                     for (size_t j = i + 1; j < _weak_locking_queue.size();
                          j++) {
+                        uint32_t sem = _weak_locking_queue[j]
+                          .txn->dependency_semaphore->decr();
+                        _weak_locking_queue[j].isHead = true;
 #if DEBUG_ELR
                         printf(
-                            "[row_lock-%p] txn-%lu decrease semaphore, type = %d, "
-                            "due to (txn-%lu, type-%d) releases locks\n",
+                            "[row_lock-%p] txn-%lu decrease semaphore to %u, "
+                            "type = %d, due to (txn-%lu, type-%d) releases locks\n",
                             this,
                             _weak_locking_queue[j].txn->get_txn_id(),
                             _weak_locking_queue[j].type,
+                            sem,
                             txn->get_txn_id(),
                             it.type);
 #endif
-                        _weak_locking_queue[j].txn->dependency_semaphore->decr();
-                        _weak_locking_queue[j].isHead = true;
                         if (_weak_locking_queue[j].type == LOCK_EX) {
                             decremented = true;
                             break;
@@ -280,9 +267,12 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
                 _weak_locking_queue.erase(
                     _weak_locking_queue.begin() + (int) i);
 #if DEBUG_ELR
-                printf("[row_lock-%p] remove txn-%lu from weak queue (current "
-                       "length = %zu)\n",
-                       this, txn->get_txn_id(), _weak_locking_queue.size());
+                if (rc == COMMIT) {
+                  printf(
+                      "[row_lock-%p] remove txn-%lu from weak queue (current "
+                      "length = %zu)\n",
+                      this, txn->get_txn_id(), _weak_locking_queue.size());
+                }
 #endif
                 break;
             }
@@ -292,18 +282,25 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
     if (found_in_weak && !decremented) {
         for (auto itr = _locking_set.begin(); itr != _locking_set.end();
         itr++) {
-            itr->txn->dependency_semaphore->decr();
+            uint32_t sem = itr->txn->dependency_semaphore->decr();
             itr->isHead = true;
 #if DEBUG_ELR
-            printf("[row_lock-%p] txn-%lu decrease semaphore in owners, type = "
+            printf("[row_lock-%p] txn-%lu decrease semaphore to %u in owners, "
+                   "type = "
                    "%d, isHead = %d, due to txn-%lu releases locks\n",
-                   this, itr->txn->get_txn_id(), itr->type, itr->isHead,
+                   this, itr->txn->get_txn_id(), sem, itr->type, itr->isHead,
                    txn->get_txn_id());
             assert(_locking_set.begin()->isHead);
 #endif
         }
     }
     assert(found_in_weak || found_in_owner);
+#if DEBUG_ELR
+    if (rc == COMMIT) {
+      printf("[row_lock-%p] txn-%lu finish releasing lock\n",
+             this, txn->get_txn_id());
+    }
+#endif
 #endif
 #else // CC_ALG == WAIT_DIE
     /*LockEntry entry {LOCK_NONE, NULL};
@@ -391,10 +388,10 @@ Row_lock::lock_retire(TxnManager * txn)
             _weak_locking_queue.push_back( LockEntry {entry.type, txn, entry
             .isHead} );
 #if DEBUG_ELR
-            printf("[row_lock-%p] txn-%lu retire lock, type = %d, "
-                   "isHead = %d, queue_size = "
-                   "%zu\n", this, txn->get_txn_id(), entry.type,
-                   entry.isHead, _weak_locking_queue.size());
+//            printf("[row_lock-%p] txn-%lu retire lock, type = %d, "
+//                   "isHead = %d, queue_size = "
+//                   "%zu\n", this, txn->get_txn_id(), entry.type,
+//                   entry.isHead, _weak_locking_queue.size());
             assert(entry.isHead == _weak_locking_queue[_weak_locking_queue
             .size() - 1].isHead);
 #endif

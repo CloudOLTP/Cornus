@@ -39,9 +39,6 @@
 RC
 TxnManager::process_prepare_request(const SundialRequest* request,
     SundialResponse* response) {
-#if DEBUG_PRINT
-    printf("[node-%u, txn-%lu] prepare request\n", g_node_id, _txn_id);
-#endif
     if (!glob_manager->active) {
         _txn_state = ABORTED;
         return FAIL;
@@ -68,9 +65,18 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     }
 
 #if EARLY_LOCK_RELEASE
+#if DEBUG_ELR
+    printf("[remote txn-%lu] retire locks; \n", _txn_id);
+#endif
     _cc_manager->retire(); // release lock after log is received
-    // enforce dependency if early lock release, regardless of txn type
+#if DEBUG_ELR
+    printf("[remote txn-%lu] waiting for dependency semaphore; \n", _txn_id);
+#endif
     dependency_semaphore->wait();
+#if DEBUG_ELR
+    printf("[remote txn-%lu] finished waiting for dependency semaphore; \n",
+           _txn_id);
+#endif
 #endif
 
     // log vote if the entire txn is read-write
@@ -115,6 +121,9 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     if (num_tuples != 0) {
         // read-write
         _txn_state = PREPARED;
+#if DEBUG_ELR
+        printf("[remote txn-%lu] prepared\n", _txn_id);
+#endif
     } else {
         // readonly remote nodes
         _txn_state = COMMITTED;
@@ -132,9 +141,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 RC
 TxnManager::process_read_request(const SundialRequest* request,
                                     SundialResponse* response) {
-#if DEBUG_PRINT
-    printf("[node-%u, txn-%lu] read request\n", g_node_id, _txn_id);
-#endif
     if (!glob_manager->active) {
         return FAIL;
     }
@@ -161,6 +167,10 @@ TxnManager::process_read_request(const SundialRequest* request,
         row_t * row = *rows->begin();
         get_cc_manager()->remote_key += 1;
         rc = get_cc_manager()->get_row(row, access_type, key);
+#if DEBUG_ELR
+        printf("[remote txn-%lu] acquire row %p type=%d\n", _txn_id,
+               row->manager, access_type);
+#endif
         if (rc == ABORT) {
             break;
         }
@@ -181,7 +191,7 @@ TxnManager::process_read_request(const SundialRequest* request,
             _txn_state = ABORTED;
         }
 #else
-		 _cc_manager->cleanup(ABORT);
+	_cc_manager->cleanup(ABORT);
 #if DEBUG_ELR
         printf("[remote txn-%lu] abort and cleaned up\n", _txn_id);
 #endif

@@ -27,7 +27,7 @@ def load_environment(fname="info.txt"):
 		f.write(env["repo"] + "\n")
 	return env
 
-def load_ipaddr(ifconfig):
+def load_ipaddr(ifconfig, start=0, end=100):
 	nodes = []
 	f = open(ifconfig)
 	itr = 0
@@ -36,7 +36,10 @@ def load_ipaddr(ifconfig):
 			continue
 		elif addr[0] == '=' and addr[1] == 'l':
 			break
-		nodes.append(addr.split(":")[0])
+		if itr >= start:
+			nodes.append(addr.split(":")[0])
+		elif itr > end:
+			break
 		itr += 1
 	f.close()
 	return nodes
@@ -134,6 +137,9 @@ class myThread (threading.Thread):
 			self.remote_exec("cd Sundial-Private; rm -f log_*")
 
 if __name__ == "__main__":
+	# sample usage
+	# python3 install.py sync 1 0-2
+	# copy code from current node 1 to node 0, 1, 2 (inclusive)
 	# parse commands
 	cmd = sys.argv[1]
 	env = load_environment()
@@ -143,9 +149,18 @@ if __name__ == "__main__":
 	else:
 		if input("current node id = 0, y/n? ") != "y":
 			curr_node_id = int(input("enter a different id: "))
+	# setup range of update
+	if len(sys.argv) > 3:
+		limit = sys.argv[3]
+		start = int(limit.split("-")[0].strip())
+		end = int(limit.split("-")[1].strip())
+	else:
+		print("operation apply from node 0 to all nodes in ifconfig.txt")
+		start = 0
+		end = 100
 	# go through each node to complete the task
 	threads = []
-	addrs = load_ipaddr("src/ifconfig.txt")
+	addrs = load_ipaddr("src/ifconfig.txt", start, end)
 	for itr, addr in enumerate(addrs):
 		thread1 = myThread(env, addr, cmd, itr, addrs)
 		thread1.start()

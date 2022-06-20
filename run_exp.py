@@ -344,7 +344,10 @@ def test_exp(env, nodes, job):
 
     # sync codebase
     print("[run_exp.py] syncing codebase with all nodes")
-    exec("python3 install.py sync 0", exit_on_err=True)
+    if env["num_nodes"] > 1:
+        exec("python3 install.py sync {} {}".format(
+            env["curr_node"], "0-{}".format(env["num_nodes"]-1)),
+             exit_on_err=True)
 
     # execute experiments
     mode = job.get("MODE", "debug")

@@ -5,8 +5,8 @@
 class SemaphoreSync {
 public:
     SemaphoreSync();
-    void              incr();
-    void              decr();
+    uint32_t          incr();
+    uint32_t          decr();
     void              wait();
 private:
     uint32_t          _semaphore;

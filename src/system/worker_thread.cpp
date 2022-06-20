@@ -57,8 +57,11 @@ RC WorkerThread::run() {
         }
         if (_native_txn) {
 #if DEBUG_ELR
-            printf("[node-%u, txn-%lu] restart.\n",
-                 g_node_id, _native_txn->get_txn_id());
+            printf("[node-%u, txn-%lu] restart for %lu times.\n",
+                 g_node_id, _native_txn->get_txn_id(), _native_txn->num_aborted);
+//            if (_native_txn->num_aborted > 150) {
+//              assert(false);
+//            }
 #endif
             // restart a previously aborted transaction
             _native_txn->restart();

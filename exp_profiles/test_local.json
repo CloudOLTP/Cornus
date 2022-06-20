@@ -4,7 +4,7 @@
   "NUM_WORKER_THREADS": 16,
   "NUM_RPC_SERVER_THREADS": 16,
   "MAX_NUM_ACTIVE_TXNS": 16,
-  "DEBUG_ELR": "true",
+  "DEBUG_ELR": "false",
   "LOG_LOCAL": "false",
   "LOG_REMOTE": "true",
   "LOG_DEVICE": "LOG_DVC_REDIS",
