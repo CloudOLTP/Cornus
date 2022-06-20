@@ -81,9 +81,18 @@ TxnManager::process_2pc_phase1()
     _decision = COMMIT;
 
 #if EARLY_LOCK_RELEASE
+#if DEBUG_ELR
+    printf("[remote txn-%lu] retire locks; \n", _txn_id);
+#endif
     _cc_manager->retire(); // release lock after log is received
-    // enforce dependency if early lock release, regardless of txn type
+#if DEBUG_ELR
+    printf("[remote txn-%lu] waiting for dependency semaphore; \n", _txn_id);
+#endif
     dependency_semaphore->wait();
+#if DEBUG_ELR
+    printf("[remote txn-%lu] finished waiting for dependency semaphore; \n",
+           _txn_id);
+#endif
 #endif
 
     // if the entire txn is read-write, log to remote storage

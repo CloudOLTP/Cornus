@@ -249,8 +249,8 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
                             "type = %d, due to (txn-%lu, type-%d) releases locks\n",
                             this,
                             _weak_locking_queue[j].txn->get_txn_id(),
-                            _weak_locking_queue[j].type,
                             sem,
+                            _weak_locking_queue[j].type,
                             txn->get_txn_id(),
                             it.type);
 #endif
