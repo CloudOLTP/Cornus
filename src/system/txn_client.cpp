@@ -396,6 +396,9 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
         }
     }
 
+#if DEBUG_PRINT
+    printf("[txn-%lu] waiting for read request reply\n", get_txn_id());
+#endif
     rpc_semaphore->wait();
     RC rc = RCOK;
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
@@ -413,6 +416,10 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             rc = ABORT;
         }
     }
+#if DEBUG_PRINT
+    printf("[txn-%lu] finished waiting for read request reply, state=%d\n",
+get_txn_id(), rc);
+#endif
     return rc;
 }
 

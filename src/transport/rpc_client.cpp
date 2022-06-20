@@ -175,6 +175,7 @@ response)
         txn->rpc_log_semaphore->decr();
     } else
 #endif
-        txn->rpc_semaphore->decr();
+
+      txn->rpc_semaphore->decr();
 
 }

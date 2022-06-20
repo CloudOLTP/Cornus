@@ -40,7 +40,7 @@ RC WorkerThread::run() {
 
     _init_time = get_sys_clock();
     // calculate which client thread this worker thread corresponds to.
-    uint64_t max_txn_id = 0;
+    uint64_t max_txn_id = 1;
 
     uint64_t last_stats_cp_time = _init_time;
     __attribute__((unused)) uint64_t last_idle_time = get_sys_clock();
