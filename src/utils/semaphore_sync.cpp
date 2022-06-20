@@ -10,6 +10,12 @@ SemaphoreSync::SemaphoreSync()
     _semaphore = 0;
 }
 
+void
+SemaphoreSync::reset()
+{
+  _semaphore = 0;
+}
+
 uint32_t
 SemaphoreSync::incr()
 {

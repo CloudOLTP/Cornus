@@ -163,6 +163,12 @@ TxnManager::restart() {
     num_local_write = 0;
     _terminate_time = 0;
 
+    // reset semaphore
+    log_semaphore->reset();
+    dependency_semaphore->reset();
+    rpc_semaphore->reset();
+    rpc_log_semaphore->reset();
+
     _txn_restart_time = get_sys_clock();
     _store_procedure->init();
     for (auto kvp : _remote_nodes_involved)
