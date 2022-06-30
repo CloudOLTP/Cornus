@@ -230,6 +230,7 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
                 // if releasing write lock, decrement dependency from i+1 until
                 // encountering the first write lock (inclusive)
                 if (it.type == LOCK_EX) {
+                  // TODO: to implement cascading abort if rc == abort
                     if (!it.isHead) {
                         // not head, must due to abort, no need to decrement
 #if DEBUG_ELR

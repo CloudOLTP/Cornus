@@ -18,17 +18,13 @@
   <component name="ChangeListManager">
     <list default="true" id="963a16de-0926-4f99-88c8-98a9f80fa508" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_exp.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_exp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/outputs/zipf_redis_elr.csv" beforeDir="false" afterPath="$PROJECT_DIR$/outputs/zipf_redis_elr.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/system/txn_server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_server.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
-  </component>
-  <component name="ClangdSettings">
-    <option name="formatViaClangd" value="false" />
   </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
@@ -69,17 +65,12 @@
           <value>
             <list>
               <ExternalProjectPojo>
-                <option name="name" value="Sundial-Private" />
+                <option name="name" value="Sundial" />
                 <option name="path" value="$PROJECT_DIR$/src" />
               </ExternalProjectPojo>
             </list>
           </value>
         </entry>
-      </map>
-    </option>
-    <option name="projectSyncType">
-      <map>
-        <entry key="$PROJECT_DIR$/src" value="RE_IMPORT" />
       </map>
     </option>
   </component>
@@ -95,6 +86,7 @@
     <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="cf.advertisement.text.overridden" value="true" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/exp_profiles" />
@@ -105,7 +97,7 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_package_manager_path" value="npm" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="web.server" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -201,7 +193,8 @@
       <workItem from="1653166985558" duration="599000" />
       <workItem from="1654547346268" duration="19000" />
       <workItem from="1654614170707" duration="43594000" />
-      <workItem from="1654970579414" duration="19675000" />
+      <workItem from="1654970579414" duration="19719000" />
+      <workItem from="1656301871432" duration="428000" />
     </task>
     <servers />
   </component>
