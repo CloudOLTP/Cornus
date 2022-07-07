@@ -79,7 +79,8 @@ class myThread (threading.Thread):
 					  "chmod +x setup_proto.sh; "
 					  "chmod +x compile.sh; "
 					  "chmod +x run.sh; ")
-			self.exec("cd tools; ./setup_grpc.sh; ./setup_redis.sh; ")
+			self.exec("cd tools; ./setup_basic.sh ./setup_grpc.sh; "
+					  "./setup_redis.sh; ")
 		elif self.cmd == "install_remote":
 			# remote command
 			if self.node_id == curr_node_id:
@@ -87,22 +88,34 @@ class myThread (threading.Thread):
 			self.exec("scp -r {} {}@{}:{};".format(self.homedir, self.usr,
 												self.ipaddr, self.homedir))
 			self.remote_exec("cd Sundial-Private; cd tools; "
-							 #"./setup_basic.sh; "
+							 "./setup_basic.sh; "
 							 "./setup_grpc.sh; "
 							 "./setup_redis.sh; ")
+		if self.cmd == "grant_scripts":
+			if self.node_id != curr_node_id:
+				return
+			self.exec("cd tools; chmod +x setup_basic.sh; "
+					  "chmod +x setup_grpc.sh; "
+					  "chmod +x setup_redis.sh; "
+					  "chmod +x setup_conf.sh; "
+					  "chmod +x setup_env.sh; "
+					  "chmod +x setup_proto.sh; "
+					  "chmod +x compile.sh; "
+					  "chmod +x run.sh; ")
 		elif self.cmd == "config_local":
 			if self.node_id != curr_node_id:
 				return
-			self.exec("sudo {}tools/setup_conf.sh {}src ; ".format(
+			self.exec("sudo bash {}tools/setup_conf.sh {}src ; ".format(
 				self.homedir, self.homedir))
-			self.exec("{}tools/setup_proto.sh {}src/proto {}tools ; ".format(
+			self.exec("bash {}tools/setup_proto.sh {}src/proto {}tools ; "
+					  "".format(
 				self.homedir, self.homedir, self.homedir))
 		elif self.cmd == "config_remote":
 			if self.node_id == curr_node_id:
 				return
-			self.remote_exec("sudo {}tools/setup_conf.sh {}src ; ".format(
+			self.remote_exec("sudo bash {}tools/setup_conf.sh {}src ; ".format(
 				self.homedir, self.homedir))
-			self.remote_exec("{}tools/setup_proto.sh {}src/proto {}tools ; "
+			self.remote_exec("bash {}tools/setup_proto.sh {}src/proto {}tools ; "
 							 "".format(self.homedir, self.homedir, self.homedir))
 		elif self.cmd == "setkey_remote":
 			if self.node_id == curr_node_id:

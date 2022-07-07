@@ -5,6 +5,7 @@
 #include "row_lock.h"
 #include "row_tictoc.h"
 #include "row_f1.h"
+#include "row_occ.h"
 #include "manager.h"
 
 IndexHash::IndexHash(bool is_key_index)
@@ -82,7 +83,6 @@ IndexHash::Bucket::init()
 
 void
 IndexHash::Bucket::latch() {
-
     _manager->latch();
 }
 
@@ -129,7 +129,7 @@ IndexHash::Bucket::insert(uint64_t key, row_t * row)
         node->next = _first_node;
         _first_node = node;
     } else {
-        // TODO. should diferentiate between unique vs. nonunique indexes.
+        // TODO. should differentiate between unique vs. nonunique indexes.
         assert(WORKLOAD != YCSB);
         node->rows.insert(row);
     }

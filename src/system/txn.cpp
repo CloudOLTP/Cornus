@@ -188,6 +188,9 @@ TxnManager::start()
     _is_coordinator = true;
     // running transaction on the host node
     rc = _store_procedure->execute();
+    // TODO: used by occ, but may overlap with tictoc's method
+    if (rc == COMMIT)
+        _cc_manager->validate();
     // Handle single-partition transactions, skip if self failed
     if (is_single_partition()) {
         _commit_start_time = get_sys_clock();

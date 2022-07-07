@@ -85,7 +85,8 @@ on Master
   no``` but it is dangerous for public cloud without setting ```requirepass```
 - set ```appendonly yes```
 - set ```fsync always```
-- set ```dir <your desired path for log>```
+- set ```dir <your desired path for log>```, e.g. 
+  ```dir /users/scarletg/redis_data```
 - set ```requirepass sundial-dev```
     
 on Replica

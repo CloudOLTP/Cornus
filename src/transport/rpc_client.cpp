@@ -152,8 +152,8 @@ response)
 
     uint64_t txn_id = response->txn_id();
 #if DEBUG_PRINT
-    printf("[node-%u, txn-%lu] receive remote reply\n", g_node_id,
-           txn_id);
+    printf("[node-%u, txn-%lu] receive remote reply-%d\n", g_node_id,
+           txn_id, response->response_type());
 #endif
     TxnManager * txn;
     switch (response->request_type()) {

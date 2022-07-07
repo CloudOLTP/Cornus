@@ -25,6 +25,7 @@
 #include "tictoc_manager.h"
 #include "lock_manager.h"
 #include "f1_manager.h"
+#include "occ_manager.h"
 #if CC_ALG == NO_WAIT || CC_ALG == WAIT_DIE
 #include "row_lock.h"
 #endif
@@ -43,18 +44,9 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     string data = "[LSN] placehold:" + string('d', num_local_write *
                                                        g_log_sz * 8);
 #if EARLY_LOCK_RELEASE
-#if DEBUG_ELR
-    printf("[txn-%lu] retire locks; \n", _txn_id);
-#endif
     _cc_manager->retire(); // release lock after log is received
     // enforce dependency if early lock release, regardless of txn type
-#if DEBUG_ELR
-    printf("[txn-%lu] waiting for dependency semaphore; \n", _txn_id);
-#endif
     dependency_semaphore->wait();
-#if DEBUG_ELR
-    printf("[txn-%lu] finished waiting for dependency semaphore; \n", _txn_id);
-#endif
 #endif
     // if logging didn't happen, process commit phase
     if (!is_read_only()) {
@@ -81,18 +73,8 @@ TxnManager::process_2pc_phase1()
     _decision = COMMIT;
 
 #if EARLY_LOCK_RELEASE
-#if DEBUG_ELR
-    printf("[remote txn-%lu] retire locks; \n", _txn_id);
-#endif
     _cc_manager->retire(); // release lock after log is received
-#if DEBUG_ELR
-    printf("[remote txn-%lu] waiting for dependency semaphore; \n", _txn_id);
-#endif
     dependency_semaphore->wait();
-#if DEBUG_ELR
-    printf("[remote txn-%lu] finished waiting for dependency semaphore; \n",
-           _txn_id);
-#endif
 #endif
 
     // if the entire txn is read-write, log to remote storage
@@ -134,16 +116,16 @@ TxnManager::process_2pc_phase1()
         participant = request.add_nodes();
         participant->set_nid(g_node_id);
         // attach participants
-        if (!is_txn_read_only()) {
+        if (!is_txn_read_only() || CC_ALG == OCC ) {
             for (auto itr = _remote_nodes_involved.begin(); itr !=
                 _remote_nodes_involved.end(); itr++) {
-                if (itr->second->is_readonly)
+                if (itr->second->is_readonly && CC_ALG != OCC)
                     continue;
                 participant = request.add_nodes();
                 participant->set_nid(it->first);
             }
         }
-        ((LockManager *)_cc_manager)->build_prepare_req( it->first, request );
+        ((CC_MAN *)_cc_manager)->build_prepare_req( it->first, request );
         if (rpc_client->sendRequestAsync(this, it->first, request, response)
         == FAIL) {
             return FAIL; // self is down, no msg can be sent out
@@ -223,7 +205,7 @@ RC
 TxnManager::process_2pc_phase2(RC rc)
 {
     bool remote_readonly = is_read_only() && (rc == COMMIT);
-    if (remote_readonly) {
+    if (remote_readonly && CC_ALG != OCC) {
         for (auto it = _remote_nodes_involved.begin();
              it != _remote_nodes_involved.end(); it++) {
             if (!(it->second->is_readonly)) {
@@ -354,7 +336,8 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
 
     // handle RPC response
     if (response.response_type() == SundialResponse::RESP_OK) {
-        ((LockManager *)_cc_manager)->process_remote_read_response(node_id, access_type, response);
+        ((CC_MAN *)_cc_manager)->process_remote_read_response(node_id,
+                                                         access_type, response);
         return RCOK;
     } else if (response.response_type() == SundialResponse::RESP_ABORT) {
         _remote_nodes_involved[node_id]->state = ABORTED;
@@ -404,16 +387,12 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             rpc_semaphore->incr();
         }
     }
-
-#if DEBUG_PRINT
-    printf("[txn-%lu] waiting for read request reply\n", get_txn_id());
-#endif
     rpc_semaphore->wait();
     RC rc = RCOK;
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         SundialResponse &response = it->second->response;
         if (response.response_type() == SundialResponse::RESP_OK) {
-            ((LockManager *)_cc_manager)->process_remote_read_response(it->first, response);
+            ((CC_MAN *)_cc_manager)->process_remote_read_response(it->first, response);
         } else if (response.response_type() == SundialResponse::RESP_ABORT) {
             _remote_nodes_involved[it->first]->state = ABORTED;
             _is_remote_abort = true;
@@ -425,10 +404,6 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             rc = ABORT;
         }
     }
-#if DEBUG_PRINT
-    printf("[txn-%lu] finished waiting for read request reply, state=%d\n",
-get_txn_id(), rc);
-#endif
     return rc;
 }
 

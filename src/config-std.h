@@ -200,6 +200,7 @@
 #define NAIVE_TICTOC                    6
 #define TICTOC                          7
 #define TCM                             8
+#define OCC                             9
 // TIMESTAMP allocation method.
 #define TS_MUTEX                        1
 #define TS_CAS                          2

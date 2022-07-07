@@ -154,6 +154,11 @@ using global_key_t = std::pair<uint32_t, uint64_t>;
     class LockManager;
     #define ROW_MAN Row_lock
     #define CC_MAN LockManager
+#elif CC_ALG == OCC
+    class Row_occ;
+    class OccManager;
+    #define ROW_MAN Row_occ
+    #define CC_MAN OccManager
 #elif CC_ALG == TICTOC
     class Row_tictoc;
     class TicTocManager;

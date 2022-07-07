@@ -94,7 +94,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             return;
         case SundialRequest::READ_REQ:
 #if DEBUG_PRINT
-          printf("[remote txn-%lu] receive remote read request\n", txn_id);
+          printf("[node-%u, txn-%lu] receive remote read request\n",
+                 g_node_id, txn_id);
 #endif
             txn = txn_table->get_txn(txn_id, false);
             if (txn  == NULL) {
@@ -129,8 +130,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::PREPARE_REQ:
 #if DEBUG_PRINT
-          printf("[remote txn-%lu] receive remote prepare request\n",
-                 txn_id);
+          printf("[node-%u, txn-%lu] receive remote prepare request\n",
+                 g_node_id, txn_id);
 #endif
             txn = txn_table->get_txn(txn_id, false);
             if (txn == NULL) {
@@ -146,7 +147,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::COMMIT_REQ:
 #if DEBUG_PRINT
-          printf("[remote txn-%lu] receive remote commit request\n",
+          printf("[node-%lu, txn-%lu] receive remote commit request\n",
                  txn_id);
 #endif
             txn = txn_table->get_txn(txn_id, true);

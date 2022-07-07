@@ -46,6 +46,15 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     assert(_txn_state == RUNNING);
     RC rc = RCOK;
     uint32_t num_tuples = request->tuple_data_size();
+#if CC_ALG == OCC
+    // if occ, validate if can commit or not
+    rc = _cc_manager->validate();
+    if (rc == ABORT) {
+        _cc_manager->cleanup(rc);
+        response->set_response_type( SundialResponse::PREPARED_ABORT );
+        return rc;
+    }
+#else
     // copy data to the write set.
     for (uint32_t i = 0; i < num_tuples; i++) {
         uint64_t key = request->tuple_data(i).key();
@@ -53,6 +62,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         char * data = get_cc_manager()->get_data(key, table_id);
         memcpy(data, request->tuple_data(i).data().c_str(), request->tuple_data(i).size());
     }
+#endif
     // set up all nodes involved (including sender, excluding self)
     // so that termination protocol will know where to find
     for (int i = 0; i < request->nodes_size(); i++) {
@@ -65,18 +75,8 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     }
 
 #if EARLY_LOCK_RELEASE
-#if DEBUG_ELR
-    printf("[remote txn-%lu] retire locks; \n", _txn_id);
-#endif
     _cc_manager->retire(); // release lock after log is received
-#if DEBUG_ELR
-    printf("[remote txn-%lu] waiting for dependency semaphore; \n", _txn_id);
-#endif
     dependency_semaphore->wait();
-#if DEBUG_ELR
-    printf("[remote txn-%lu] finished waiting for dependency semaphore; \n",
-           _txn_id);
-#endif
 #endif
 
     // log vote if the entire txn is read-write
@@ -121,16 +121,11 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     if (num_tuples != 0) {
         // read-write
         _txn_state = PREPARED;
-#if DEBUG_ELR
-        printf("[remote txn-%lu] prepared\n", _txn_id);
-#endif
     } else {
         // readonly remote nodes
         _txn_state = COMMITTED;
-        _cc_manager->cleanup(COMMIT); // release lock after log is received
-#if DEBUG_ELR
-        printf("[remote txn-%lu] readonly committed and cleaned up\n", _txn_id);
-#endif
+        // release lock (for pessimistic) and delete accesses
+        _cc_manager->cleanup(COMMIT);
         response->set_response_type( SundialResponse::PREPARED_OK_RO );
         return rc;
     }
@@ -167,10 +162,6 @@ TxnManager::process_read_request(const SundialRequest* request,
         row_t * row = *rows->begin();
         get_cc_manager()->remote_key += 1;
         rc = get_cc_manager()->get_row(row, access_type, key);
-#if DEBUG_ELR
-        printf("[remote txn-%lu] acquire row %p type=%d\n", _txn_id,
-               row->manager, access_type);
-#endif
         if (rc == ABORT) {
             break;
         }
@@ -192,14 +183,14 @@ TxnManager::process_read_request(const SundialRequest* request,
         }
 #else
 	_cc_manager->cleanup(ABORT);
-#if DEBUG_ELR
+#if DEBUG_PRINT
         printf("[remote txn-%lu] abort and cleaned up\n", _txn_id);
 #endif
          _txn_state = ABORTED;
 #endif
         response->set_response_type( SundialResponse::RESP_ABORT );
     } else {
-#if DEBUG_ELR
+#if DEBUG_PRINT
         printf("[remote txn-%lu] read completed, do not release lock yet\n",
                _txn_id);
 #endif
@@ -239,10 +230,7 @@ TxnManager::process_decision_request(const SundialRequest* request,
 
     rpc_log_semaphore->wait();
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
-    _cc_manager->cleanup(rc); // release lock after log is received
-#if DEBUG_ELR
-    printf("[remote txn-%lu] status = %d, cleaned up\n", _txn_id, _txn_state);
-#endif
+    _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
 #if FAILURE_ENABLE
     // termination protocol is called when timeout (i.e. receiving terminate

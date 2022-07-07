@@ -76,6 +76,9 @@ public:
     void                    failure_protocol();
     volatile bool           active;
 
+    // For OCC timestamp
+    volatile uint64_t       _max_node_cts;
+
 private:
     pthread_mutex_t         ts_mutex;
     uint64_t *              timestamp;

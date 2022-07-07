@@ -78,6 +78,7 @@ message SundialResponse {
         uint64 size = 3;
         bytes data = 4;
         uint64 access_type = 5;
+        uint64 version = 6;
     }
     uint64                  txn_id        = 1;
     ResponseType            response_type = 2;
