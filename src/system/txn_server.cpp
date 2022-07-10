@@ -52,6 +52,11 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     if (rc == ABORT) {
         _cc_manager->cleanup(rc);
         response->set_response_type( SundialResponse::PREPARED_ABORT );
+#if DEBUG_PRINT
+        printf("[node-%u, txn-%lu] participant fail to handle prepare: "
+               "due to abort in handling request.\n",
+               g_node_id, get_txn_id());
+#endif
         return rc;
     }
 #else

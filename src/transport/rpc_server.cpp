@@ -134,7 +134,13 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                  g_node_id, txn_id);
 #endif
             txn = txn_table->get_txn(txn_id, false);
-            if (txn == NULL) {
+            if (txn == nullptr) {
+#if DEBUG_PRINT
+                printf("[node-%u, txn-%lu] participant fail to handle "
+                     "prepare: txn already cleaned up due to "
+                     "abort in read request\n",
+                     g_node_id, txn_id);
+#endif
                 // txn already cleaned up
                 response->set_response_type(SundialResponse::PREPARED_ABORT);
                 return;
@@ -147,8 +153,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::COMMIT_REQ:
 #if DEBUG_PRINT
-          printf("[node-%lu, txn-%lu] receive remote commit request\n",
-                 txn_id);
+          printf("[node-%u, txn-%lu] receive remote commit request\n",
+                 g_node_id, txn_id);
 #endif
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
@@ -161,7 +167,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::ABORT_REQ:
 #if DEBUG_PRINT
-          printf("[remote txn-%lu] receive remote abort request\n", txn_id);
+          printf("[node-%u txn-%lu] receive remote abort request\n",
+                 g_node_id, txn_id);
 #endif
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {

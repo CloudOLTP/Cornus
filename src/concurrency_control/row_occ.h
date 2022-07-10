@@ -24,12 +24,12 @@ public:
     RC              lock_get(TxnManager * txn);
     RC              lock_release(TxnManager * txn, RC rc);
     inline static bool is_locked(uint64_t tid) { return tid & 1; };
-    void            latch() {};
-    void            unlatch() {};
+    void            latch();
+    void            unlatch();
 
 protected:
-    #define LOCK_MAN(txn) ((OccManager *) (txn)->get_cc_manager())
     row_t *           _row;
-    // TID (64 bit):
+    pthread_mutex_t _latch;
+    // TID (64 bit)
     std::atomic<std::uint64_t> _version;
 };

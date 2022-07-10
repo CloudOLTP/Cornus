@@ -43,11 +43,6 @@ Row_occ::unlatch()
 RC
 Row_occ::get_version_if_unlocked(uint64_t &version) {
     version = get_version();
-//#if DEBUG_PRINT
-//    printf("get version if unlocked: version = %lu, locked = %d\n", version,
-//           is_locked(version));
-//#endif
-    // get lock bit
     if (is_locked(version)) {
         return ABORT;
     } else {
@@ -60,13 +55,25 @@ Row_occ::lock_get(TxnManager * txn)
 {
     uint64_t version;
     if (get_version_if_unlocked(version) == ABORT) {
+#if DEBUG_PRINT
+      printf("[node-%u, txn-%lu] failed acquiring lock on %p since locked.\n",
+             g_node_id, txn->get_txn_id(), _row);
+#endif
         return ABORT;
     }
     // TODO: get txn, skip if same txn
     // try to acquire lock
     if (_version.compare_exchange_strong(version, version + 1)) {
+#if DEBUG_PRINT
+      printf("[node-%u, txn-%lu] acquired lock on %p.\n",
+             g_node_id, txn->get_txn_id(), _row);
+#endif
         return RCOK;
     }
+#if DEBUG_PRINT
+    printf("[node-%u, txn-%lu] failed acquiring lock on %p.\n",
+           g_node_id, txn->get_txn_id(), _row);
+#endif
     return ABORT;
 }
 

@@ -199,7 +199,7 @@ OccManager::validate() {
              }
          });
     // 2. lock write set
-    for (auto access : _access_set) {
+    for (const auto& access : _access_set) {
         if (access.type == WR) {
             rc = access.row->manager->lock_get(_txn);
             if (rc == ABORT)
@@ -208,16 +208,31 @@ OccManager::validate() {
     }
     // 4. check if data has changed in read set
     // assume all the writes are in read sets as well
-    for (auto access : _access_set) {
+    for (const auto& access : _access_set) {
         uint64_t version = access.row->manager->get_version();
         access.row->manager->get_version_if_unlocked(version);
         if (access.type == WR) {
-            if (access.version - 1 != version) {
+            if (access.version != version - 1) {
                 // assume already locked by self; if locked by other, abort
+#if DEBUG_PRINT
+        printf("[node-%u, txn-%lu, row-%p] write version locked, saved=%lu, "
+                       "current=%lu"
+                       ".\n",
+               g_node_id, _txn->get_txn_id(), access.row, access.version,
+                       version);
+#endif
                 return ABORT;
             }
         } else {
             if (access.version != version) {
+#if DEBUG_PRINT
+              printf("[node-%u, txn-%lu, row-%p] read version locked, "
+                     "saved=%lu, "
+                     "current=%lu"
+                     ".\n",
+                     g_node_id, _txn->get_txn_id(), access.row, access.version,
+                     version);
+#endif
                 // locked or different version
                 return ABORT;
             }
