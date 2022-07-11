@@ -85,6 +85,7 @@ int main(int argc, char* argv[])
     cout << "[Sundial] Synchronization done" << endl;
 
     // terminate on "q" or "quit"
+    cout << "<--- Enter 'q' or 'quit' to terminate --->" << endl;
     std::string line;
     while(std::getline(std::cin, line)) {
         if (line == "q" || line == "quit") {

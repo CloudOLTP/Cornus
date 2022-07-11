@@ -160,4 +160,20 @@ private:
 
   public:
     std::map<uint32_t, RemoteNodeInfo *> _remote_nodes_involved;
+
+    // Distributed transactions for MDCC
+    // =================================
+  public:
+    // client
+    // server
+    RC mdcc_phase1b(const SundialRequest* request, SundialResponse*
+    response)
+    RC mdcc_phase2bclassic(const SundialRequest* request,
+                                  SundialResponse* response)
+    RC mdcc_phase2bfast(const SundialRequest* request,
+                                  SundialResponse* response)
+    RC mdcc_apply_visibility(const SundialRequest* request,
+                               SundialResponse* response)
+  private:
+    void mdcc_set_compatible();
 };

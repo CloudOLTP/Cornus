@@ -92,6 +92,28 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         case SundialRequest::SYS_REQ:
             glob_manager->receive_sync_request();
             return;
+        case SundialRequest::MDCC_Phase1a:
+            // TODO
+            // create txn instance
+            txn = txn_table->get_txn(txn_id, false);
+            if (txn  == NULL) {
+                txn = new TxnManager();
+                txn->set_txn_id(txn_id);
+                txn_table->add_txn(txn);
+            }
+            // handle phase 1b message
+            txn->mdcc_phase1b(request, response);
+            response->set_response_type(SundialResponse::MDCC_Phase1b);
+            break;
+        case SundialRequest::MDCC_Phase2a:
+            // TODO
+            break;
+        case SundialRequest::MDCC_Propose:
+            // TODO
+            break;
+        case SundialRequest::Visibility:
+            // TODO
+            break;
         case SundialRequest::READ_REQ:
             assert(false);
             break;

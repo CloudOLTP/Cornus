@@ -6,20 +6,12 @@
 #include "txn_table.h"
 
 SundialRPCClient::SundialRPCClient() {
-#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    _servers = new SundialRPCClientStub * [g_num_nodes_and_storage];
-#else
     _servers = new SundialRPCClientStub * [g_num_nodes];
-#endif
     // get server names
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t node_id = 0;
-#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    while ( node_id  < g_num_nodes_and_storage && getline(in, line) )
-#else
-    while ( node_id  < g_num_nodes && getline(in, line) )
-#endif
+    while ( node_id < g_num_nodes && getline(in, line) )
     {
         if (line[0] == '#')
             continue;

@@ -235,6 +235,4 @@ Manager::failure_protocol() {
             }
         }
     }
-
-
 }
