@@ -8,7 +8,6 @@
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024
 #define NUM_RPC_SERVER_THREADS          24
-#define NUM_STORAGE_RPC_SERVER_THREADS  24
 
 // Statistics
 // ==========
