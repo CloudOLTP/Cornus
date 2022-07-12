@@ -160,4 +160,10 @@ private:
 
   public:
     std::map<uint32_t, RemoteNodeInfo *> _remote_nodes_involved;
+
+    // Distributed transactions for MDCC
+    // =================================
+  public:
+    // client
+    // server
 };

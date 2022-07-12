@@ -44,3 +44,10 @@ response) {
     }
 
 }
+
+
+RC
+TxnManager::mdcc_phase2bfast(const SundialRequest* request, SundialResponse*
+response) {
+
+}
