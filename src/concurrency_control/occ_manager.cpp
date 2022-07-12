@@ -186,7 +186,7 @@ OccManager::get_log_record(char *& record)
 
 RC
 OccManager::validate() {
-    RC rc = RCOK;
+    RC rc = COMMIT;
     // lock write set in order
     // 1. sort access set by (table id, key id)
     sort(_access_set.begin(), _access_set.end(),
@@ -203,7 +203,7 @@ OccManager::validate() {
         if (access.type == WR) {
             rc = access.row->manager->lock_get(_txn);
             if (rc == ABORT)
-                return rc;
+                return ABORT;
         }
     }
     // 4. check if data has changed in read set
@@ -242,7 +242,8 @@ OccManager::validate() {
     // it only works as unique identifier
     // after commit, for each write in write set, copy the value and assign
     // it the new version (= this txn.id)
-    return rc;
+    if (rc == ABORT) return ABORT;
+    return COMMIT;
 }
 
 
