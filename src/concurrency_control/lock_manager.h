@@ -25,7 +25,7 @@ public:
 
     RC            commit_insdel();
     void          cleanup(RC rc);
-    RC            validate() { return RCOK; };
+    RC            validate() { return COMMIT; };
     // Logging
     // Get the log record for a single partition transaction.
     // Return value: size of the log record.
