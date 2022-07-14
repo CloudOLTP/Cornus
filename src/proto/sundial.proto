@@ -16,7 +16,11 @@ message SundialRequest {
         LOG_ABORT_REQ = 6;
         LOG_COMMIT_REQ = 7;
         TERMINATE_REQ = 8;
-        NUM_REQ_TYPES = 9;
+        MDCC_Phase1a = 9;
+        MDCC_Phase2a = 10;
+        MDCC_Propose = 11;
+        MDCC_Visibility = 12;
+        NUM_REQ_TYPES = 13;
     }
     message ReadRequest {
         uint64 key = 1;
@@ -28,9 +32,15 @@ message SundialRequest {
         uint64 table_id = 2;
         uint64 size = 3;
         bytes data = 4;
+        uint64 access_type = 5;
+        uint64 version = 6;
     }
     message NodeData {
         uint64 nid = 1;
+    }
+
+    message MdccData {
+        uint64 ballot = 1;
     }
 
     uint64                  txn_id        = 1;
@@ -43,6 +53,7 @@ message SundialRequest {
     repeated NodeData       nodes         = 8;
     uint64                  request_time  = 9;
     uint64                  thread_id     = 10;
+    repeated MdccData       mdcc_data     = 11;
 }
 
 message SundialResponse {
@@ -56,7 +67,10 @@ message SundialResponse {
         LOG_ABORT_REQ = 6;
         LOG_COMMIT_REQ = 7;
         TERMINATE_REQ = 8;
-        NUM_REQ_TYPES = 9;
+        MDCC_Phase1b = 9;
+        MDCC_Phase2bClassic = 10;
+        MDCC_Phase2bFast = 11;
+        NUM_REQ_TYPES = 13;
     }
     enum ResponseType {
         RESP_OK = 0;
@@ -70,8 +84,15 @@ message SundialResponse {
         RESP_LOG_YES = 8;
         RESP_LOG_ABORT = 9;
         RESP_LOG_COMMIT = 10;
-        NUM_RESP_TYPES = 11;
+        NUM_RESP_TYPES = 14;
     }
+
+    enum SenderType {
+        COORD = 0;
+        PTCPT_LEADER = 1;
+        PTCPT_ACCEPTOR = 2;
+    }
+
     message TupleData {
         uint64 key = 1;
         uint64 table_id = 2;
@@ -80,11 +101,17 @@ message SundialResponse {
         uint64 access_type = 5;
         uint64 version = 6;
     }
+
+    message MdccData {
+        uint64 ballot = 1;
+    }
+
     uint64                  txn_id        = 1;
     ResponseType            response_type = 2;
     repeated TupleData      tuple_data    = 3;
     uint64                  node_id       = 4;
     RequestType             request_type  = 5;
+    repeated MdccData       mdcc_data     = 6;
 }
 
 

@@ -338,6 +338,8 @@ OccManager::process_remote_read_response(uint32_t node_id, access_t type, Sundia
         access->type = type;
         access->data_size = response.tuple_data(i).size();
         access->data = new char [access->data_size];
+        access->type =
+            static_cast<access_t>(response.tuple_data(i).access_type());
         access->version = response.tuple_data(i).version();
         memcpy(access->data, response.tuple_data(i).data().c_str(), access->data_size);
     }
@@ -360,6 +362,8 @@ OccManager::process_remote_read_response(uint32_t node_id, SundialResponse &resp
         access->type = (access_t) response.tuple_data(i).access_type();
         access->data_size = response.tuple_data(i).size();
         access->data = new char [access->data_size];
+        access->type =
+            static_cast<access_t>(response.tuple_data(i).access_type());
         access->version = response.tuple_data(i).version();
         memcpy(access->data, response.tuple_data(i).data().c_str(), access->data_size);
     }
@@ -376,6 +380,10 @@ OccManager::build_prepare_req(uint32_t node_id, SundialRequest &request)
             tuple->set_table_id( access.table_id );
             tuple->set_size( tuple_size );
             tuple->set_data( access.data, tuple_size );
+            tuple->set_access_type(access.type);
+            tuple->set_version(access.version);
+            SundialRequest::MdccData * mdcc_data = request.add_mdcc_data();
+            mdcc_data->set_ballot(0);
         }
     }
 }

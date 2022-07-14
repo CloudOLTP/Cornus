@@ -180,6 +180,14 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn_table->remove_txn(txn);
             delete txn;
             break;
+        case SundialRequest::MDCC_Propose:
+            txn = txn_table->get_txn(txn_id, true);
+            rc = txn->process_mdcc_2aclassic(request, response);
+            if (rc == ABORT) {
+                txn_table->remove_txn(txn);
+                delete txn;
+            }
+            break;
         default:
             assert(false);
     }

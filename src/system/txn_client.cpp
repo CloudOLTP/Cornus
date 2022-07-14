@@ -400,32 +400,4 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
 }
 
 
-// For Logging
-// ====================
-RC
-TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
-{
-    if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
-        _log_nodes_involved[node_id] = new RemoteNodeInfo;
-        _log_nodes_involved[node_id]->state = RUNNING;
-    }
-    SundialRequest &request = _log_nodes_involved[node_id]->request;
-    SundialResponse &response = _log_nodes_involved[node_id]->response;
-    request.Clear();
-    response.Clear();
-    request.set_txn_id( get_txn_id() );
-    request.set_request_type( type );
-
-    char * log_record = NULL;
-    uint32_t log_record_size = 0;
-    if (type == SundialRequest::LOG_COMMIT_REQ) {   // only commit need to log modified data
-        log_record_size = _cc_manager->get_log_record(log_record);
-        request.set_log_data(log_record);
-    }
-    request.set_log_data_size(log_record_size);
-    rpc_log_semaphore->incr();
-    rpc_client->sendRequestAsync(this, node_id, request, response);
-    return RCOK;
-}
-
 

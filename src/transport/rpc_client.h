@@ -45,10 +45,12 @@ public:
     SundialRPCClient();
     static void AsyncCompleteRpc(SundialRPCClient * s);
     RC sendRequest(uint64_t node_id, SundialRequest &request, SundialResponse
-    &response);
+    &response, bool is_storage=false);
     RC sendRequestAsync(TxnManager * txn, uint64_t node_id,
-                          SundialRequest &request, SundialResponse &response);
-    void sendRequestDone(SundialRequest * request, SundialResponse * response);
+                          SundialRequest &request, SundialResponse &response,
+                          bool is_storage=false);
+    void sendRequestDone(SundialRequest * request, SundialResponse *
+    response, bool is_storage=false);
 private:
     SundialRPCClientStub ** _servers;
     SundialRPCClientStub ** _storage_servers;

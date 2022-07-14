@@ -72,7 +72,6 @@ public:
     RC send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t index_id,
                                 uint64_t table_id, access_t access_type);
     RC send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> > &remote_requests);
-    RC send_log_request(uint64_t node_id, SundialRequest::RequestType type);
     RC process_2pc_phase1();
     RC process_2pc_phase2(RC rc);
     // server
@@ -167,4 +166,7 @@ private:
     // client
     RC process_mdcc();
     // server
+    RC process_mdcc_2aclassic(const SundialRequest* request, SundialResponse* response);
+    RC process_mdcc_2bclassic(const SundialRequest* request, SundialResponse*
+    response);
 };
