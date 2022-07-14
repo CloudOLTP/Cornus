@@ -4,6 +4,7 @@
 // ==========
 #define DISTRIBUTED                     false
 #define NUM_NODES                       1
+#define NUM_STORAGE_NODES               0
 
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024
@@ -35,6 +36,7 @@
 // Concurrency Control
 // ===================
 // Supported concurrency control algorithms: WAIT_DIE, NO_WAIT, TICTOC, F_ONE
+#define ISOLATION_LEVEL                 SERIALIZABLE
 #define CC_ALG                          NO_WAIT
 #define ABORT_PENALTY                   10000000  // in nanoseconds
 
@@ -179,6 +181,7 @@
 #define SEND_BUFFER_SIZE                32768
 #define MAX_CLOCK_SKEW                  0 // in us
 #define COMMIT_ALG                      ONE_PC
+#define BALLOT_TYPE                     BALLOT_CLASSIC
 #define DEBUG_LOG                       false
 #define WORKER_SERVER_SAME              false
 
@@ -212,7 +215,16 @@
 
 #define ONE_PC                          1
 #define TWO_PC                          2
+#define MDCC                            3
+#define CORNUS_CUSTOMIZED               4
 
-#define LOG_DVC_NATIVE                  1
+#define LOG_DVC_CUSTOMIZED              1
 #define LOG_DVC_REDIS                   2
 #define LOG_DVC_AZURE_BLOB              3
+#define LOG_DVC_NATIVE                  4
+
+#define SERIALIZABLE                    1
+#define READ_COMMITTED                  2
+
+#define BALLOT_FAST 1
+#define BALLOT_CLASSIC 2

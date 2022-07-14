@@ -6,20 +6,13 @@
 #include "txn_table.h"
 
 SundialRPCClient::SundialRPCClient() {
-#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    _servers = new SundialRPCClientStub * [g_num_nodes_and_storage];
-#else
     _servers = new SundialRPCClientStub * [g_num_nodes];
-#endif
+    _storage_servers = new SundialRPCClientStub * [g_num_storage_nodes];
     // get server names
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t node_id = 0;
-#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
-    while ( node_id  < g_num_nodes_and_storage && getline(in, line) )
-#else
     while ( node_id  < g_num_nodes && getline(in, line) )
-#endif
     {
         if (line[0] == '#')
             continue;
@@ -36,10 +29,30 @@ SundialRPCClient::SundialRPCClient() {
         }
     }
     cout << "[Sundial] rpc client is initialized!" << endl;
+#if LOG_DEVICE == LOG_DVC_CUSTOMIZED
+    node_id = 0;
+    bool is_
+    while ( node_id  < g_num_storage_nodes && getline(in, line) )
+    {
+      if (line[0] == '#')
+        continue;
+      else if ((line[0] == '=' && line[1] == 's'))
+        break;
+      else {
+        string url = line;
+        if (node_id != g_node_id) {
+          _storage_servers[node_id] = new SundialRPCClientStub
+              (grpc::CreateChannel(url, grpc::InsecureChannelCredentials()));
+          cout << "[Sundial] init rpc client - " << node_id << " at " << url << endl;
+        }
+        node_id ++;
+      }
+    }
+    cout << "[Sundial] rpc client is initialized!" << endl;
+#endif
     // spawn a reader thread to indefinitely read completion queue
     _thread = new std::thread(AsyncCompleteRpc, this);
-    //pthread_create(_thread, NULL, AsyncCompleteRpc, this); 
-    // use a single cq for different channels. 
+    // use a single cq for different channels.
 }
 
 void

@@ -86,9 +86,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0) {
-        #if LOG_DEVICE == LOG_DVC_NATIVE
-            send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
-        #elif LOG_DEVICE == LOG_DVC_REDIS
+        #if LOG_DEVICE == LOG_DVC_REDIS
             string data = "[LSN] placehold:" + string('d', num_tuples *
             g_log_sz * 8);
             rpc_log_semaphore->incr();
@@ -212,12 +210,7 @@ TxnManager::process_decision_request(const SundialRequest* request,
         return FAIL;
     }
 
-    #if LOG_DEVICE == LOG_DVC_NATIVE
-    SundialRequest::RequestType log_type = (request->request_type() ==
-        SundialRequest::COMMIT_REQ)? SundialRequest::LOG_COMMIT_REQ :
-            SundialRequest::LOG_ABORT_REQ;
-    send_log_request(g_storage_node_id, log_type);
-    #elif LOG_DEVICE == LOG_DVC_REDIS
+    #if LOG_DEVICE == LOG_DVC_REDIS
     State status = (rc == COMMIT)? COMMITTED : ABORTED;
     rpc_log_semaphore->incr();
     if (redis_client->log_async(g_node_id, get_txn_id(), status) == FAIL) {
@@ -266,9 +259,7 @@ TxnManager::process_terminate_request(const SundialRequest* request,
     switch (_txn_state) {
         case RUNNING:
             // self has not voted yes, log abort and cleanup
-            #if LOG_DEVICE == LOG_DVC_NATIVE
-            send_log_request(g_storage_node_id, SundialRequest::LOG_ABORT_REQ);
-            #elif LOG_DEVICE == LOG_DVC_REDIS
+            #if LOG_DEVICE == LOG_DVC_REDIS
             if (redis_client->log_sync(g_node_id, get_txn_id(), ABORTED)
             == FAIL) {
                 return FAIL;

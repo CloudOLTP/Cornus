@@ -196,6 +196,10 @@ TxnManager::start()
         _commit_start_time = get_sys_clock();
         rc = process_commit_phase_singlepart(rc);
     } else {
+#if COMMIT_ALG == MDCC
+      assert(CC_ALG == READ_COMMITTED);
+      rc = process_mdcc();
+#else
         if (rc == COMMIT) {
             _prepare_start_time = get_sys_clock();
             rc = process_2pc_phase1();
@@ -204,6 +208,7 @@ TxnManager::start()
             _commit_start_time = get_sys_clock();
             rc = process_2pc_phase2(rc);
         }
+#endif
     }
     if (rc != FAIL) {
         update_stats();

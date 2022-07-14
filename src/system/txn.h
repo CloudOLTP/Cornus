@@ -165,5 +165,6 @@ private:
     // =================================
   public:
     // client
+    RC process_mdcc();
     // server
 };

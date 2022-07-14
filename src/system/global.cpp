@@ -76,10 +76,9 @@ uint32_t        g_num_worker_threads    = NUM_WORKER_THREADS; // TODO: better in
 uint32_t        g_total_num_threads     = 0;
 
 uint32_t        g_num_nodes             = NUM_NODES;
-uint32_t        g_num_nodes_and_storage = NUM_NODES * 2;
+uint32_t        g_num_storage_nodes     = NUM_STORAGE_NODES;
 
 uint32_t        g_node_id;
-uint32_t        g_storage_node_id;
 
 uint32_t        g_num_input_threads     = NUM_INPUT_THREADS;
 uint32_t        g_num_output_threads    = NUM_OUTPUT_THREADS;

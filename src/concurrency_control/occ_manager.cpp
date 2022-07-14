@@ -204,35 +204,30 @@ OccManager::validate() {
             rc = access.row->manager->lock_get(_txn);
             if (rc == ABORT)
                 return ABORT;
+#if ISOLATION_LEVEL == READ_COMMITTED
+            // check if read version has changed
+            uint64_t version = access.row->manager->get_version();
+            if (access.version != version - 1) {
+              // assume already locked by self; if locked by other, abort
+              return ABORT;
+            }
+#endif
         }
     }
     // 4. check if data has changed in read set
     // assume all the writes are in read sets as well
+#if ISOLATION_LEVEL == SERIALIZABLE
+    assert(false);
     for (const auto& access : _access_set) {
         uint64_t version = access.row->manager->get_version();
         access.row->manager->get_version_if_unlocked(version);
         if (access.type == WR) {
             if (access.version != version - 1) {
                 // assume already locked by self; if locked by other, abort
-#if DEBUG_PRINT
-        printf("[node-%u, txn-%lu, row-%p] write version locked, saved=%lu, "
-                       "current=%lu"
-                       ".\n",
-               g_node_id, _txn->get_txn_id(), access.row, access.version,
-                       version);
-#endif
                 return ABORT;
             }
         } else {
             if (access.version != version) {
-#if DEBUG_PRINT
-              printf("[node-%u, txn-%lu, row-%p] read version locked, "
-                     "saved=%lu, "
-                     "current=%lu"
-                     ".\n",
-                     g_node_id, _txn->get_txn_id(), access.row, access.version,
-                     version);
-#endif
                 // locked or different version
                 return ABORT;
             }
@@ -243,6 +238,7 @@ OccManager::validate() {
     // after commit, for each write in write set, copy the value and assign
     // it the new version (= this txn.id)
     if (rc == ABORT) return ABORT;
+#endif
     return COMMIT;
 }
 

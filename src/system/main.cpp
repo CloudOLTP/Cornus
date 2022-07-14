@@ -18,7 +18,6 @@
 
 void * start_thread(void *);
 void * start_rpc_server(void *);
-void get_node_id();
 
 // defined in parser.cpp
 void parser(int argc, char ** argv);
@@ -69,8 +68,8 @@ int main(int argc, char* argv[])
     m_wl->init();
     printf("[Sundial] workload initialized!\n");
     warmup_finish = true;
-    pthread_barrier_init( &global_barrier, NULL, g_total_num_threads);
-    pthread_mutex_init( &global_lock, NULL);
+    pthread_barrier_init( &global_barrier, nullptr, g_total_num_threads);
+    pthread_mutex_init( &global_lock, nullptr);
 
     // Thread numbering:
     //    worker_threads | input_thread | output_thread | logging_thread
@@ -102,12 +101,13 @@ int main(int argc, char* argv[])
     cout << "[Sundial] Synchronization done" << endl;
 #endif
     for (uint64_t i = 0; i < g_num_worker_threads - 1; i++)
-        pthread_create(pthreads_worker[i], NULL, start_thread, (void *)worker_threads[i]);
+        pthread_create(pthreads_worker[i], nullptr, start_thread, (void *)
+                                                              worker_threads[i]);
     assert(next_thread_id == g_total_num_threads);
     starttime = get_server_clock();
     start_thread((void *)(worker_threads[g_num_worker_threads - 1]));
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)
-        pthread_join(*pthreads_worker[i], NULL);
+        pthread_join(*pthreads_worker[i], nullptr);
 
 #if DISTRIBUTED
     cout << "[Sundial] End synchronization starts" << endl;
@@ -154,30 +154,3 @@ void * start_rpc_server(void * input) {
     return NULL;
 }
 
-void get_node_id()
-{
-    // get server names
-    vector<string> _urls;
-    string line;
-    std::ifstream file (ifconfig_file);
-    assert(file.is_open());
-    while (getline (file, line)) {
-        if (line[0] == '#')
-            continue;
-        else {
-            std::string delimiter = ":";
-            std::string token = line.substr(0, line.find(delimiter));
-            _urls.push_back(token);
-        }
-    }
-    char hostname[1024];
-    gethostname(hostname, 1023);
-    printf("[!] My Hostname is %s\n", hostname);
-    for (uint32_t i = 0; i < g_num_nodes_and_storage; i ++)  {
-        if (_urls[i] == string(hostname)) {
-            printf("[!] My node id id %u\n", i);
-            g_node_id = i;
-        }
-    }
-    file.close();
-}

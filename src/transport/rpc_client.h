@@ -50,9 +50,8 @@ public:
                           SundialRequest &request, SundialResponse &response);
     void sendRequestDone(SundialRequest * request, SundialResponse * response);
 private:
-    //std::unique_ptr<SundialRPC::Stub> ** _servers;
     SundialRPCClientStub ** _servers;
+    SundialRPCClientStub ** _storage_servers;
     CompletionQueue cq;
-    //pthread_t * _thread;
     std::thread * _thread;
 };

@@ -223,11 +223,7 @@ TxnManager::process_2pc_phase2(RC rc)
 
     #if COMMIT_ALG == TWO_PC
         // 2pc: persistent decision
-        #if LOG_DEVICE == LOG_DVC_NATIVE
-        SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-                SundialRequest::LOG_ABORT_REQ;
-        send_log_request(g_storage_node_id, type);
-        #elif LOG_DEVICE == LOG_DVC_REDIS
+        #if LOG_DEVICE == LOG_DVC_REDIS
         rpc_log_semaphore->incr();
         if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
         FAIL) {
@@ -246,11 +242,7 @@ TxnManager::process_2pc_phase2(RC rc)
     #elif COMMIT_ALG == ONE_PC
         // finish before sending out logs.
         _finish_time = get_sys_clock();
-        #if LOG_DEVICE == LOG_DVC_NATIVE
-            SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-                    SundialRequest::LOG_ABORT_REQ;
-            send_log_request(g_storage_node_id, type);
-        #elif LOG_DEVICE == LOG_DVC_REDIS
+        #if LOG_DEVICE == LOG_DVC_REDIS
             rpc_log_semaphore->incr();
             if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
             FAIL) {

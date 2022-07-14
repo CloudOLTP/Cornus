@@ -29,6 +29,7 @@ SundialRPCServerImpl::run() {
             num_nodes ++;
         }
     }
+
     ServerBuilder builder;
     builder.AddListeningPort(line, grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
