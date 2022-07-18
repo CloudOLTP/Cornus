@@ -323,7 +323,6 @@ OccManager::cleanup(RC rc)
 void
 OccManager::process_remote_read_response(uint32_t node_id, access_t type, SundialResponse &response)
 {
-    // TODO: stop point
     assert(response.response_type() == SundialResponse::RESP_OK);
     for (int i = 0; i < response.tuple_data_size(); i ++) {
         AccessOcc ac;
@@ -385,6 +384,22 @@ OccManager::build_prepare_req(uint32_t node_id, SundialRequest &request)
             SundialRequest::MdccData * mdcc_data = request.add_mdcc_data();
             mdcc_data->set_ballot(0);
         }
+    }
+}
+
+void
+OccManager::build_local_req(SundialRequest &request) {
+    for (auto access : _access_set) {
+        SundialRequest::TupleData * tuple = request.add_tuple_data();
+        uint64_t tuple_size = access.data_size;
+        tuple->set_key(access.key);
+        tuple->set_table_id( access.table_id );
+        tuple->set_size( tuple_size );
+        tuple->set_data( access.data, tuple_size );
+        tuple->set_access_type(access.type);
+        tuple->set_version(access.version);
+        SundialRequest::MdccData * mdcc_data = request.add_mdcc_data();
+        mdcc_data->set_ballot(0);
     }
 }
 

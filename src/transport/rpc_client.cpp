@@ -29,7 +29,7 @@ SundialRPCClient::SundialRPCClient() {
         }
     }
     cout << "[Sundial] rpc client is initialized!" << endl;
-#if LOG_DEVICE == LOG_DVC_CUSTOMIZED
+#if NUM_STORAGE_NODES > 0
     node_id = 0;
     bool is_storage_node = false;
     while ( node_id  < g_num_storage_nodes && getline(in, line) )
@@ -155,7 +155,7 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
 
 void
 SundialRPCClient::sendRequestDone(SundialRequest * request, SundialResponse *
-response, bool is_storage)
+response)
 {
     // RACE CONDITION (solved): should assign thd id to server thread
     uint64_t thread_id = request->thread_id();
@@ -179,13 +179,23 @@ response, bool is_storage)
     printf("[node-%u, txn-%lu] receive remote reply-%d\n", g_node_id,
            txn_id, response->response_type());
 #endif
-    if (!is_storage) {
         TxnManager * txn;
         switch (response->request_type()) {
             case SundialResponse::PREPARE_REQ :
                 txn = txn_table->get_txn(txn_id);
                 txn->handle_prepare_resp(response);
                 break;
+            case SundialResponse::MDCC_Phase2bClassic :
+                // sent by leader (acceptor will send a request directly
+                // instead of response)
+                txn = txn_table->get_txn(txn_id);
+                txn->handle_prepare_resp(response);
+                txn->increment_replied_acceptors(response->node_id());
+                return; // no need to update rpc semaphore
+            case SundialResponse::MDCC_Visibility :
+                txn = txn_table->get_txn(txn_id);
+                txn->increment_replied_acceptors(request->node_id());
+                return;
             case SundialResponse::TERMINATE_REQ:
                 // dont decr semaphore, and terminate request dont need retrieve txn
                 return;
@@ -194,10 +204,4 @@ response, bool is_storage)
                 break;
         }
         txn->rpc_semaphore->decr();
-    } else {
-        // TODO: handle response from customized storage
-
-    }
-
-
 }

@@ -105,8 +105,9 @@ enum SundialRequest_RequestType : int {
   SundialRequest_RequestType_MDCC_Phase1a = 9,
   SundialRequest_RequestType_MDCC_Phase2a = 10,
   SundialRequest_RequestType_MDCC_Propose = 11,
-  SundialRequest_RequestType_MDCC_Visibility = 12,
-  SundialRequest_RequestType_NUM_REQ_TYPES = 13,
+  SundialRequest_RequestType_MDCC_COMMIT_REQ = 12,
+  SundialRequest_RequestType_MDCC_ABORT_REQ = 13,
+  SundialRequest_RequestType_NUM_REQ_TYPES = 14,
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
@@ -142,6 +143,7 @@ enum SundialResponse_RequestType : int {
   SundialResponse_RequestType_MDCC_Phase1b = 9,
   SundialResponse_RequestType_MDCC_Phase2bClassic = 10,
   SundialResponse_RequestType_MDCC_Phase2bFast = 11,
+  SundialResponse_RequestType_MDCC_Visibility = 12,
   SundialResponse_RequestType_NUM_REQ_TYPES = 13,
   SundialResponse_RequestType_SundialResponse_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialResponse_RequestType_SundialResponse_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
@@ -1043,8 +1045,10 @@ class SundialRequest final :
     SundialRequest_RequestType_MDCC_Phase2a;
   static constexpr RequestType MDCC_Propose =
     SundialRequest_RequestType_MDCC_Propose;
-  static constexpr RequestType MDCC_Visibility =
-    SundialRequest_RequestType_MDCC_Visibility;
+  static constexpr RequestType MDCC_COMMIT_REQ =
+    SundialRequest_RequestType_MDCC_COMMIT_REQ;
+  static constexpr RequestType MDCC_ABORT_REQ =
+    SundialRequest_RequestType_MDCC_ABORT_REQ;
   static constexpr RequestType NUM_REQ_TYPES =
     SundialRequest_RequestType_NUM_REQ_TYPES;
   static inline bool RequestType_IsValid(int value) {
@@ -1749,6 +1753,8 @@ class SundialResponse final :
     SundialResponse_RequestType_MDCC_Phase2bClassic;
   static constexpr RequestType MDCC_Phase2bFast =
     SundialResponse_RequestType_MDCC_Phase2bFast;
+  static constexpr RequestType MDCC_Visibility =
+    SundialResponse_RequestType_MDCC_Visibility;
   static constexpr RequestType NUM_REQ_TYPES =
     SundialResponse_RequestType_NUM_REQ_TYPES;
   static inline bool RequestType_IsValid(int value) {

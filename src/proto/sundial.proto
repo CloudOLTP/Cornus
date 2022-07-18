@@ -19,8 +19,9 @@ message SundialRequest {
         MDCC_Phase1a = 9;
         MDCC_Phase2a = 10;
         MDCC_Propose = 11;
-        MDCC_Visibility = 12;
-        NUM_REQ_TYPES = 13;
+        MDCC_COMMIT_REQ = 12;
+        MDCC_ABORT_REQ = 13;
+        NUM_REQ_TYPES = 14;
     }
     message ReadRequest {
         uint64 key = 1;
@@ -70,6 +71,7 @@ message SundialResponse {
         MDCC_Phase1b = 9;
         MDCC_Phase2bClassic = 10;
         MDCC_Phase2bFast = 11;
+        MDCC_Visibility = 12;
         NUM_REQ_TYPES = 13;
     }
     enum ResponseType {

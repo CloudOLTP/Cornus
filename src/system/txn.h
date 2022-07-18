@@ -164,9 +164,26 @@ private:
     // =================================
   public:
     // client
-    RC process_mdcc();
+    RC process_mdcc_singlepart(RC rc);
+    RC process_mdcc_phase1();
+    RC process_mdcc_phase2(RC rc);
     // server
     RC process_mdcc_2aclassic(const SundialRequest* request, SundialResponse* response);
     RC process_mdcc_2bclassic(const SundialRequest* request, SundialResponse*
     response);
+    RC process_mdcc_visibility(const SundialRequest* request, SundialResponse*
+    response, RC rc);
+    int get_replied_acceptors(size_t i) {return replied_acceptors[i].load
+            (std::memory_order_relaxed);}
+    void increment_replied_acceptors(size_t i) { replied_acceptors[i]++; }
+
+  private:
+    void process_mdcc_local_phase1(RC rc, bool is_singlepart=false);
+    // used to track # of replies from each node and the stats will be used for
+    // calculating quorum
+    // each count should not exceed g_num_storage_nodes + 1
+    // rpc_server will update the stats on receiving storage node's 2b msg
+    // rpc_client will update the stats on receiving reply from participant's 2b
+    // the txn_mdcc will read the stats
+    std::atomic<int> replied_acceptors[NUM_NODES];
 };

@@ -21,6 +21,7 @@ public:
     void          process_remote_read_response(uint32_t node_id, access_t type, SundialResponse &response);
     void          process_remote_read_response(uint32_t node_id, SundialResponse &response);
     void          build_prepare_req(uint32_t node_id, SundialRequest &request);
+    void          build_local_req(SundialRequest &request);
 
     RC            validate();
     RC            commit_insdel();

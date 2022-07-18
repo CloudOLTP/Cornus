@@ -50,7 +50,7 @@ public:
                           SundialRequest &request, SundialResponse &response,
                           bool is_storage=false);
     void sendRequestDone(SundialRequest * request, SundialResponse *
-    response, bool is_storage=false);
+    response);
 private:
     SundialRPCClientStub ** _servers;
     SundialRPCClientStub ** _storage_servers;

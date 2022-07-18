@@ -256,7 +256,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 };
 
 const char descriptor_table_protodef_sundial_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\rsundial.proto\022\013sundial_rpc\"\225\007\n\016Sundial"
+  "\n\rsundial.proto\022\013sundial_rpc\"\251\007\n\016Sundial"
   "Request\022\016\n\006txn_id\030\001 \001(\004\022=\n\014request_type\030"
   "\002 \001(\0162\'.sundial_rpc.SundialRequest.Reque"
   "stType\022>\n\rread_requests\030\003 \003(\0132\'.sundial_"
@@ -273,44 +273,45 @@ const char descriptor_table_protodef_sundial_2eproto[] PROTOBUF_SECTION_VARIABLE
   "_id\030\002 \001(\004\022\014\n\004size\030\003 \001(\004\022\014\n\004data\030\004 \001(\014\022\023\n"
   "\013access_type\030\005 \001(\004\022\017\n\007version\030\006 \001(\004\032\027\n\010N"
   "odeData\022\013\n\003nid\030\001 \001(\004\032\032\n\010MdccData\022\016\n\006ball"
-  "ot\030\001 \001(\004\"\201\002\n\013RequestType\022\014\n\010READ_REQ\020\000\022\017"
+  "ot\030\001 \001(\004\"\225\002\n\013RequestType\022\014\n\010READ_REQ\020\000\022\017"
   "\n\013PREPARE_REQ\020\001\022\016\n\nCOMMIT_REQ\020\002\022\r\n\tABORT"
   "_REQ\020\003\022\013\n\007SYS_REQ\020\004\022\017\n\013LOG_YES_REQ\020\005\022\021\n\r"
   "LOG_ABORT_REQ\020\006\022\022\n\016LOG_COMMIT_REQ\020\007\022\021\n\rT"
   "ERMINATE_REQ\020\010\022\020\n\014MDCC_Phase1a\020\t\022\020\n\014MDCC"
-  "_Phase2a\020\n\022\020\n\014MDCC_Propose\020\013\022\023\n\017MDCC_Vis"
-  "ibility\020\014\022\021\n\rNUM_REQ_TYPES\020\r\"\311\007\n\017Sundial"
-  "Response\022\016\n\006txn_id\030\001 \001(\004\022@\n\rresponse_typ"
-  "e\030\002 \001(\0162).sundial_rpc.SundialResponse.Re"
-  "sponseType\022:\n\ntuple_data\030\003 \003(\0132&.sundial"
-  "_rpc.SundialResponse.TupleData\022\017\n\007node_i"
-  "d\030\004 \001(\004\022>\n\014request_type\030\005 \001(\0162(.sundial_"
-  "rpc.SundialResponse.RequestType\0228\n\tmdcc_"
-  "data\030\006 \003(\0132%.sundial_rpc.SundialResponse"
-  ".MdccData\032l\n\tTupleData\022\013\n\003key\030\001 \001(\004\022\020\n\010t"
-  "able_id\030\002 \001(\004\022\014\n\004size\030\003 \001(\004\022\014\n\004data\030\004 \001("
-  "\014\022\023\n\013access_type\030\005 \001(\004\022\017\n\007version\030\006 \001(\004\032"
-  "\032\n\010MdccData\022\016\n\006ballot\030\001 \001(\004\"\367\001\n\013RequestT"
-  "ype\022\014\n\010READ_REQ\020\000\022\017\n\013PREPARE_REQ\020\001\022\016\n\nCO"
-  "MMIT_REQ\020\002\022\r\n\tABORT_REQ\020\003\022\013\n\007SYS_REQ\020\004\022\017"
-  "\n\013LOG_YES_REQ\020\005\022\021\n\rLOG_ABORT_REQ\020\006\022\022\n\016LO"
-  "G_COMMIT_REQ\020\007\022\021\n\rTERMINATE_REQ\020\010\022\020\n\014MDC"
-  "C_Phase1b\020\t\022\027\n\023MDCC_Phase2bClassic\020\n\022\024\n\020"
-  "MDCC_Phase2bFast\020\013\022\021\n\rNUM_REQ_TYPES\020\r\"\331\001"
-  "\n\014ResponseType\022\013\n\007RESP_OK\020\000\022\016\n\nRESP_ABOR"
-  "T\020\001\022\r\n\tRESP_FAIL\020\002\022\017\n\013PREPARED_OK\020\003\022\022\n\016P"
-  "REPARED_OK_RO\020\004\022\022\n\016PREPARED_ABORT\020\005\022\007\n\003A"
-  "CK\020\006\022\014\n\010SYS_RESP\020\007\022\020\n\014RESP_LOG_YES\020\010\022\022\n\016"
-  "RESP_LOG_ABORT\020\t\022\023\n\017RESP_LOG_COMMIT\020\n\022\022\n"
-  "\016NUM_RESP_TYPES\020\016\"=\n\nSenderType\022\t\n\005COORD"
-  "\020\000\022\020\n\014PTCPT_LEADER\020\001\022\022\n\016PTCPT_ACCEPTOR\020\002"
-  "2Z\n\nSundialRPC\022L\n\rcontactRemote\022\033.sundia"
-  "l_rpc.SundialRequest\032\034.sundial_rpc.Sundi"
-  "alResponse\"\000b\006proto3"
+  "_Phase2a\020\n\022\020\n\014MDCC_Propose\020\013\022\023\n\017MDCC_COM"
+  "MIT_REQ\020\014\022\022\n\016MDCC_ABORT_REQ\020\r\022\021\n\rNUM_REQ"
+  "_TYPES\020\016\"\336\007\n\017SundialResponse\022\016\n\006txn_id\030\001"
+  " \001(\004\022@\n\rresponse_type\030\002 \001(\0162).sundial_rp"
+  "c.SundialResponse.ResponseType\022:\n\ntuple_"
+  "data\030\003 \003(\0132&.sundial_rpc.SundialResponse"
+  ".TupleData\022\017\n\007node_id\030\004 \001(\004\022>\n\014request_t"
+  "ype\030\005 \001(\0162(.sundial_rpc.SundialResponse."
+  "RequestType\0228\n\tmdcc_data\030\006 \003(\0132%.sundial"
+  "_rpc.SundialResponse.MdccData\032l\n\tTupleDa"
+  "ta\022\013\n\003key\030\001 \001(\004\022\020\n\010table_id\030\002 \001(\004\022\014\n\004siz"
+  "e\030\003 \001(\004\022\014\n\004data\030\004 \001(\014\022\023\n\013access_type\030\005 \001"
+  "(\004\022\017\n\007version\030\006 \001(\004\032\032\n\010MdccData\022\016\n\006ballo"
+  "t\030\001 \001(\004\"\214\002\n\013RequestType\022\014\n\010READ_REQ\020\000\022\017\n"
+  "\013PREPARE_REQ\020\001\022\016\n\nCOMMIT_REQ\020\002\022\r\n\tABORT_"
+  "REQ\020\003\022\013\n\007SYS_REQ\020\004\022\017\n\013LOG_YES_REQ\020\005\022\021\n\rL"
+  "OG_ABORT_REQ\020\006\022\022\n\016LOG_COMMIT_REQ\020\007\022\021\n\rTE"
+  "RMINATE_REQ\020\010\022\020\n\014MDCC_Phase1b\020\t\022\027\n\023MDCC_"
+  "Phase2bClassic\020\n\022\024\n\020MDCC_Phase2bFast\020\013\022\023"
+  "\n\017MDCC_Visibility\020\014\022\021\n\rNUM_REQ_TYPES\020\r\"\331"
+  "\001\n\014ResponseType\022\013\n\007RESP_OK\020\000\022\016\n\nRESP_ABO"
+  "RT\020\001\022\r\n\tRESP_FAIL\020\002\022\017\n\013PREPARED_OK\020\003\022\022\n\016"
+  "PREPARED_OK_RO\020\004\022\022\n\016PREPARED_ABORT\020\005\022\007\n\003"
+  "ACK\020\006\022\014\n\010SYS_RESP\020\007\022\020\n\014RESP_LOG_YES\020\010\022\022\n"
+  "\016RESP_LOG_ABORT\020\t\022\023\n\017RESP_LOG_COMMIT\020\n\022\022"
+  "\n\016NUM_RESP_TYPES\020\016\"=\n\nSenderType\022\t\n\005COOR"
+  "D\020\000\022\020\n\014PTCPT_LEADER\020\001\022\022\n\016PTCPT_ACCEPTOR\020"
+  "\0022Z\n\nSundialRPC\022L\n\rcontactRemote\022\033.sundi"
+  "al_rpc.SundialRequest\032\034.sundial_rpc.Sund"
+  "ialResponse\"\000b\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_sundial_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_sundial_2eproto = {
-  false, false, 2020, descriptor_table_protodef_sundial_2eproto, "sundial.proto", 
+  false, false, 2061, descriptor_table_protodef_sundial_2eproto, "sundial.proto", 
   &descriptor_table_sundial_2eproto_once, nullptr, 0, 8,
   schemas, file_default_instances, TableStruct_sundial_2eproto::offsets,
   file_level_metadata_sundial_2eproto, file_level_enum_descriptors_sundial_2eproto, file_level_service_descriptors_sundial_2eproto,
@@ -342,6 +343,7 @@ bool SundialRequest_RequestType_IsValid(int value) {
     case 11:
     case 12:
     case 13:
+    case 14:
       return true;
     default:
       return false;
@@ -361,7 +363,8 @@ constexpr SundialRequest_RequestType SundialRequest::TERMINATE_REQ;
 constexpr SundialRequest_RequestType SundialRequest::MDCC_Phase1a;
 constexpr SundialRequest_RequestType SundialRequest::MDCC_Phase2a;
 constexpr SundialRequest_RequestType SundialRequest::MDCC_Propose;
-constexpr SundialRequest_RequestType SundialRequest::MDCC_Visibility;
+constexpr SundialRequest_RequestType SundialRequest::MDCC_COMMIT_REQ;
+constexpr SundialRequest_RequestType SundialRequest::MDCC_ABORT_REQ;
 constexpr SundialRequest_RequestType SundialRequest::NUM_REQ_TYPES;
 constexpr SundialRequest_RequestType SundialRequest::RequestType_MIN;
 constexpr SundialRequest_RequestType SundialRequest::RequestType_MAX;
@@ -385,6 +388,7 @@ bool SundialResponse_RequestType_IsValid(int value) {
     case 9:
     case 10:
     case 11:
+    case 12:
     case 13:
       return true;
     default:
@@ -405,6 +409,7 @@ constexpr SundialResponse_RequestType SundialResponse::TERMINATE_REQ;
 constexpr SundialResponse_RequestType SundialResponse::MDCC_Phase1b;
 constexpr SundialResponse_RequestType SundialResponse::MDCC_Phase2bClassic;
 constexpr SundialResponse_RequestType SundialResponse::MDCC_Phase2bFast;
+constexpr SundialResponse_RequestType SundialResponse::MDCC_Visibility;
 constexpr SundialResponse_RequestType SundialResponse::NUM_REQ_TYPES;
 constexpr SundialResponse_RequestType SundialResponse::RequestType_MIN;
 constexpr SundialResponse_RequestType SundialResponse::RequestType_MAX;

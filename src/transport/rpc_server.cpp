@@ -188,6 +188,25 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 delete txn;
             }
             break;
+        case SundialRequest::MDCC_COMMIT_REQ:
+            txn = txn_table->get_txn(txn_id, true);
+            if (txn == NULL) {
+                response->set_response_type(SundialResponse::ACK);
+                return;
+            }
+            rc = txn->process_mdcc_visibility(request, response, COMMIT);
+            txn_table->remove_txn(txn);
+            delete txn;
+        case SundialRequest::MDCC_ABORT_REQ:
+            txn = txn_table->get_txn(txn_id, true);
+            if (txn == NULL) {
+                response->set_response_type(SundialResponse::ACK);
+                return;
+            }
+            rc = txn->process_mdcc_visibility(request, response, ABORT);
+            txn_table->remove_txn(txn);
+            delete txn;
+            break;
         default:
             assert(false);
     }

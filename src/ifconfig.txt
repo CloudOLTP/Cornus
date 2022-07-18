@@ -5,3 +5,5 @@ node-1:50051
 128.105.144.82:6379 sundial-dev
 # cornus-redis-replication.redis.cache.windows.net:6379 SQU0wAWeBbOkOxjtIHhQsyHksrVpVt3xkTJtmEtp8rM=
 # cornusredis.redis.cache.windows.net:6379 GiJPjtKcoOlNel4GCWZctbysmmml1KkkXG6OikkrKPs=
+=s
+128.105.144.82:50052
