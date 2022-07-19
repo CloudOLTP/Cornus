@@ -5,6 +5,7 @@
 #define DISTRIBUTED                     false
 #define NUM_NODES                       1
 #define NUM_STORAGE_NODES               0
+#define NODE_TYPE                       STORAGE_NODE
 
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024
@@ -212,19 +213,21 @@
 #define ALWAYS_READ                     1    // always read cached data
 #define ALWAYS_CHECK                    2    // always contact remote node
 #define READ_INTENSIVE                  3    // only read cached data that is read-intensive
-
+// Commit Algorithm
 #define ONE_PC                          1
 #define TWO_PC                          2
 #define MDCC                            3
 #define CORNUS_CUSTOMIZED               4
-
-#define LOG_DVC_CUSTOMIZED              1
-#define LOG_DVC_REDIS                   2
-#define LOG_DVC_AZURE_BLOB              3
-#define LOG_DVC_NATIVE                  4
-
+// Log Device
+#define LOG_DVC_REDIS                   1
+#define LOG_DVC_AZURE_BLOB              2
+#define LOG_DVC_NATIVE                  3
+// Isolation Level
 #define SERIALIZABLE                    1
 #define READ_COMMITTED                  2
-
-#define BALLOT_FAST 1
-#define BALLOT_CLASSIC 2
+// MDCC Ballot Type
+#define BALLOT_FAST                     1
+#define BALLOT_CLASSIC                  2
+// Node Type
+#define COMPUTE_NODE                    1
+#define STORAGE_NODE                    2

@@ -22,6 +22,7 @@ public:
     void          process_remote_read_response(uint32_t node_id, SundialResponse &response);
     void          build_prepare_req(uint32_t node_id, SundialRequest &request);
     void          build_local_req(SundialRequest &request);
+    void          restore_from_remote_request(const SundialRequest* request);
 
     RC            validate();
     RC            commit_insdel();
@@ -47,6 +48,7 @@ private:
         char *        data;    // original data.
         uint32_t      data_size;
         uint64_t      version;
+        uint64_t      index_id;
     };
 
     AccessOcc * find_access(uint64_t key, uint32_t table_id, vector<AccessOcc>

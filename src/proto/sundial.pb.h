@@ -104,10 +104,11 @@ enum SundialRequest_RequestType : int {
   SundialRequest_RequestType_TERMINATE_REQ = 8,
   SundialRequest_RequestType_MDCC_Phase1a = 9,
   SundialRequest_RequestType_MDCC_Phase2a = 10,
-  SundialRequest_RequestType_MDCC_Propose = 11,
-  SundialRequest_RequestType_MDCC_COMMIT_REQ = 12,
-  SundialRequest_RequestType_MDCC_ABORT_REQ = 13,
-  SundialRequest_RequestType_NUM_REQ_TYPES = 14,
+  SundialRequest_RequestType_MDCC_Phase2bReply = 11,
+  SundialRequest_RequestType_MDCC_Propose = 12,
+  SundialRequest_RequestType_MDCC_COMMIT_REQ = 13,
+  SundialRequest_RequestType_MDCC_ABORT_REQ = 14,
+  SundialRequest_RequestType_NUM_REQ_TYPES = 15,
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
@@ -144,7 +145,8 @@ enum SundialResponse_RequestType : int {
   SundialResponse_RequestType_MDCC_Phase2bClassic = 10,
   SundialResponse_RequestType_MDCC_Phase2bFast = 11,
   SundialResponse_RequestType_MDCC_Visibility = 12,
-  SundialResponse_RequestType_NUM_REQ_TYPES = 13,
+  SundialResponse_RequestType_MDCC_DummyReply = 13,
+  SundialResponse_RequestType_NUM_REQ_TYPES = 14,
   SundialResponse_RequestType_SundialResponse_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialResponse_RequestType_SundialResponse_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
@@ -526,6 +528,7 @@ class SundialRequest_TupleData final :
     kSizeFieldNumber = 3,
     kAccessTypeFieldNumber = 5,
     kVersionFieldNumber = 6,
+    kIndexIdFieldNumber = 7,
   };
   // bytes data = 4;
   void clear_data();
@@ -586,6 +589,15 @@ class SundialRequest_TupleData final :
   void _internal_set_version(uint64_t value);
   public:
 
+  // uint64 index_id = 7;
+  void clear_index_id();
+  uint64_t index_id() const;
+  void set_index_id(uint64_t value);
+  private:
+  uint64_t _internal_index_id() const;
+  void _internal_set_index_id(uint64_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:sundial_rpc.SundialRequest.TupleData)
  private:
   class _Internal;
@@ -599,6 +611,7 @@ class SundialRequest_TupleData final :
   uint64_t size_;
   uint64_t access_type_;
   uint64_t version_;
+  uint64_t index_id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_sundial_2eproto;
 };
@@ -1043,6 +1056,8 @@ class SundialRequest final :
     SundialRequest_RequestType_MDCC_Phase1a;
   static constexpr RequestType MDCC_Phase2a =
     SundialRequest_RequestType_MDCC_Phase2a;
+  static constexpr RequestType MDCC_Phase2bReply =
+    SundialRequest_RequestType_MDCC_Phase2bReply;
   static constexpr RequestType MDCC_Propose =
     SundialRequest_RequestType_MDCC_Propose;
   static constexpr RequestType MDCC_COMMIT_REQ =
@@ -1382,6 +1397,7 @@ class SundialResponse_TupleData final :
     kSizeFieldNumber = 3,
     kAccessTypeFieldNumber = 5,
     kVersionFieldNumber = 6,
+    kIndexIdFieldNumber = 7,
   };
   // bytes data = 4;
   void clear_data();
@@ -1442,6 +1458,15 @@ class SundialResponse_TupleData final :
   void _internal_set_version(uint64_t value);
   public:
 
+  // uint64 index_id = 7;
+  void clear_index_id();
+  uint64_t index_id() const;
+  void set_index_id(uint64_t value);
+  private:
+  uint64_t _internal_index_id() const;
+  void _internal_set_index_id(uint64_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:sundial_rpc.SundialResponse.TupleData)
  private:
   class _Internal;
@@ -1455,6 +1480,7 @@ class SundialResponse_TupleData final :
   uint64_t size_;
   uint64_t access_type_;
   uint64_t version_;
+  uint64_t index_id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_sundial_2eproto;
 };
@@ -1755,6 +1781,8 @@ class SundialResponse final :
     SundialResponse_RequestType_MDCC_Phase2bFast;
   static constexpr RequestType MDCC_Visibility =
     SundialResponse_RequestType_MDCC_Visibility;
+  static constexpr RequestType MDCC_DummyReply =
+    SundialResponse_RequestType_MDCC_DummyReply;
   static constexpr RequestType NUM_REQ_TYPES =
     SundialResponse_RequestType_NUM_REQ_TYPES;
   static inline bool RequestType_IsValid(int value) {
@@ -2186,6 +2214,26 @@ inline void SundialRequest_TupleData::_internal_set_version(uint64_t value) {
 inline void SundialRequest_TupleData::set_version(uint64_t value) {
   _internal_set_version(value);
   // @@protoc_insertion_point(field_set:sundial_rpc.SundialRequest.TupleData.version)
+}
+
+// uint64 index_id = 7;
+inline void SundialRequest_TupleData::clear_index_id() {
+  index_id_ = uint64_t{0u};
+}
+inline uint64_t SundialRequest_TupleData::_internal_index_id() const {
+  return index_id_;
+}
+inline uint64_t SundialRequest_TupleData::index_id() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialRequest.TupleData.index_id)
+  return _internal_index_id();
+}
+inline void SundialRequest_TupleData::_internal_set_index_id(uint64_t value) {
+  
+  index_id_ = value;
+}
+inline void SundialRequest_TupleData::set_index_id(uint64_t value) {
+  _internal_set_index_id(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialRequest.TupleData.index_id)
 }
 
 // -------------------------------------------------------------------
@@ -2724,6 +2772,26 @@ inline void SundialResponse_TupleData::_internal_set_version(uint64_t value) {
 inline void SundialResponse_TupleData::set_version(uint64_t value) {
   _internal_set_version(value);
   // @@protoc_insertion_point(field_set:sundial_rpc.SundialResponse.TupleData.version)
+}
+
+// uint64 index_id = 7;
+inline void SundialResponse_TupleData::clear_index_id() {
+  index_id_ = uint64_t{0u};
+}
+inline uint64_t SundialResponse_TupleData::_internal_index_id() const {
+  return index_id_;
+}
+inline uint64_t SundialResponse_TupleData::index_id() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialResponse.TupleData.index_id)
+  return _internal_index_id();
+}
+inline void SundialResponse_TupleData::_internal_set_index_id(uint64_t value) {
+  
+  index_id_ = value;
+}
+inline void SundialResponse_TupleData::set_index_id(uint64_t value) {
+  _internal_set_index_id(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialResponse.TupleData.index_id)
 }
 
 // -------------------------------------------------------------------

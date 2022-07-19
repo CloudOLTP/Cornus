@@ -68,6 +68,9 @@ int main(int argc, char* argv[])
     m_wl->init();
     printf("[Sundial] workload initialized!\n");
     warmup_finish = true;
+#if NODE_TYPE == COMPUTE_NODE
+    uint64_t starttime;
+    uint64_t endtime;
     pthread_barrier_init( &global_barrier, nullptr, g_total_num_threads);
     pthread_mutex_init( &global_lock, nullptr);
 
@@ -83,8 +86,6 @@ int main(int argc, char* argv[])
 
     // make sure server is setup before moving on
     sleep(5);
-    uint64_t starttime;
-    uint64_t endtime;
 #if DISTRIBUTED
     cout << "[Sundial] Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
@@ -108,7 +109,6 @@ int main(int argc, char* argv[])
     start_thread((void *)(worker_threads[g_num_worker_threads - 1]));
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)
         pthread_join(*pthreads_worker[i], nullptr);
-
 #if DISTRIBUTED
     cout << "[Sundial] End synchronization starts" << endl;
     assert( glob_manager->are_all_worker_threads_done() );
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     cout << "[Sundial] End synchronization ends" << endl;
 #endif
     endtime = get_server_clock();
-    cout << "Complete." << endl; 
+    cout << "Complete." << endl;
     if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
         glob_stats->print();
 
@@ -141,6 +141,16 @@ int main(int argc, char* argv[])
     }
     delete [] pthreads_worker;
     delete [] worker_threads;
+#else
+    cout << "<--- Enter 'q' or 'quit' to terminate --->" << endl;
+    std::string line;
+    while(std::getline(std::cin, line)) {
+        if (line == "q" || line == "quit") {
+            break;
+        }
+    }
+    cout << "Terminate." << endl;
+#endif // #if NODE_TYPE == COMPUTE_NODE
     return 0;
 }
 

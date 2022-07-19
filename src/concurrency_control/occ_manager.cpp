@@ -323,7 +323,6 @@ OccManager::cleanup(RC rc)
 void
 OccManager::process_remote_read_response(uint32_t node_id, access_t type, SundialResponse &response)
 {
-    assert(response.response_type() == SundialResponse::RESP_OK);
     for (int i = 0; i < response.tuple_data_size(); i ++) {
         AccessOcc ac;
         _remote_set.push_back(ac);
@@ -340,6 +339,7 @@ OccManager::process_remote_read_response(uint32_t node_id, access_t type, Sundia
         access->type =
             static_cast<access_t>(response.tuple_data(i).access_type());
         access->version = response.tuple_data(i).version();
+        access->index_id = response.tuple_data(i).index_id();
         memcpy(access->data, response.tuple_data(i).data().c_str(), access->data_size);
     }
 }
@@ -347,7 +347,6 @@ OccManager::process_remote_read_response(uint32_t node_id, access_t type, Sundia
 void
 OccManager::process_remote_read_response(uint32_t node_id, SundialResponse &response)
 {
-    assert(response.response_type() == SundialResponse::RESP_OK);
     for (int i = 0; i < response.tuple_data_size(); i ++) {
         AccessOcc ac;
         _remote_set.push_back(ac);
@@ -364,6 +363,7 @@ OccManager::process_remote_read_response(uint32_t node_id, SundialResponse &resp
         access->type =
             static_cast<access_t>(response.tuple_data(i).access_type());
         access->version = response.tuple_data(i).version();
+        access->index_id = response.tuple_data(i).index_id();
         memcpy(access->data, response.tuple_data(i).data().c_str(), access->data_size);
     }
 }
@@ -381,6 +381,7 @@ OccManager::build_prepare_req(uint32_t node_id, SundialRequest &request)
             tuple->set_data( access.data, tuple_size );
             tuple->set_access_type(access.type);
             tuple->set_version(access.version);
+            tuple->set_index_id( access.index_id );
             SundialRequest::MdccData * mdcc_data = request.add_mdcc_data();
             mdcc_data->set_ballot(0);
         }
@@ -400,6 +401,44 @@ OccManager::build_local_req(SundialRequest &request) {
         tuple->set_version(access.version);
         SundialRequest::MdccData * mdcc_data = request.add_mdcc_data();
         mdcc_data->set_ballot(0);
+    }
+}
+
+void
+OccManager::restore_from_remote_request(const SundialRequest* request) {
+    RC rc = RCOK;
+    auto num_tuples = request->tuple_data_size();
+    for (int i = 0; i < num_tuples; i++) {
+        uint64_t key = request->tuple_data(i).key();
+        uint64_t index_id = request->tuple_data(i).index_id();
+        access_t access_type = (access_t)request->tuple_data(i).access_type();
+        // TODO: here only restore write accesses since using read committed
+        if (access_type != WR) {
+            _txn->set_read_only(false);
+            assert(CC_ALG == READ_COMMITTED);
+            continue;
+        }
+        // copy write accesses
+        INDEX * index = GET_WORKLOAD->get_index(index_id);
+        set<row_t *> * rows = nullptr;
+        rc = index_read(index, key, rows, 1);
+        row_t * row = *rows->begin();
+        remote_key += 1;
+        // create a read copy
+        AccessOcc ac;
+        _access_set.push_back( ac );
+        AccessOcc * access = &(*_access_set.rbegin());
+        access->key = key;
+        // treat as local access
+        access->home_node_id = g_node_id;
+        access->table_id = row->get_table()->get_table_id();
+        access->type = access_type;
+        access->row = row;
+        access->version = request->tuple_data(i).version();
+        access->data = new char [request->tuple_data(i).size()];
+        access->data_size = request->tuple_data(i).size();
+        memcpy(access->data, request->tuple_data(i).data().data().c_str(),
+               access->data_size);
     }
 }
 

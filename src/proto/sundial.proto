@@ -18,10 +18,11 @@ message SundialRequest {
         TERMINATE_REQ = 8;
         MDCC_Phase1a = 9;
         MDCC_Phase2a = 10;
-        MDCC_Propose = 11;
-        MDCC_COMMIT_REQ = 12;
-        MDCC_ABORT_REQ = 13;
-        NUM_REQ_TYPES = 14;
+        MDCC_Phase2bReply = 11;
+        MDCC_Propose = 12;
+        MDCC_COMMIT_REQ = 13;
+        MDCC_ABORT_REQ = 14;
+        NUM_REQ_TYPES = 15;
     }
     message ReadRequest {
         uint64 key = 1;
@@ -35,6 +36,7 @@ message SundialRequest {
         bytes data = 4;
         uint64 access_type = 5;
         uint64 version = 6;
+        uint64 index_id = 7;
     }
     message NodeData {
         uint64 nid = 1;
@@ -72,7 +74,8 @@ message SundialResponse {
         MDCC_Phase2bClassic = 10;
         MDCC_Phase2bFast = 11;
         MDCC_Visibility = 12;
-        NUM_REQ_TYPES = 13;
+        MDCC_DummyReply = 13;
+        NUM_REQ_TYPES = 14;
     }
     enum ResponseType {
         RESP_OK = 0;
@@ -86,7 +89,7 @@ message SundialResponse {
         RESP_LOG_YES = 8;
         RESP_LOG_ABORT = 9;
         RESP_LOG_COMMIT = 10;
-        NUM_RESP_TYPES = 14;
+        NUM_RESP_TYPES = 11;
     }
 
     enum SenderType {
@@ -102,6 +105,7 @@ message SundialResponse {
         bytes data = 4;
         uint64 access_type = 5;
         uint64 version = 6;
+        uint64 index_id = 7;
     }
 
     message MdccData {

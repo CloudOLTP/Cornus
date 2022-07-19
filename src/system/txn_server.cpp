@@ -175,6 +175,7 @@ TxnManager::process_read_request(const SundialRequest* request,
         tuple->set_table_id( table_id );
         tuple->set_size( tuple_size );
         tuple->set_access_type( access_type );
+        tuple->set_index_id( index_id );
         tuple->set_data( get_cc_manager()->get_data(key, table_id), tuple_size );
     }
 

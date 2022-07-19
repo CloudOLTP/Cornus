@@ -186,8 +186,9 @@ response)
                 txn->handle_prepare_resp(response);
                 break;
             case SundialResponse::MDCC_Phase2bClassic :
-                // sent by leader (acceptor will send a request directly
-                // instead of response)
+                if (response->response_type() == SundialResponse::ACK)
+                    return; // ignore if from acceptor to participant
+                // else, sent from participant to coordinator
                 txn = txn_table->get_txn(txn_id);
                 txn->handle_prepare_resp(response);
                 txn->increment_replied_acceptors(response->node_id());
@@ -195,6 +196,9 @@ response)
             case SundialResponse::MDCC_Visibility :
                 txn = txn_table->get_txn(txn_id);
                 txn->increment_replied_acceptors(request->node_id());
+                return;
+            case SundialResponse::MDCC_DummyReply:
+                // no need decr semaphore as well
                 return;
             case SundialResponse::TERMINATE_REQ:
                 // dont decr semaphore, and terminate request dont need retrieve txn
