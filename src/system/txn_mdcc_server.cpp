@@ -138,6 +138,7 @@ TxnManager::process_mdcc_visibility(const SundialRequest *request,
     rpc_log_semaphore->wait();
     // finish after log is stable.
     _finish_time = get_sys_clock();
+    response->set_request_type(SundialResponse::MDCC_Visibility);
     response->set_response_type(SundialResponse::ACK);
     return RCOK;
 }

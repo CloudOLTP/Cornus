@@ -210,7 +210,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
-            rc = txn->process_mdcc_visibility(request, response, COMMIT);
+            txn->process_mdcc_visibility(request, response, COMMIT);
             txn_table->remove_txn(txn);
             delete txn;
         case SundialRequest::MDCC_ABORT_REQ:
@@ -219,7 +219,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
-            rc = txn->process_mdcc_visibility(request, response, ABORT);
+            txn->process_mdcc_visibility(request, response, ABORT);
             txn_table->remove_txn(txn);
             delete txn;
             break;
