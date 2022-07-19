@@ -218,6 +218,7 @@
 #define TWO_PC                          2
 #define MDCC                            3
 #define CORNUS_CUSTOMIZED               4
+#define COORDINATOR_LOG                 5
 // Log Device
 #define LOG_DVC_REDIS                   1
 #define LOG_DVC_AZURE_BLOB              2

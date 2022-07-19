@@ -78,7 +78,7 @@ TxnManager::process_2pc_phase1()
 #endif
 
     // if the entire txn is read-write, log to remote storage
-    if (!is_txn_read_only()) {
+    if (!is_txn_read_only() && COMMIT_ALG != COORDINATOR_LOG) {
         string data = "[LSN] placehold:" + string('d', num_local_write *
                 g_log_sz * 8);
         rpc_log_semaphore->incr();
@@ -237,6 +237,29 @@ TxnManager::process_2pc_phase2(RC rc)
         }
         #endif
         rpc_log_semaphore->wait();
+        // finish after log is stable.
+        _finish_time = get_sys_clock();
+    #elif COMMIG_ALG == COORDINATOR_LOG
+        string data = "[LSN] placehold:" + string('d', num_local_write *
+                g_log_sz * 8);
+        for (auto it = _remote_nodes_involved.begin();
+             it != _remote_nodes_involved.end(); it++) {
+            if (!(it->second->is_readonly)) {
+                data += + string('d', num_local_write *
+                g_log_sz * 8);
+            }
+        }
+        #if LOG_DEVICE == LOG_DVC_REDIS
+        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
+           data)) == FAIL) {
+            return FAIL;
+        }
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        if (azure_blob_client->log_sync_data(g_node_id, get_txn_id(),
+                                          rc_to_state(rc)) == FAIL) {
+            return FAIL;
+        }
+        #endif
         // finish after log is stable.
         _finish_time = get_sys_clock();
     #elif COMMIT_ALG == ONE_PC

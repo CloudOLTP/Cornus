@@ -85,7 +85,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 #endif
 
     // log vote if the entire txn is read-write
-    if (request->nodes_size() != 0) {
+    if (request->nodes_size() != 0 && COMMIT_ALG != COORDINATOR_LOG) {
         #if LOG_DEVICE == LOG_DVC_REDIS
             string data = "[LSN] placehold:" + string('d', num_tuples *
             g_log_sz * 8);
