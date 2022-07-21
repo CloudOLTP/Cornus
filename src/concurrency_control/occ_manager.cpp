@@ -437,7 +437,7 @@ OccManager::restore_from_remote_request(const SundialRequest* request) {
         access->version = request->tuple_data(i).version();
         access->data = new char [request->tuple_data(i).size()];
         access->data_size = request->tuple_data(i).size();
-        memcpy(access->data, request->tuple_data(i).data().data().c_str(),
+        memcpy(access->data, request->tuple_data(i).data().c_str(),
                access->data_size);
     }
 }

@@ -86,7 +86,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     response->set_request_type(tpe);
     response->set_txn_id(txn_id);
     response->set_node_id(g_node_id);
-    RC rc;
+    RC rc = RCOK;
     TxnManager * txn;
 
     switch (request->request_type()) {
@@ -119,6 +119,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 #endif
             break;
         case SundialRequest::TERMINATE_REQ:
+#if NODE_TYPE == COMPUTE_NODE
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
                 return;
@@ -129,6 +130,12 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn_table->remove_txn(txn);
             delete txn;
             break;
+#else
+            glob_manager->active = false;
+            response->set_request_type(SundialResponse::SYS_REQ);
+            response->set_response_type(SundialResponse::ACK);
+            return;
+#endif
         case SundialRequest::PREPARE_REQ:
 #if DEBUG_PRINT
           printf("[node-%u, txn-%lu] receive remote prepare request\n",

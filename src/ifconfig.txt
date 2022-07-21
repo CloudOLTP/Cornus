@@ -6,4 +6,5 @@ node-1:50051
 # cornus-redis-replication.redis.cache.windows.net:6379 SQU0wAWeBbOkOxjtIHhQsyHksrVpVt3xkTJtmEtp8rM=
 # cornusredis.redis.cache.windows.net:6379 GiJPjtKcoOlNel4GCWZctbysmmml1KkkXG6OikkrKPs=
 =s
-128.105.144.82:50052
+# please use ip instead hostname here; need to check if the node is local or not
+128.105.144.106:50052

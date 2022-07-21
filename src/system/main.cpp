@@ -125,7 +125,10 @@ int main(int argc, char* argv[])
         cout << "[Sundial] network roundtrip to node " << i << ": " <<
         endtime / 1000 << " us" << endl;
     }
-
+    request.set_request_type( SundialRequest::TERMINATE_REQ );
+    for (uint32_t i = 0; i < g_num_storage_nodes; i ++) {
+        rpc_client->sendRequest(i, request, response, true);
+    }
     while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
         usleep(1);
     cout << "[Sundial] End synchronization ends" << endl;
@@ -142,13 +145,8 @@ int main(int argc, char* argv[])
     delete [] pthreads_worker;
     delete [] worker_threads;
 #else
-    cout << "<--- Enter 'q' or 'quit' to terminate --->" << endl;
-    std::string line;
-    while(std::getline(std::cin, line)) {
-        if (line == "q" || line == "quit") {
-            break;
-        }
-    }
+    // terminate on receiving end synchronization
+    while (glob_manager->active) {}
     cout << "Terminate." << endl;
 #endif // #if NODE_TYPE == COMPUTE_NODE
     return 0;

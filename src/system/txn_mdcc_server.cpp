@@ -74,7 +74,7 @@ TxnManager::process_mdcc_2bclassic(const SundialRequest* request,
                                    SundialResponse* response) {
     #if NODE_TYPE == STORAGE_NODE
     // if acceptor, need to copy the access info
-    restore_from_remote_request(request);
+    ((CC_MAN *) get_cc_manager())->restore_from_remote_request(request);
     #endif
     // if participant (leader), no need.
     // validate occ
@@ -105,7 +105,7 @@ TxnManager::process_mdcc_2bclassic(const SundialRequest* request,
     response->set_response_type(SundialResponse::ACK);
     // send to coordinator
     SundialRequest new_request;
-    new_request->set_request_type(SundialRequest::MDCC_Phase2bReply);
+    new_request.set_request_type(SundialRequest::MDCC_Phase2bReply);
     SundialResponse new_response;
     rpc_client->sendRequestAsync(this, request->node_id(), new_request,
                                  new_response, true);
