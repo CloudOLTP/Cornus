@@ -20,9 +20,10 @@ message SundialRequest {
         MDCC_Phase2a = 10;
         MDCC_Phase2bReply = 11;
         MDCC_Propose = 12;
-        MDCC_COMMIT_REQ = 13;
-        MDCC_ABORT_REQ = 14;
-        NUM_REQ_TYPES = 15;
+        MDCC_ProposeFast = 13;
+        MDCC_COMMIT_REQ = 14;
+        MDCC_ABORT_REQ = 15;
+        NUM_REQ_TYPES = 16;
     }
     message ReadRequest {
         uint64 key = 1;
@@ -70,7 +71,6 @@ message SundialResponse {
         LOG_ABORT_REQ = 6;
         LOG_COMMIT_REQ = 7;
         TERMINATE_REQ = 8;
-        MDCC_Phase1b = 9;
         MDCC_Phase2bClassic = 10;
         MDCC_Phase2bFast = 11;
         MDCC_Visibility = 12;
@@ -90,12 +90,6 @@ message SundialResponse {
         RESP_LOG_ABORT = 9;
         RESP_LOG_COMMIT = 10;
         NUM_RESP_TYPES = 11;
-    }
-
-    enum SenderType {
-        COORD = 0;
-        PTCPT_LEADER = 1;
-        PTCPT_ACCEPTOR = 2;
     }
 
     message TupleData {

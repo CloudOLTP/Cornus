@@ -188,6 +188,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             break;
         case SundialRequest::MDCC_Propose:
+            // from coordinator to participant in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);
             rc = txn->process_mdcc_2aclassic(request, response);
             if (rc == ABORT) {
@@ -196,33 +197,47 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
             break;
         case SundialRequest::MDCC_Phase2a:
+            // from leader to acceptors in phase 1, classic
+            // leader may be coordinator or participant
             assert(NODE_TYPE == STORAGE_NODE);
             txn = txn_table->get_txn(txn_id, true);
-            rc = txn->process_mdcc_2aclassic(request, response);
+            rc = txn->process_mdcc_2bclassic(request, response);
             if (rc == ABORT) {
                 txn_table->remove_txn(txn);
                 delete txn;
             }
             break;
         case SundialRequest::MDCC_Phase2bReply:
-            // from acceptor to leader in phase 1
+            // from acceptor to leader in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);
             txn->handle_prepare_resp(response);
             txn->increment_replied_acceptors(response->node_id());
             response->set_request_type(SundialResponse::MDCC_DummyReply);
             break;
+        case SundialRequest::MDCC_ProposeFast:
+            // from coordinator to participant/acceptor, fast
+            txn = txn_table->get_txn(txn_id, true);
+            rc = txn->process_mdcc_2bfast(request, response);
+            if (rc == ABORT) {
+              txn_table->remove_txn(txn);
+              delete txn;
+            }
+            break;
         case SundialRequest::MDCC_COMMIT_REQ:
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
+                response->set_request_type(SundialResponse::MDCC_Visibility);
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
             txn->process_mdcc_visibility(request, response, COMMIT);
             txn_table->remove_txn(txn);
             delete txn;
+            break;
         case SundialRequest::MDCC_ABORT_REQ:
             txn = txn_table->get_txn(txn_id, true);
             if (txn == NULL) {
+                response->set_request_type(SundialResponse::MDCC_Visibility);
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }

@@ -171,6 +171,7 @@ private:
     RC process_mdcc_2aclassic(const SundialRequest* request, SundialResponse* response);
     RC process_mdcc_2bclassic(const SundialRequest* request, SundialResponse*
     response);
+    RC process_mdcc_2bfast(const SundialRequest* request, SundialResponse* response);
     RC process_mdcc_visibility(const SundialRequest* request, SundialResponse*
     response, RC rc);
     int get_replied_acceptors(size_t i) {return replied_acceptors[i].load
@@ -178,7 +179,7 @@ private:
     void increment_replied_acceptors(size_t i) { replied_acceptors[i]++; }
 
   private:
-    void process_mdcc_local_phase1(RC rc, bool is_singlepart=false);
+    void process_mdcc_local_phase1(RC rc, uint64_t g_node_id, bool is_singlepart=false);
     // used to track # of replies from each node and the stats will be used for
     // calculating quorum
     // each count should not exceed g_num_storage_nodes + 1

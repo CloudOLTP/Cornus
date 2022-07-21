@@ -58,6 +58,10 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     rpc_semaphore = new SemaphoreSync();
     rpc_log_semaphore = new SemaphoreSync();
     pthread_mutex_init(&_latch, NULL);
+
+    for (size_t i = 0; i < g_num_nodes; i++) {
+        replied_acceptors[i] = 0;
+    }
 }
 
 TxnManager::~TxnManager()

@@ -106,9 +106,10 @@ enum SundialRequest_RequestType : int {
   SundialRequest_RequestType_MDCC_Phase2a = 10,
   SundialRequest_RequestType_MDCC_Phase2bReply = 11,
   SundialRequest_RequestType_MDCC_Propose = 12,
-  SundialRequest_RequestType_MDCC_COMMIT_REQ = 13,
-  SundialRequest_RequestType_MDCC_ABORT_REQ = 14,
-  SundialRequest_RequestType_NUM_REQ_TYPES = 15,
+  SundialRequest_RequestType_MDCC_ProposeFast = 13,
+  SundialRequest_RequestType_MDCC_COMMIT_REQ = 14,
+  SundialRequest_RequestType_MDCC_ABORT_REQ = 15,
+  SundialRequest_RequestType_NUM_REQ_TYPES = 16,
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
@@ -141,7 +142,6 @@ enum SundialResponse_RequestType : int {
   SundialResponse_RequestType_LOG_ABORT_REQ = 6,
   SundialResponse_RequestType_LOG_COMMIT_REQ = 7,
   SundialResponse_RequestType_TERMINATE_REQ = 8,
-  SundialResponse_RequestType_MDCC_Phase1b = 9,
   SundialResponse_RequestType_MDCC_Phase2bClassic = 10,
   SundialResponse_RequestType_MDCC_Phase2bFast = 11,
   SundialResponse_RequestType_MDCC_Visibility = 12,
@@ -181,7 +181,7 @@ enum SundialResponse_ResponseType : int {
   SundialResponse_ResponseType_RESP_LOG_YES = 8,
   SundialResponse_ResponseType_RESP_LOG_ABORT = 9,
   SundialResponse_ResponseType_RESP_LOG_COMMIT = 10,
-  SundialResponse_ResponseType_NUM_RESP_TYPES = 14,
+  SundialResponse_ResponseType_NUM_RESP_TYPES = 11,
   SundialResponse_ResponseType_SundialResponse_ResponseType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialResponse_ResponseType_SundialResponse_ResponseType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
@@ -203,32 +203,6 @@ inline bool SundialResponse_ResponseType_Parse(
     ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, SundialResponse_ResponseType* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<SundialResponse_ResponseType>(
     SundialResponse_ResponseType_descriptor(), name, value);
-}
-enum SundialResponse_SenderType : int {
-  SundialResponse_SenderType_COORD = 0,
-  SundialResponse_SenderType_PTCPT_LEADER = 1,
-  SundialResponse_SenderType_PTCPT_ACCEPTOR = 2,
-  SundialResponse_SenderType_SundialResponse_SenderType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
-  SundialResponse_SenderType_SundialResponse_SenderType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
-};
-bool SundialResponse_SenderType_IsValid(int value);
-constexpr SundialResponse_SenderType SundialResponse_SenderType_SenderType_MIN = SundialResponse_SenderType_COORD;
-constexpr SundialResponse_SenderType SundialResponse_SenderType_SenderType_MAX = SundialResponse_SenderType_PTCPT_ACCEPTOR;
-constexpr int SundialResponse_SenderType_SenderType_ARRAYSIZE = SundialResponse_SenderType_SenderType_MAX + 1;
-
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SundialResponse_SenderType_descriptor();
-template<typename T>
-inline const std::string& SundialResponse_SenderType_Name(T enum_t_value) {
-  static_assert(::std::is_same<T, SundialResponse_SenderType>::value ||
-    ::std::is_integral<T>::value,
-    "Incorrect type passed to function SundialResponse_SenderType_Name.");
-  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
-    SundialResponse_SenderType_descriptor(), enum_t_value);
-}
-inline bool SundialResponse_SenderType_Parse(
-    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, SundialResponse_SenderType* value) {
-  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<SundialResponse_SenderType>(
-    SundialResponse_SenderType_descriptor(), name, value);
 }
 // ===================================================================
 
@@ -1060,6 +1034,8 @@ class SundialRequest final :
     SundialRequest_RequestType_MDCC_Phase2bReply;
   static constexpr RequestType MDCC_Propose =
     SundialRequest_RequestType_MDCC_Propose;
+  static constexpr RequestType MDCC_ProposeFast =
+    SundialRequest_RequestType_MDCC_ProposeFast;
   static constexpr RequestType MDCC_COMMIT_REQ =
     SundialRequest_RequestType_MDCC_COMMIT_REQ;
   static constexpr RequestType MDCC_ABORT_REQ =
@@ -1773,8 +1749,6 @@ class SundialResponse final :
     SundialResponse_RequestType_LOG_COMMIT_REQ;
   static constexpr RequestType TERMINATE_REQ =
     SundialResponse_RequestType_TERMINATE_REQ;
-  static constexpr RequestType MDCC_Phase1b =
-    SundialResponse_RequestType_MDCC_Phase1b;
   static constexpr RequestType MDCC_Phase2bClassic =
     SundialResponse_RequestType_MDCC_Phase2bClassic;
   static constexpr RequestType MDCC_Phase2bFast =
@@ -1858,38 +1832,6 @@ class SundialResponse final :
   static inline bool ResponseType_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
       ResponseType* value) {
     return SundialResponse_ResponseType_Parse(name, value);
-  }
-
-  typedef SundialResponse_SenderType SenderType;
-  static constexpr SenderType COORD =
-    SundialResponse_SenderType_COORD;
-  static constexpr SenderType PTCPT_LEADER =
-    SundialResponse_SenderType_PTCPT_LEADER;
-  static constexpr SenderType PTCPT_ACCEPTOR =
-    SundialResponse_SenderType_PTCPT_ACCEPTOR;
-  static inline bool SenderType_IsValid(int value) {
-    return SundialResponse_SenderType_IsValid(value);
-  }
-  static constexpr SenderType SenderType_MIN =
-    SundialResponse_SenderType_SenderType_MIN;
-  static constexpr SenderType SenderType_MAX =
-    SundialResponse_SenderType_SenderType_MAX;
-  static constexpr int SenderType_ARRAYSIZE =
-    SundialResponse_SenderType_SenderType_ARRAYSIZE;
-  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
-  SenderType_descriptor() {
-    return SundialResponse_SenderType_descriptor();
-  }
-  template<typename T>
-  static inline const std::string& SenderType_Name(T enum_t_value) {
-    static_assert(::std::is_same<T, SenderType>::value ||
-      ::std::is_integral<T>::value,
-      "Incorrect type passed to function SenderType_Name.");
-    return SundialResponse_SenderType_Name(enum_t_value);
-  }
-  static inline bool SenderType_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
-      SenderType* value) {
-    return SundialResponse_SenderType_Parse(name, value);
   }
 
   // accessors -------------------------------------------------------
@@ -3020,11 +2962,6 @@ template <> struct is_proto_enum< ::sundial_rpc::SundialResponse_ResponseType> :
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::sundial_rpc::SundialResponse_ResponseType>() {
   return ::sundial_rpc::SundialResponse_ResponseType_descriptor();
-}
-template <> struct is_proto_enum< ::sundial_rpc::SundialResponse_SenderType> : ::std::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::sundial_rpc::SundialResponse_SenderType>() {
-  return ::sundial_rpc::SundialResponse_SenderType_descriptor();
 }
 
 PROTOBUF_NAMESPACE_CLOSE
