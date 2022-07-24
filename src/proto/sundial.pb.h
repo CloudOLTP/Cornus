@@ -104,12 +104,14 @@ enum SundialRequest_RequestType : int {
   SundialRequest_RequestType_TERMINATE_REQ = 8,
   SundialRequest_RequestType_MDCC_Phase1a = 9,
   SundialRequest_RequestType_MDCC_Phase2a = 10,
-  SundialRequest_RequestType_MDCC_Phase2bReply = 11,
-  SundialRequest_RequestType_MDCC_Propose = 12,
-  SundialRequest_RequestType_MDCC_ProposeFast = 13,
-  SundialRequest_RequestType_MDCC_COMMIT_REQ = 14,
-  SundialRequest_RequestType_MDCC_ABORT_REQ = 15,
-  SundialRequest_RequestType_NUM_REQ_TYPES = 16,
+  SundialRequest_RequestType_MDCC_Phase2aAbort = 11,
+  SundialRequest_RequestType_MDCC_Phase2bReply = 12,
+  SundialRequest_RequestType_MDCC_Phase2bReplyAbort = 13,
+  SundialRequest_RequestType_MDCC_Propose = 14,
+  SundialRequest_RequestType_MDCC_ProposeFast = 15,
+  SundialRequest_RequestType_MDCC_COMMIT_REQ = 16,
+  SundialRequest_RequestType_MDCC_ABORT_REQ = 17,
+  SundialRequest_RequestType_NUM_REQ_TYPES = 18,
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
@@ -131,6 +133,32 @@ inline bool SundialRequest_RequestType_Parse(
     ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, SundialRequest_RequestType* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<SundialRequest_RequestType>(
     SundialRequest_RequestType_descriptor(), name, value);
+}
+enum SundialRequest_NodeType : int {
+  SundialRequest_NodeType_COORDINATOR = 0,
+  SundialRequest_NodeType_PARTICIPANT = 1,
+  SundialRequest_NodeType_STORAGE = 2,
+  SundialRequest_NodeType_SundialRequest_NodeType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  SundialRequest_NodeType_SundialRequest_NodeType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool SundialRequest_NodeType_IsValid(int value);
+constexpr SundialRequest_NodeType SundialRequest_NodeType_NodeType_MIN = SundialRequest_NodeType_COORDINATOR;
+constexpr SundialRequest_NodeType SundialRequest_NodeType_NodeType_MAX = SundialRequest_NodeType_STORAGE;
+constexpr int SundialRequest_NodeType_NodeType_ARRAYSIZE = SundialRequest_NodeType_NodeType_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SundialRequest_NodeType_descriptor();
+template<typename T>
+inline const std::string& SundialRequest_NodeType_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, SundialRequest_NodeType>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function SundialRequest_NodeType_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    SundialRequest_NodeType_descriptor(), enum_t_value);
+}
+inline bool SundialRequest_NodeType_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, SundialRequest_NodeType* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<SundialRequest_NodeType>(
+    SundialRequest_NodeType_descriptor(), name, value);
 }
 enum SundialResponse_RequestType : int {
   SundialResponse_RequestType_READ_REQ = 0,
@@ -203,6 +231,32 @@ inline bool SundialResponse_ResponseType_Parse(
     ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, SundialResponse_ResponseType* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<SundialResponse_ResponseType>(
     SundialResponse_ResponseType_descriptor(), name, value);
+}
+enum SundialResponse_NodeType : int {
+  SundialResponse_NodeType_COORDINATOR = 0,
+  SundialResponse_NodeType_PARTICIPANT = 1,
+  SundialResponse_NodeType_STORAGE = 2,
+  SundialResponse_NodeType_SundialResponse_NodeType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  SundialResponse_NodeType_SundialResponse_NodeType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool SundialResponse_NodeType_IsValid(int value);
+constexpr SundialResponse_NodeType SundialResponse_NodeType_NodeType_MIN = SundialResponse_NodeType_COORDINATOR;
+constexpr SundialResponse_NodeType SundialResponse_NodeType_NodeType_MAX = SundialResponse_NodeType_STORAGE;
+constexpr int SundialResponse_NodeType_NodeType_ARRAYSIZE = SundialResponse_NodeType_NodeType_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SundialResponse_NodeType_descriptor();
+template<typename T>
+inline const std::string& SundialResponse_NodeType_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, SundialResponse_NodeType>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function SundialResponse_NodeType_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    SundialResponse_NodeType_descriptor(), enum_t_value);
+}
+inline bool SundialResponse_NodeType_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, SundialResponse_NodeType* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<SundialResponse_NodeType>(
+    SundialResponse_NodeType_descriptor(), name, value);
 }
 // ===================================================================
 
@@ -1030,8 +1084,12 @@ class SundialRequest final :
     SundialRequest_RequestType_MDCC_Phase1a;
   static constexpr RequestType MDCC_Phase2a =
     SundialRequest_RequestType_MDCC_Phase2a;
+  static constexpr RequestType MDCC_Phase2aAbort =
+    SundialRequest_RequestType_MDCC_Phase2aAbort;
   static constexpr RequestType MDCC_Phase2bReply =
     SundialRequest_RequestType_MDCC_Phase2bReply;
+  static constexpr RequestType MDCC_Phase2bReplyAbort =
+    SundialRequest_RequestType_MDCC_Phase2bReplyAbort;
   static constexpr RequestType MDCC_Propose =
     SundialRequest_RequestType_MDCC_Propose;
   static constexpr RequestType MDCC_ProposeFast =
@@ -1067,6 +1125,38 @@ class SundialRequest final :
     return SundialRequest_RequestType_Parse(name, value);
   }
 
+  typedef SundialRequest_NodeType NodeType;
+  static constexpr NodeType COORDINATOR =
+    SundialRequest_NodeType_COORDINATOR;
+  static constexpr NodeType PARTICIPANT =
+    SundialRequest_NodeType_PARTICIPANT;
+  static constexpr NodeType STORAGE =
+    SundialRequest_NodeType_STORAGE;
+  static inline bool NodeType_IsValid(int value) {
+    return SundialRequest_NodeType_IsValid(value);
+  }
+  static constexpr NodeType NodeType_MIN =
+    SundialRequest_NodeType_NodeType_MIN;
+  static constexpr NodeType NodeType_MAX =
+    SundialRequest_NodeType_NodeType_MAX;
+  static constexpr int NodeType_ARRAYSIZE =
+    SundialRequest_NodeType_NodeType_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  NodeType_descriptor() {
+    return SundialRequest_NodeType_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& NodeType_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, NodeType>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function NodeType_Name.");
+    return SundialRequest_NodeType_Name(enum_t_value);
+  }
+  static inline bool NodeType_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      NodeType* value) {
+    return SundialRequest_NodeType_Parse(name, value);
+  }
+
   // accessors -------------------------------------------------------
 
   enum : int {
@@ -1078,9 +1168,11 @@ class SundialRequest final :
     kTxnIdFieldNumber = 1,
     kLogDataSizeFieldNumber = 5,
     kNodeIdFieldNumber = 7,
+    kRequestTypeFieldNumber = 2,
+    kNodeTypeFieldNumber = 12,
     kRequestTimeFieldNumber = 9,
     kThreadIdFieldNumber = 10,
-    kRequestTypeFieldNumber = 2,
+    kCoordIdFieldNumber = 13,
   };
   // repeated .sundial_rpc.SundialRequest.ReadRequest read_requests = 3;
   int read_requests_size() const;
@@ -1195,6 +1287,24 @@ class SundialRequest final :
   void _internal_set_node_id(uint64_t value);
   public:
 
+  // .sundial_rpc.SundialRequest.RequestType request_type = 2;
+  void clear_request_type();
+  ::sundial_rpc::SundialRequest_RequestType request_type() const;
+  void set_request_type(::sundial_rpc::SundialRequest_RequestType value);
+  private:
+  ::sundial_rpc::SundialRequest_RequestType _internal_request_type() const;
+  void _internal_set_request_type(::sundial_rpc::SundialRequest_RequestType value);
+  public:
+
+  // .sundial_rpc.SundialRequest.NodeType node_type = 12;
+  void clear_node_type();
+  ::sundial_rpc::SundialRequest_NodeType node_type() const;
+  void set_node_type(::sundial_rpc::SundialRequest_NodeType value);
+  private:
+  ::sundial_rpc::SundialRequest_NodeType _internal_node_type() const;
+  void _internal_set_node_type(::sundial_rpc::SundialRequest_NodeType value);
+  public:
+
   // uint64 request_time = 9;
   void clear_request_time();
   uint64_t request_time() const;
@@ -1213,13 +1323,13 @@ class SundialRequest final :
   void _internal_set_thread_id(uint64_t value);
   public:
 
-  // .sundial_rpc.SundialRequest.RequestType request_type = 2;
-  void clear_request_type();
-  ::sundial_rpc::SundialRequest_RequestType request_type() const;
-  void set_request_type(::sundial_rpc::SundialRequest_RequestType value);
+  // uint64 coord_id = 13;
+  void clear_coord_id();
+  uint64_t coord_id() const;
+  void set_coord_id(uint64_t value);
   private:
-  ::sundial_rpc::SundialRequest_RequestType _internal_request_type() const;
-  void _internal_set_request_type(::sundial_rpc::SundialRequest_RequestType value);
+  uint64_t _internal_coord_id() const;
+  void _internal_set_coord_id(uint64_t value);
   public:
 
   // @@protoc_insertion_point(class_scope:sundial_rpc.SundialRequest)
@@ -1237,9 +1347,11 @@ class SundialRequest final :
   uint64_t txn_id_;
   uint64_t log_data_size_;
   uint64_t node_id_;
+  int request_type_;
+  int node_type_;
   uint64_t request_time_;
   uint64_t thread_id_;
-  int request_type_;
+  uint64_t coord_id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_sundial_2eproto;
 };
@@ -1834,6 +1946,38 @@ class SundialResponse final :
     return SundialResponse_ResponseType_Parse(name, value);
   }
 
+  typedef SundialResponse_NodeType NodeType;
+  static constexpr NodeType COORDINATOR =
+    SundialResponse_NodeType_COORDINATOR;
+  static constexpr NodeType PARTICIPANT =
+    SundialResponse_NodeType_PARTICIPANT;
+  static constexpr NodeType STORAGE =
+    SundialResponse_NodeType_STORAGE;
+  static inline bool NodeType_IsValid(int value) {
+    return SundialResponse_NodeType_IsValid(value);
+  }
+  static constexpr NodeType NodeType_MIN =
+    SundialResponse_NodeType_NodeType_MIN;
+  static constexpr NodeType NodeType_MAX =
+    SundialResponse_NodeType_NodeType_MAX;
+  static constexpr int NodeType_ARRAYSIZE =
+    SundialResponse_NodeType_NodeType_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  NodeType_descriptor() {
+    return SundialResponse_NodeType_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& NodeType_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, NodeType>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function NodeType_Name.");
+    return SundialResponse_NodeType_Name(enum_t_value);
+  }
+  static inline bool NodeType_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      NodeType* value) {
+    return SundialResponse_NodeType_Parse(name, value);
+  }
+
   // accessors -------------------------------------------------------
 
   enum : int {
@@ -1843,6 +1987,7 @@ class SundialResponse final :
     kResponseTypeFieldNumber = 2,
     kRequestTypeFieldNumber = 5,
     kNodeIdFieldNumber = 4,
+    kNodeTypeFieldNumber = 7,
   };
   // repeated .sundial_rpc.SundialResponse.TupleData tuple_data = 3;
   int tuple_data_size() const;
@@ -1916,6 +2061,15 @@ class SundialResponse final :
   void _internal_set_node_id(uint64_t value);
   public:
 
+  // .sundial_rpc.SundialResponse.NodeType node_type = 7;
+  void clear_node_type();
+  ::sundial_rpc::SundialResponse_NodeType node_type() const;
+  void set_node_type(::sundial_rpc::SundialResponse_NodeType value);
+  private:
+  ::sundial_rpc::SundialResponse_NodeType _internal_node_type() const;
+  void _internal_set_node_type(::sundial_rpc::SundialResponse_NodeType value);
+  public:
+
   // @@protoc_insertion_point(class_scope:sundial_rpc.SundialResponse)
  private:
   class _Internal;
@@ -1929,6 +2083,7 @@ class SundialResponse final :
   int response_type_;
   int request_type_;
   uint64_t node_id_;
+  int node_type_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_sundial_2eproto;
 };
@@ -2561,6 +2716,46 @@ SundialRequest::mdcc_data() const {
   return mdcc_data_;
 }
 
+// .sundial_rpc.SundialRequest.NodeType node_type = 12;
+inline void SundialRequest::clear_node_type() {
+  node_type_ = 0;
+}
+inline ::sundial_rpc::SundialRequest_NodeType SundialRequest::_internal_node_type() const {
+  return static_cast< ::sundial_rpc::SundialRequest_NodeType >(node_type_);
+}
+inline ::sundial_rpc::SundialRequest_NodeType SundialRequest::node_type() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialRequest.node_type)
+  return _internal_node_type();
+}
+inline void SundialRequest::_internal_set_node_type(::sundial_rpc::SundialRequest_NodeType value) {
+  
+  node_type_ = value;
+}
+inline void SundialRequest::set_node_type(::sundial_rpc::SundialRequest_NodeType value) {
+  _internal_set_node_type(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialRequest.node_type)
+}
+
+// uint64 coord_id = 13;
+inline void SundialRequest::clear_coord_id() {
+  coord_id_ = uint64_t{0u};
+}
+inline uint64_t SundialRequest::_internal_coord_id() const {
+  return coord_id_;
+}
+inline uint64_t SundialRequest::coord_id() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialRequest.coord_id)
+  return _internal_coord_id();
+}
+inline void SundialRequest::_internal_set_coord_id(uint64_t value) {
+  
+  coord_id_ = value;
+}
+inline void SundialRequest::set_coord_id(uint64_t value) {
+  _internal_set_coord_id(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialRequest.coord_id)
+}
+
 // -------------------------------------------------------------------
 
 // SundialResponse_TupleData
@@ -2924,6 +3119,26 @@ SundialResponse::mdcc_data() const {
   return mdcc_data_;
 }
 
+// .sundial_rpc.SundialResponse.NodeType node_type = 7;
+inline void SundialResponse::clear_node_type() {
+  node_type_ = 0;
+}
+inline ::sundial_rpc::SundialResponse_NodeType SundialResponse::_internal_node_type() const {
+  return static_cast< ::sundial_rpc::SundialResponse_NodeType >(node_type_);
+}
+inline ::sundial_rpc::SundialResponse_NodeType SundialResponse::node_type() const {
+  // @@protoc_insertion_point(field_get:sundial_rpc.SundialResponse.node_type)
+  return _internal_node_type();
+}
+inline void SundialResponse::_internal_set_node_type(::sundial_rpc::SundialResponse_NodeType value) {
+  
+  node_type_ = value;
+}
+inline void SundialResponse::set_node_type(::sundial_rpc::SundialResponse_NodeType value) {
+  _internal_set_node_type(value);
+  // @@protoc_insertion_point(field_set:sundial_rpc.SundialResponse.node_type)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
@@ -2953,6 +3168,11 @@ template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::sundial_rpc::SundialRequest_RequestType>() {
   return ::sundial_rpc::SundialRequest_RequestType_descriptor();
 }
+template <> struct is_proto_enum< ::sundial_rpc::SundialRequest_NodeType> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::sundial_rpc::SundialRequest_NodeType>() {
+  return ::sundial_rpc::SundialRequest_NodeType_descriptor();
+}
 template <> struct is_proto_enum< ::sundial_rpc::SundialResponse_RequestType> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::sundial_rpc::SundialResponse_RequestType>() {
@@ -2962,6 +3182,11 @@ template <> struct is_proto_enum< ::sundial_rpc::SundialResponse_ResponseType> :
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::sundial_rpc::SundialResponse_ResponseType>() {
   return ::sundial_rpc::SundialResponse_ResponseType_descriptor();
+}
+template <> struct is_proto_enum< ::sundial_rpc::SundialResponse_NodeType> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::sundial_rpc::SundialResponse_NodeType>() {
+  return ::sundial_rpc::SundialResponse_NodeType_descriptor();
 }
 
 PROTOBUF_NAMESPACE_CLOSE

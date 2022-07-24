@@ -169,8 +169,9 @@ private:
     RC process_mdcc_phase2(RC rc);
     // server
     RC process_mdcc_2aclassic(const SundialRequest* request, SundialResponse* response);
-    RC process_mdcc_2bclassic(const SundialRequest* request, SundialResponse*
+    void process_mdcc_2bclassic(const SundialRequest* request, SundialResponse*
     response);
+    void process_mdcc_2bclassic_abort(const SundialRequest* request, SundialResponse* response);
     RC process_mdcc_2bfast(const SundialRequest* request, SundialResponse* response);
     RC process_mdcc_visibility(const SundialRequest* request, SundialResponse*
     response, RC rc);

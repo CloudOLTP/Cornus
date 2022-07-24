@@ -185,18 +185,23 @@ response)
                 txn = txn_table->get_txn(txn_id);
                 txn->handle_prepare_resp(response);
                 break;
-            case SundialResponse::MDCC_Phase2bClassic :
-                if (response->response_type() == SundialResponse::ACK)
-                    return; // ignore if from acceptor to participant
-                // else, sent from participant/acceptors to coordinator (as
-                // leader)
-                txn = txn_table->get_txn(txn_id);
-                txn->handle_prepare_resp(response);
-                txn->increment_replied_acceptors(response->node_id());
+            case SundialResponse::MDCC_Phase2bClassic:
+                if (response->node_type() == SundialResponse::PARTICIPANT) {
+                    // case 1: sent from participant to coordinator as reply
+                    txn = txn_table->get_txn(txn_id);
+                    // update remote_node stats as well
+                    txn->handle_prepare_resp(response);
+                    txn->increment_replied_acceptors(response->node_id());
+                } else if (response->node_type() == SundialResponse::STORAGE) {
+                    // case 2: reply from acceptors which treats coordinator
+                    // as leader. has to be prepared ok.
+                    txn->increment_replied_acceptors(response->node_id());
+                }
                 return; // no need to update rpc semaphore
             case SundialResponse::MDCC_Phase2bFast :
                 // sent from participant/acceptors to coordinator
                 txn = txn_table->get_txn(txn_id);
+                // update remote_node stats as well
                 txn->handle_prepare_resp(response);
                 txn->increment_replied_acceptors(response->node_id());
               return; // no need to update rpc semaphore

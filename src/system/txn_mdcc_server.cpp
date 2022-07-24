@@ -43,27 +43,36 @@ TxnManager::process_mdcc_2aclassic(const SundialRequest* request,
     // then send result to acceptors to persist and log
     // IMPORTATNT: need to pass the node id of sender (coordinator)
     num_local_write = request->tuple_data_size();
-    process_mdcc_local_phase1(rc, request->node_id(), false);
+    process_mdcc_local_phase1(rc, request->coord_id(), false);
     // wait for ack from redis/azure
     rpc_log_semaphore->wait();
     // set response
     SundialResponse::ResponseType type = (rc == ABORT) ?
-        SundialReponse::PREPARED_ABORT : SundialResponse::PREPARED_OK;
+                                         SundialResponse::PREPARED_ABORT
+                                                       : SundialResponse::PREPARED_OK;
     response->set_request_type(SundialResponse::MDCC_Phase2bClassic);
+    response->set_response_type(type);
+    response->set_node_id(request->node_id());
+    response->set_node_type(SundialResponse::PARTICIPANT);
     return rc;
+}
 
-RC TxnManager::process_mdcc_2bfast(const int *request, int *response) {
+RC TxnManager::process_mdcc_2bfast(const SundialRequest *request,
+                                   SundialResponse *response) {
     // both storage node and participant share the same function
 #if NODE_TYPE == STORAGE_NODE
     // if acceptor, need to copy the access info to restore
     ((CC_MAN *) get_cc_manager())->restore_from_remote_request(request);
+    response->set_node_type(SundialResponse::STORAGE);
+#else
+    response->set_node_type(SundialResponse::PARTICIPANT);
 #endif
     // if participant (leader), no need.
     // validate occ
     RC rc = ((CC_MAN *) get_cc_manager())->validate();
     // log
-    string data = "[LSN] placehold:" + std::string('d', request->tuple_data_size
-                                                            () * g_log_sz * 8);
+    string data = "[LSN] placehold:" + std::string(request->tuple_data_size
+        () * g_log_sz * 8, 'd');
     rpc_log_semaphore->incr();
     State state = (rc == ABORT) ? PREPARED : ABORTED;
 #if LOG_DEVICE == LOG_DVC_REDIS
@@ -74,36 +83,81 @@ RC TxnManager::process_mdcc_2bfast(const int *request, int *response) {
     rpc_log_semaphore->wait();
     // set response
     SundialResponse::ResponseType type = (rc == ABORT) ?
-        SundialReponse::PREPARED_ABORT : SundialResponse::PREPARED_OK;
+        SundialResponse::PREPARED_ABORT : SundialResponse::PREPARED_OK;
     response->set_request_type(SundialResponse::MDCC_Phase2bFast);
+    response->set_response_type(type);
+    response->set_node_id(request->node_id());
 }
 
-RC
+void
 TxnManager::process_mdcc_2bclassic(const SundialRequest* request,
                                    SundialResponse* response) {
+    // if abort request, will not call this function, so we assume commit
     assert(NODE_TYPE == STORAGE_NODE);
     // log to redis
-    string data = "[LSN] placehold:" + std::string('d', request->tuple_data_size
-    () * g_log_sz * 8);
-    State status = PREPARE
+    string data = "[LSN] placehold:" + std::string(request->tuple_data_size
+    () * g_log_sz * 8, 'd');
     rpc_log_semaphore->incr();
 #if LOG_DEVICE == LOG_DVC_REDIS
-    redis_client->log_async_data(g_node_id, get_txn_id(), status, data);
+    redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
 #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-    azure_blob_client->log_async_data(g_node_id, get_txn_id(), status, data);
+    azure_blob_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
 #endif
     rpc_log_semaphore->wait();
+    response->set_node_id(request->node_id());
+    if (request->node_type() == SundialRequest::COORDINATOR) {
+        response->set_request_type(SundialResponse::MDCC_Phase2bClassic);
+        response->set_response_type(SundialResponse::PREPARED_OK);
+        response->set_node_type(SundialResponse::STORAGE);
+    } else {
+        // send result (phase 2b) to leader
+        response->set_request_type(SundialResponse::MDCC_Phase2bClassic);
+        response->set_response_type(SundialResponse::ACK);
+        response->set_node_type(SundialResponse::STORAGE);
+        // send to coordinator
+        SundialRequest new_request;
+        new_request.set_request_type(SundialRequest::MDCC_Phase2bReply);
+        new_request.set_node_type(SundialRequest::STORAGE);
+        SundialResponse new_response;
+        rpc_client->sendRequestAsync(this, request->coord_id(), new_request,
+                                     new_response, true);
+        new_request.set_node_id(request->node_id());
+    }
+}
 
-    // send result (phase 2b) to coordinator
-    response->set_request_type(SundialResponse::MDCC_Phase2bClassic);
-    response->set_response_type(SundialResponse::ACK);
-    // send to coordinator
-    SundialRequest new_request;
-    new_request.set_request_type(SundialRequest::MDCC_Phase2bReply);
-    SundialResponse new_response;
-    rpc_client->sendRequestAsync(this, request->node_id(), new_request,
-                                 new_response, true);
-    return rc;
+
+void
+TxnManager::process_mdcc_2bclassic_abort(const SundialRequest* request,
+                                   SundialResponse* response) {
+    // if abort request, will not call this function, so we assume commit
+    assert(NODE_TYPE == STORAGE_NODE);
+    // log to redis
+    rpc_log_semaphore->incr();
+#if LOG_DEVICE == LOG_DVC_REDIS
+    redis_client->log_async(g_node_id, get_txn_id(), ABORTED);
+#elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+    azure_blob_client->log_async(g_node_id, get_txn_id(), ABORTED);
+#endif
+    rpc_log_semaphore->wait();
+    response->set_node_id(request->node_id());
+    if (request->node_type() == SundialRequest::COORDINATOR) {
+        response->set_request_type(SundialResponse::MDCC_Phase2bClassic);
+        response->set_response_type(SundialResponse::PREPARED_ABORT);
+        response->set_node_type(SundialResponse::STORAGE);
+    } else {
+        // send result (phase 2b) to leader
+        response->set_request_type(SundialResponse::MDCC_Phase2bClassic);
+        response->set_response_type(SundialResponse::ACK);
+        response->set_node_type(SundialResponse::STORAGE);
+        // send to coordinator
+        SundialRequest new_request;
+        new_request.set_request_type(SundialRequest::MDCC_Phase2bReplyAbort);
+        new_request.set_node_type(SundialRequest::STORAGE);
+        SundialResponse new_response;
+        rpc_client->sendRequestAsync(this, request->coord_id(), new_request,
+                                     new_response, true);
+        new_request.set_node_id(request->node_id());
+    }
 }
 
 RC
@@ -133,7 +187,7 @@ TxnManager::process_mdcc_local_phase1(RC rc, uint64_t node_id, bool is_singlepar
   // also used by coordinator (client, single partition): process_mdcc_singlepart
   replied_acceptors[g_node_id] = 0;
   // self also acts as an acceptor
-  string data = "[LSN] placehold:" + std::string('d', num_local_write * g_log_sz * 8);
+  string data = "[LSN] placehold:" + std::string(num_local_write * g_log_sz * 8, 'd');
   // only incr as redis/azure will decrement
   SundialRequest::RequestType type;
   State status;
@@ -141,7 +195,8 @@ TxnManager::process_mdcc_local_phase1(RC rc, uint64_t node_id, bool is_singlepar
     status = (rc == COMMIT) ? PREPARED : ABORTED;
 #if BALLOT_TYPE == CLASSIC_BALLOT
     // participant (leader) for local partiton, send 2a to acceptors
-    type = (rc == COMMIT) ? SundialRequest::MDCC_Phase2a : SundialRequest::MDCC_ABORT_REQ;
+    type = (rc == COMMIT) ? SundialRequest::MDCC_Phase2a :
+        SundialRequest::MDCC_Phase2aAbort;
 #else
     type = SundialRequest::MDCC_ProposeFast;
 #endif
@@ -161,7 +216,12 @@ TxnManager::process_mdcc_local_phase1(RC rc, uint64_t node_id, bool is_singlepar
   SundialResponse new_response;
   new_request.set_request_type(type);
   new_request.set_txn_id( get_txn_id() );
-  new_request.set_node_id(node_id);
+  new_request.set_coord_id(node_id);
+  new_request.set_node_id(g_node_id);
+  if (g_node_id == node_id)
+      new_request.set_node_type(SundialRequest::COORDINATOR);
+  else
+      new_request.set_node_type(SundialRequest::PARTICIPANT);
   assert(CC_ALG == OCC);
   ((CC_MAN *) _cc_manager)->build_local_req(new_request);
   for (size_t i = 0; i < g_num_storage_nodes; i++) {

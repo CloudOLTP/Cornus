@@ -38,7 +38,7 @@
 // MDCC client (coordinator)
 
 RC TxnManager::process_mdcc_singlepart(RC rc) {
-    process_mdcc_local_phase1(rc);
+    process_mdcc_local_phase1(rc, g_node_id, true);
     int num_acceptors = (int) g_num_storage_nodes + 1;
 #if BALLOT_TYPE == BALLOT_CLASSIC
     int quorum = (int) floor(num_acceptors / 2) + 1;
@@ -71,8 +71,11 @@ RC TxnManager::process_mdcc_phase1() {
         request.Clear();
         response.Clear();
         request.set_txn_id(get_txn_id());
-        // set node id as self so that the acceptor can find coordinator
-        request.set_node_id(g_node_id);
+        // set node id as participant id
+        request.set_node_id(it->first);
+        request.set_node_type(SundialRequest::COORDINATOR);
+        // set coordinator id so that the acceptor can find coordinator
+        request.set_coord_id(g_node_id);
         // attach coordinator
         participant = request.add_nodes();
         participant->set_nid(g_node_id);
@@ -85,7 +88,7 @@ RC TxnManager::process_mdcc_phase1() {
             request.set_request_type(SundialRequest::MDCC_Propose);
             // build request
             ((CC_MAN *) _cc_manager)->build_prepare_req(it->first, request);
-            (rpc_client->sendRequestAsync(this, it->first, request, response);
+            rpc_client->sendRequestAsync(this, it->first, request, response);
         } else {
             // send proposal to acceptors (participant + storage nodes)
             request.set_request_type(SundialRequest::MDCC_ProposeFast);

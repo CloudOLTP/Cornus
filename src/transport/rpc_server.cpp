@@ -201,17 +201,34 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             // leader may be coordinator or participant
             assert(NODE_TYPE == STORAGE_NODE);
             txn = txn_table->get_txn(txn_id, true);
-            rc = txn->process_mdcc_2bclassic(request, response);
-            if (rc == ABORT) {
-                txn_table->remove_txn(txn);
-                delete txn;
-            }
+            txn->process_mdcc_2bclassic(request, response);
+            break;
+        case SundialRequest::MDCC_Phase2aAbort:
+            // from leader to acceptors in phase 1, classic
+            // leader may be coordinator or participant
+            assert(NODE_TYPE == STORAGE_NODE);
+            txn = txn_table->get_txn(txn_id, true);
+            txn->process_mdcc_2bclassic_abort(request, response);
+            // abort
+            txn_table->remove_txn(txn);
+            delete txn;
             break;
         case SundialRequest::MDCC_Phase2bReply:
             // from acceptor to leader in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);
-            txn->handle_prepare_resp(response);
-            txn->increment_replied_acceptors(response->node_id());
+            txn->_remote_nodes_involved[request->node_id()]->state =
+                TxnManager::PREPARED;
+            txn->increment_replied_acceptors(request->node_id());
+            response->set_request_type(SundialResponse::MDCC_DummyReply);
+            break;
+        case SundialRequest::MDCC_Phase2bReplyAbort:
+            // from acceptor to leader in phase 1, classic
+            txn = txn_table->get_txn(txn_id, true);
+            // set decision to abort
+            // cannot use handle_resp since here we have type of request
+            txn->_remote_nodes_involved[request->node_id()]->state =
+                TxnManager::ABORTED;
+            txn->increment_replied_acceptors(request->node_id());
             response->set_request_type(SundialResponse::MDCC_DummyReply);
             break;
         case SundialRequest::MDCC_ProposeFast:

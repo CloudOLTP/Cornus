@@ -18,12 +18,14 @@ message SundialRequest {
         TERMINATE_REQ = 8;
         MDCC_Phase1a = 9;
         MDCC_Phase2a = 10;
-        MDCC_Phase2bReply = 11;
-        MDCC_Propose = 12;
-        MDCC_ProposeFast = 13;
-        MDCC_COMMIT_REQ = 14;
-        MDCC_ABORT_REQ = 15;
-        NUM_REQ_TYPES = 16;
+        MDCC_Phase2aAbort = 11;
+        MDCC_Phase2bReply = 12;
+        MDCC_Phase2bReplyAbort = 13;
+        MDCC_Propose = 14;
+        MDCC_ProposeFast = 15;
+        MDCC_COMMIT_REQ = 16;
+        MDCC_ABORT_REQ = 17;
+        NUM_REQ_TYPES = 18;
     }
     message ReadRequest {
         uint64 key = 1;
@@ -47,6 +49,12 @@ message SundialRequest {
         uint64 ballot = 1;
     }
 
+    enum NodeType {
+        COORDINATOR = 0;
+        PARTICIPANT = 1;
+        STORAGE = 2;
+    }
+
     uint64                  txn_id        = 1;
     RequestType             request_type  = 2;
     repeated ReadRequest    read_requests = 3;
@@ -58,6 +66,8 @@ message SundialRequest {
     uint64                  request_time  = 9;
     uint64                  thread_id     = 10;
     repeated MdccData       mdcc_data     = 11;
+    NodeType                node_type     = 12;
+    uint64                  coord_id      = 13;
 }
 
 message SundialResponse {
@@ -92,6 +102,12 @@ message SundialResponse {
         NUM_RESP_TYPES = 11;
     }
 
+    enum NodeType {
+        COORDINATOR = 0;
+        PARTICIPANT = 1;
+        STORAGE = 2;
+    }
+
     message TupleData {
         uint64 key = 1;
         uint64 table_id = 2;
@@ -112,6 +128,7 @@ message SundialResponse {
     uint64                  node_id       = 4;
     RequestType             request_type  = 5;
     repeated MdccData       mdcc_data     = 6;
+    NodeType                node_type     = 7;
 }
 
 
