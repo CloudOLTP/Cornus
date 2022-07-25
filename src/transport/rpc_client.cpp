@@ -20,15 +20,19 @@ SundialRPCClient::SundialRPCClient() {
             break;
         else {
             string url = line;
-            if (node_id != g_node_id) {
-                _servers[node_id] = new SundialRPCClientStub(grpc::CreateChannel(url,
-                    grpc::InsecureChannelCredentials()));
-                cout << "[Sundial] init rpc client - " << node_id << " at " << url << endl;
+#if NODE_TYPE == COMPUTE_NODE
+            if (node_id == g_node_id) {
+              node_id ++;
+              continue;
             }
+#endif
+            _servers[node_id] = new SundialRPCClientStub(grpc::CreateChannel(url,
+                grpc::InsecureChannelCredentials()));
+            cout << "[Sundial] init rpc client to - " << node_id << " at " <<
+                url << endl;
             node_id ++;
         }
     }
-    cout << "[Sundial] rpc client is initialized!" << endl;
 #if NUM_STORAGE_NODES > 0
     node_id = 0;
     bool is_storage_node = false;
@@ -42,6 +46,12 @@ SundialRPCClient::SundialRPCClient() {
       } else {
           if (!is_storage_node)
               continue;
+#if NODE_TYPE == STORAGE_NODE
+          if (node_id == g_node_id) {
+            node_id ++;
+            continue;
+          }
+#endif
         _storage_servers[node_id] = new SundialRPCClientStub
           (grpc::CreateChannel(line, grpc::InsecureChannelCredentials()));
         cout << "[Sundial] init rpc storage client - " << node_id << " at " <<
@@ -49,8 +59,8 @@ SundialRPCClient::SundialRPCClient() {
         node_id ++;
       }
     }
-    cout << "[Sundial] rpc client is initialized!" << endl;
 #endif
+    cout << "[Sundial] rpc client is initialized!" << endl;
     // spawn a reader thread to indefinitely read completion queue
     _thread = new std::thread(AsyncCompleteRpc, this);
     // use a single cq for different channels.
@@ -90,7 +100,7 @@ SundialRPCClient::sendRequest(uint64_t node_id, SundialRequest &request,
     ClientContext context;
     request.set_request_time(get_sys_clock());
     Status status;
-    if (is_storage)
+    if (!is_storage)
         status = _servers[node_id]->contactRemote(&context, request, &response);
     else
         status = _storage_servers[node_id]->contactRemote(&context,

@@ -20,6 +20,7 @@ SundialRPCServerImpl::run() {
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t num_nodes = 0;
+#if NODE_TYPE == COMPUTE_NODE
     while (getline (in, line)) {
         if (line[0] == '#')
             continue;
@@ -29,6 +30,24 @@ SundialRPCServerImpl::run() {
             num_nodes ++;
         }
     }
+#else
+    bool is_storage_node = false;
+    while (getline (in, line)) {
+      if (line[0] == '#')
+        continue;
+      else if (line[0] == '=' && line[1] == 's') {
+        is_storage_node = true;
+        continue;
+      }
+      if (is_storage_node) {
+        if (num_nodes == g_node_id) {
+          cout << "[Sundial] will start rpc server at " << line << endl;
+          break;
+        }
+        num_nodes ++;
+      }
+    }
+#endif
 
     ServerBuilder builder;
     builder.AddListeningPort(line, grpc::InsecureServerCredentials());
@@ -47,7 +66,7 @@ SundialRPCServerImpl::run() {
     for (uint32_t i = 0; i < num_thds; i++) {
         _thread_pool[i] = new std::thread(HandleRpcs, this);
     }
-    cout <<"[Sundial] rpc server initialized, lisentening on " << line << endl;
+    cout <<"[Sundial] rpc server initialized, listening on " << line << endl;
 }
 
 void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
