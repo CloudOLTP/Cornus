@@ -33,7 +33,6 @@ Manager::Manager() {
     _max_node_cts = 0;
     //_worker_threads = new WorkerThread * [g_num_worker_threads];
     //_wakeup_thread = g_max_num_active_txns;
-    _tag = 0;
 }
 
 uint64_t
@@ -242,8 +241,3 @@ Manager::failure_protocol() {
 
 }
 
-uint64_t Manager::get_unique_tag() {
-    uint64_t tag = ATOM_ADD_FETCH(tag, 1);
-    tag = tag * g_num_nodes + g_node_id;
-    return tag;
-}

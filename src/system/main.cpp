@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
     m_wl->init();
     printf("[Sundial] workload initialized!\n");
     warmup_finish = true;
+
 #if NODE_TYPE == COMPUTE_NODE
     uint64_t starttime;
     uint64_t endtime;
@@ -90,9 +91,7 @@ int main(int argc, char* argv[])
     cout << "[Sundial] Synchronization starts" << endl;
     // Notify other nodes that the current node has finished initialization
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
-#if NODE_TYPE == COMPUTE_NODE
         if (i == g_node_id) continue;
-#endif
         SundialRequest request;
         SundialResponse response;
         request.set_request_type( SundialRequest::SYS_REQ );
@@ -109,9 +108,6 @@ int main(int argc, char* argv[])
     SundialResponse new_response;
     new_request.set_request_type( SundialRequest::SYS_REQ );
     for (uint32_t i = 0; i < g_num_storage_nodes; i ++) {
-#if NODE_TYPE == STORAGE_NODE
-      if (i == g_node_id) continue;
-#endif
       rpc_client->sendRequest(i, new_request, new_response, true);
     }
 #endif
@@ -124,17 +120,16 @@ int main(int argc, char* argv[])
     start_thread((void *)(worker_threads[g_num_worker_threads - 1]));
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)
         pthread_join(*pthreads_worker[i], nullptr);
+    assert( glob_manager->are_all_worker_threads_done() );
+    
 #if DISTRIBUTED
     cout << "[Sundial] End synchronization starts" << endl;
-    assert( glob_manager->are_all_worker_threads_done() );
     SundialRequest request;
     SundialResponse response;
     request.set_request_type( SundialRequest::SYS_REQ );
     // Notify other nodes the completion of the current node.
     for (uint32_t i = 0; i < g_num_nodes; i ++) {
-#if NODE_TYPE == COMPUTE_NODE
       if (i == g_node_id) continue;
-#endif
         starttime = get_sys_clock();
         rpc_client->sendRequest(i, request, response);
         endtime = get_sys_clock() - starttime;
@@ -145,7 +140,6 @@ int main(int argc, char* argv[])
     while (glob_manager->num_sync_requests_received() < (g_num_nodes - 1) * 2)
       usleep(1);
     cout << "[Sundial] End synchronization ends" << endl;
-
 #endif
 #if NUM_STORAGE_NODES > 0
     // only the first node has right to terminate
@@ -153,9 +147,6 @@ int main(int argc, char* argv[])
       cout << "[Sundial] Terminating Storage Nodes" << endl;
       new_request.set_request_type(SundialRequest::TERMINATE_REQ);
       for (uint32_t i = 0; i < g_num_storage_nodes; i++) {
-#if NODE_TYPE == STORAGE_NODE
-        if (i == g_node_id) continue;
-#endif
         rpc_client->sendRequest(i, new_request, new_response, true);
       }
     }
@@ -164,14 +155,13 @@ int main(int argc, char* argv[])
     cout << "Complete." << endl;
     if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
         glob_stats->print();
-
     for (uint32_t i = 0; i < g_num_worker_threads; i ++) {
         delete pthreads_worker[i];
         delete worker_threads[i];
     }
     delete [] pthreads_worker;
     delete [] worker_threads;
-#else
+#else // #if NODE_TYPE == COMPUTE_NODE
     // terminate on receiving end synchronization
     while (glob_manager->active) {}
     cout << "Terminate." << endl;
