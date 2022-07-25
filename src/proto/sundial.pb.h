@@ -111,7 +111,9 @@ enum SundialRequest_RequestType : int {
   SundialRequest_RequestType_MDCC_ProposeFast = 15,
   SundialRequest_RequestType_MDCC_COMMIT_REQ = 16,
   SundialRequest_RequestType_MDCC_ABORT_REQ = 17,
-  SundialRequest_RequestType_NUM_REQ_TYPES = 18,
+  SundialRequest_RequestType_MDCC_SINGLEPART_COMMIT = 18,
+  SundialRequest_RequestType_MDCC_SINGLEPART_ABORT = 19,
+  SundialRequest_RequestType_NUM_REQ_TYPES = 20,
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialRequest_RequestType_SundialRequest_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
@@ -1098,6 +1100,10 @@ class SundialRequest final :
     SundialRequest_RequestType_MDCC_COMMIT_REQ;
   static constexpr RequestType MDCC_ABORT_REQ =
     SundialRequest_RequestType_MDCC_ABORT_REQ;
+  static constexpr RequestType MDCC_SINGLEPART_COMMIT =
+    SundialRequest_RequestType_MDCC_SINGLEPART_COMMIT;
+  static constexpr RequestType MDCC_SINGLEPART_ABORT =
+    SundialRequest_RequestType_MDCC_SINGLEPART_ABORT;
   static constexpr RequestType NUM_REQ_TYPES =
     SundialRequest_RequestType_NUM_REQ_TYPES;
   static inline bool RequestType_IsValid(int value) {

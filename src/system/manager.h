@@ -2,6 +2,7 @@
 
 #include "helper.h"
 #include "global.h"
+#include "../utils/helper.h"
 #include <stack>
 
 class row_t;
@@ -80,6 +81,9 @@ public:
     // For OCC timestamp
     volatile uint64_t       _max_node_cts;
 
+    // rpc tag
+    uint64_t                get_unique_tag();
+
 private:
     pthread_mutex_t         ts_mutex;
     uint64_t *              timestamp;
@@ -109,5 +113,8 @@ private:
     pthread_mutex_t *       _worker_pool_mutex;
     uint64_t                _unused_quota;
     std::stack<WorkerThread *> _ready_workers;
+
+    // rpc
+    uint64_t                _tag;
 
 };

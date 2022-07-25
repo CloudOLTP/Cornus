@@ -25,7 +25,9 @@ message SundialRequest {
         MDCC_ProposeFast = 15;
         MDCC_COMMIT_REQ = 16;
         MDCC_ABORT_REQ = 17;
-        NUM_REQ_TYPES = 18;
+        MDCC_SINGLEPART_COMMIT = 18;
+        MDCC_SINGLEPART_ABORT = 19;
+        NUM_REQ_TYPES = 20;
     }
     message ReadRequest {
         uint64 key = 1;

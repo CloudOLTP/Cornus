@@ -274,7 +274,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::MDCC_COMMIT_REQ:
             txn = txn_table->get_txn(txn_id, true);
-            if (txn == NULL) {
+            if (txn == nullptr) {
                 response->set_request_type(SundialResponse::MDCC_Visibility);
                 response->set_response_type(SundialResponse::ACK);
                 return;
@@ -289,7 +289,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::MDCC_ABORT_REQ:
             txn = txn_table->get_txn(txn_id, true);
-            if (txn == NULL) {
+            if (txn == nullptr) {
                 response->set_request_type(SundialResponse::MDCC_Visibility);
                 response->set_response_type(SundialResponse::ACK);
                 return;
@@ -300,6 +300,26 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 #endif
             txn->process_mdcc_visibility(request, response, ABORT);
             txn_table->remove_txn(txn);
+            delete txn;
+            break;
+        case SundialRequest::MDCC_SINGLEPART_COMMIT:
+            txn = new TxnManager();
+            txn->set_txn_id(txn_id);
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive single part request\n",
+                 g_node_id, txn_id);
+#endif
+            txn->process_mdcc_visibility(request, response, COMMIT);
+            delete txn;
+            break;
+        case SundialRequest::MDCC_SINGLEPART_ABORT:
+            txn = new TxnManager();
+            txn->set_txn_id(txn_id);
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive single part request\n",
+                 g_node_id, txn_id);
+#endif
+            txn->process_mdcc_visibility(request, response, ABORT);
             delete txn;
             break;
         default:
@@ -325,7 +345,9 @@ SundialRPCServerImpl::CallData::CallData(SundialRPC::AsyncService* service,
 void
 SundialRPCServerImpl::CallData::Proceed() {
     if (status_ == CREATE) {
-        service_->RequestcontactRemote(&ctx_, &request_, &responder_, cq_, cq_, this);  
+        //ctx_.AsyncNotifyWhenDone(this);
+        service_->RequestcontactRemote(&ctx_, &request_, &responder_, cq_,
+                                       cq_, this);
         status_ = PROCESS;
     } else if (status_ == PROCESS) {
         // Spawn a new CallData instance to serve new clients while processing

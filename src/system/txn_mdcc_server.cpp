@@ -203,7 +203,8 @@ TxnManager::process_mdcc_local_phase1(RC rc, uint64_t node_id, bool is_singlepar
   } else {
     status = (rc == COMMIT)? COMMITTED : ABORTED;
     type = (rc == COMMIT)?
-            SundialRequest::MDCC_COMMIT_REQ : SundialRequest::MDCC_ABORT_REQ;
+            SundialRequest::MDCC_SINGLEPART_COMMIT :
+            SundialRequest::MDCC_SINGLEPART_ABORT;
   }
   // log to redis
   rpc_log_semaphore->incr();
