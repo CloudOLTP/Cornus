@@ -7,6 +7,7 @@
   <component name="MakefileSettings">
     <option name="linkedExternalProjectsSettings">
       <MakefileProjectSettings>
+        <option name="buildTarget" value="rundb" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/src" />
         <option name="modules">
           <set>

@@ -87,8 +87,8 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0 && COMMIT_ALG != COORDINATOR_LOG) {
         #if LOG_DEVICE == LOG_DVC_REDIS
-            string data = "[LSN] placehold:" + string('d', num_tuples *
-            g_log_sz * 8);
+            string data = "[LSN] placehold:" + string(num_tuples *
+            g_log_sz * 8, 'd');
             rpc_log_semaphore->incr();
             #if COMMIT_ALG == ONE_PC
             if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
@@ -102,8 +102,8 @@ TxnManager::process_prepare_request(const SundialRequest* request,
             }
             #endif  // ONE_PC
         #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-            string data = "[LSN] placehold:" + string('d', num_tuples *
-            g_log_sz * 8);
+            string data = "[LSN] placehold:" + string(num_tuples *
+            g_log_sz * 8, 'd');
             rpc_log_semaphore->incr();
             #if COMMIT_ALG == ONE_PC
                 if (azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==

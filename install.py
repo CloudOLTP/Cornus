@@ -29,10 +29,11 @@ def load_environment(fname="info.txt"):
     return env
 
 
-def load_ipaddr(ifconfig, start=0, end=100):
+def load_ipaddr(ifconfig, start=0, end=100, storage_start=0, storage_end=100):
     nodes = []
-    f = open(ifconfig)
+    storage_nodes = []
     itr = 0
+    f = open(ifconfig, "r")
     for addr in f:
         if addr[0] == '#':
             continue
@@ -44,12 +45,29 @@ def load_ipaddr(ifconfig, start=0, end=100):
             break
         itr += 1
     f.close()
-    return nodes
+
+    is_storage = False
+    itr = 0
+    f = open(ifconfig, "r")
+    for addr in f:
+        if addr[0] == "#":
+            continue
+        elif addr[0] == '=' and addr[1] == 's':
+            is_storage = True
+            continue
+        if is_storage:
+            if itr >= storage_start:
+                storage_nodes.append(addr.split(":")[0])
+            elif itr > storage_end:
+                break
+            itr += 1
+    f.close()
+    return nodes, storage_nodes
 
 
 class myThread(threading.Thread):
 
-    def __init__(self, env, ipaddr, cmd, node_id, all_addrs):
+    def __init__(self, env, ipaddr, cmd, node_id, all_addrs, is_storage=False):
         threading.Thread.__init__(self)
         self.usr = env["user"]
         self.ipaddr = ipaddr
@@ -58,6 +76,7 @@ class myThread(threading.Thread):
         self.node_id = node_id
         self.all_addrs = all_addrs
         self.root = env["home"]
+        self.is_storage = is_storage
 
     def exec(self, cmd):
         ret = os.system(cmd)
@@ -137,7 +156,7 @@ class myThread(threading.Thread):
                           "| sudo ssh {} \"cat >> {}.ssh/authorized_keys\"".format(
                     self.root, addr, self.root))
         elif self.cmd == "sync":
-            if self.node_id == curr_node_id:
+            if (not self.is_storage) and self.node_id == curr_node_id:
                 return
             self.exec(
                 "rsync -av --exclude 'outputs' --delete {} {}@{}:{}".format(
@@ -170,19 +189,33 @@ if __name__ == "__main__":
         if input("current node id = 0, y/n? ") != "y":
             curr_node_id = int(input("enter a different id: "))
     # setup range of update
-    if len(sys.argv) > 3:
+    start = 0
+    end = 100
+    storage_start = 0
+    storage_end = 100
+    if len(sys.argv) > 4:
         limit = sys.argv[3]
         start = int(limit.split("-")[0].strip())
         end = int(limit.split("-")[1].strip())
+        if len(sys.argv) > 5:
+            limit = sys.argv[4]
+            storage_start = int(limit.split("-")[0].strip())
+            storage_end = int(limit.split("-")[1].strip())
     else:
         print("operation apply from node 0 to all nodes in ifconfig.txt")
-        start = 0
-        end = 100
     # go through each node to complete the task
     threads = []
-    addrs = load_ipaddr("src/ifconfig.txt", start, end)
+    addrs, storage = load_ipaddr("src/ifconfig.txt", start, end, storage_start,
+                         storage_end)
     for itr, addr in enumerate(addrs):
         thread1 = myThread(env, addr, cmd, itr, addrs)
+        thread1.start()
+        threads.append(thread1)
+        time.sleep(0.5)
+    for t in threads:
+        t.join()
+    for itr, addr in enumerate(storage):
+        thread1 = myThread(env, addr, cmd, itr, addrs, is_storage=True)
         thread1.start()
         threads.append(thread1)
         time.sleep(0.5)

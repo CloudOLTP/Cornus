@@ -41,8 +41,8 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         _store_procedure->txn_abort();
     }
     // create log record
-    string data = "[LSN] placehold:" + string('d', num_local_write *
-                                                       g_log_sz * 8);
+    string data = "[LSN] placehold:" + string(num_local_write *
+                                                       g_log_sz * 8, 'd');
 #if EARLY_LOCK_RELEASE
     _cc_manager->retire(); // release lock after log is received
     // enforce dependency if early lock release, regardless of txn type
@@ -79,8 +79,8 @@ TxnManager::process_2pc_phase1()
 
     // if the entire txn is read-write, log to remote storage
     if (!is_txn_read_only() && COMMIT_ALG != COORDINATOR_LOG) {
-        string data = "[LSN] placehold:" + string('d', num_local_write *
-                g_log_sz * 8);
+        string data = "[LSN] placehold:" + string(num_local_write *
+            g_log_sz * 8, 'd');
         rpc_log_semaphore->incr();
     #if COMMIT_ALG == ONE_PC
         #if LOG_DEVICE == LOG_DVC_REDIS
@@ -240,8 +240,8 @@ TxnManager::process_2pc_phase2(RC rc)
         // finish after log is stable.
         _finish_time = get_sys_clock();
     #elif COMMIG_ALG == COORDINATOR_LOG
-        string data = "[LSN] placehold:" + string('d', num_local_write *
-                g_log_sz * 8);
+        string data = "[LSN] placehold:" + string(num_local_write *
+                                                       g_log_sz * 8, 'd');
         for (auto it = _remote_nodes_involved.begin();
              it != _remote_nodes_involved.end(); it++) {
             if (!(it->second->is_readonly)) {

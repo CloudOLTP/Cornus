@@ -224,7 +224,9 @@ TxnManager::process_mdcc_local_phase1(RC rc, uint64_t node_id, bool is_singlepar
   else
       new_request.set_node_type(SundialRequest::PARTICIPANT);
   assert(CC_ALG == OCC);
+#if COMMIT_ALG == MDCC
   ((CC_MAN *) _cc_manager)->build_local_req(new_request);
+#endif
   for (size_t i = 0; i < g_num_storage_nodes; i++) {
     rpc_client->sendRequestAsync(this, i, new_request, new_response,
                                  true);
