@@ -305,21 +305,25 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         case SundialRequest::MDCC_SINGLEPART_COMMIT:
             txn = new TxnManager();
             txn->set_txn_id(txn_id);
+            txn_table->add_txn(txn);
 #if DEBUG_PRINT
             printf("[node-%u txn-%lu] receive single part request\n",
                  g_node_id, txn_id);
 #endif
             txn->process_mdcc_visibility(request, response, COMMIT);
+            txn_table->remove_txn(txn);
             delete txn;
             break;
         case SundialRequest::MDCC_SINGLEPART_ABORT:
             txn = new TxnManager();
             txn->set_txn_id(txn_id);
+            txn_table->add_txn(txn);
 #if DEBUG_PRINT
             printf("[node-%u txn-%lu] receive single part request\n",
                  g_node_id, txn_id);
 #endif
             txn->process_mdcc_visibility(request, response, ABORT);
+            txn_table->remove_txn(txn);
             delete txn;
             break;
         default:
