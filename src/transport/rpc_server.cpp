@@ -92,6 +92,9 @@ SundialRPCServerImpl::contactRemote(ServerContext* context, const SundialRequest
     // Calls done_callback->Run() when it goes out of scope.
     // AutoClosureRunner done_runner(done_callback);
     processContactRemote(context, request, response);
+#if DEBUG_PRINT
+    printf("finish processing contact remote\n");
+#endif
     return Status::OK;
 }
 
@@ -110,6 +113,10 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 
     switch (request->request_type()) {
         case SundialRequest::SYS_REQ:
+#if DEBUG_PRINT
+            printf("[node-%u] receive system request\n",
+                 g_node_id);
+#endif
             glob_manager->receive_sync_request();
             return;
         case SundialRequest::READ_REQ:
@@ -150,9 +157,15 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             break;
 #else
-            glob_manager->active = false;
+#if DEBUG_PRINT
+            cout << "receive terminate request" << endl;
+#endif
             response->set_request_type(SundialResponse::SYS_REQ);
             response->set_response_type(SundialResponse::ACK);
+            glob_manager->recv_terminate_request = true;
+#if DEBUG_PRINT
+            cout << "set active status to false" << endl;
+#endif
             return;
 #endif
         case SundialRequest::PREPARE_REQ:
@@ -266,6 +279,10 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive remote commit request\n",
+                 g_node_id, txn_id);
+#endif
             txn->process_mdcc_visibility(request, response, COMMIT);
             txn_table->remove_txn(txn);
             delete txn;
@@ -277,6 +294,10 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive remote abort request\n",
+                 g_node_id, txn_id);
+#endif
             txn->process_mdcc_visibility(request, response, ABORT);
             txn_table->remove_txn(txn);
             delete txn;
@@ -312,8 +333,17 @@ SundialRPCServerImpl::CallData::Proceed() {
         processContactRemote(&ctx_, &request_ , &reply_);
         status_ = FINISH;
         responder_.Finish(reply_, Status::OK, this);
-    } else {
+#if DEBUG_PRINT
+        printf("request-%d is finish\n", request_.request_type());
+#endif
+    } else  {
         GPR_ASSERT(status_ == FINISH);
         delete this;
+        if (glob_manager->recv_terminate_request) {
+            glob_manager->active = false;
+        }
+#if DEBUG_PRINT
+        printf("finished request is deleted\n");
+#endif
     }
 }

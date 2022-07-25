@@ -140,10 +140,11 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     printf("[node-%u, txn-%lu] send async request-%d\n", g_node_id, request
         .txn_id(), request.request_type());
 #endif
-    assert(node_id != g_node_id);
+    if ((is_storage && NODE_TYPE == STORAGE_NODE) || (!is_storage &&
+    NODE_TYPE == COMPUTE_NODE))
+        assert( node_id != g_node_id);
     // call object to store rpc data
     AsyncClientCall* call = new AsyncClientCall;;
-    assert(node_id != g_node_id);
     request.set_request_time(get_sys_clock());
     request.set_thread_id(GET_THD_ID);
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;

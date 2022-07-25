@@ -75,6 +75,7 @@ public:
     // Handle Failure
     void                    failure_protocol();
     volatile bool           active;
+    volatile bool           recv_terminate_request;
 
     // For OCC timestamp
     volatile uint64_t       _max_node_cts;

@@ -41,9 +41,9 @@ RC TxnManager::process_mdcc_singlepart(RC rc) {
     process_mdcc_local_phase1(rc, g_node_id, true);
     int num_acceptors = (int) g_num_storage_nodes + 1;
 #if BALLOT_TYPE == BALLOT_CLASSIC
-    int quorum = (int) floor(num_acceptors / 2) + 1;
+    int quorum = (int) floor(num_acceptors / 2);
 #else
-    int quorum = (int) floor(num_acceptors / 4 * 3) + 1;
+    int quorum = (int) floor(num_acceptors / 4 * 3);
 #endif
     // wait quorum for local partition
     rpc_log_semaphore->wait();
@@ -125,7 +125,8 @@ RC TxnManager::process_mdcc_phase1() {
     // wait quorum for local partition
     rpc_log_semaphore->wait();
     increment_replied_acceptors(g_node_id);
-    while (get_replied_acceptors(g_node_id) < quorum) {}
+    // quorum requirement -1 since self is leader
+    while (get_replied_acceptors(g_node_id) < quorum - 1) {}
     INC_INT_STATS(num_prepare, 1);
     _txn_state = PREPARED;
     return _decision;

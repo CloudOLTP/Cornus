@@ -22,6 +22,8 @@ class myThread(threading.Thread):
 
     def run(self):
         print("[run_exp.py] executing remotely: " + self.cmd)
+        if self.conn[1] is None:
+            return exec(self.cmd, exit_on_err=True)
         stdin, stdout, stderr = self.conn[1].exec_command(self.cmd)
         if stderr.read() == b'':
             if not self.print_stdout:
