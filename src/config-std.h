@@ -5,7 +5,7 @@
 #define DISTRIBUTED                     false
 #define NUM_NODES                       1
 #define NUM_STORAGE_NODES               0
-#define NODE_TYPE                       STORAGE_NODE
+#define NODE_TYPE                       COMPUTE_NODE
 
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024

@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)
         pthread_join(*pthreads_worker[i], nullptr);
     assert( glob_manager->are_all_worker_threads_done() );
-    
+
 #if DISTRIBUTED
     cout << "[Sundial] End synchronization starts" << endl;
     SundialRequest request;
