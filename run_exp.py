@@ -297,7 +297,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
         build_config(env, job)
         for itr in storage_nodes:
             if storage_nodes[itr][0] != "local":
-                exec("scp -r config.h {}@{}:{}src/config.h".format(
+                exec("scp -r {}src/config.h {}@{}:{}src/config.h".format(
+                    env["repo"],
                     env["user"], storage_nodes[itr][0], env["repo"]),
                     exit_on_err=True)
             remote_exec(storage_nodes[itr][1], "cd {}/src; make clean; ".format(
@@ -323,7 +324,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
     # compile remotely
     for itr in nodes:
         # copy config file
-        exec("scp -r config.h {}@{}:{}src/config.h".format(
+        exec("scp -r {}src/config.h {}@{}:{}src/config.h".format(
+            env["repo"],
             env["user"], nodes[itr][0], env["repo"]), exit_on_err=True)
         remote_exec(nodes[itr][1], "sudo pkill rundb; ")
         if int(job.get("NUM_STORAGE_NODES", 0)) == 0:
