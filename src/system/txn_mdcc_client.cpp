@@ -40,15 +40,14 @@
 RC TxnManager::process_mdcc_singlepart(RC rc) {
     process_mdcc_local_phase1(rc, g_node_id, true);
     int num_acceptors = (int) g_num_storage_nodes + 1;
-#if BALLOT_TYPE == BALLOT_CLASSIC
-    int quorum = (int) floor(num_acceptors / 2);
-#else
-    int quorum = (int) floor(num_acceptors / 4 * 3);
-#endif
+    int quorum = (int) floor(num_acceptors / 2) + 1;
+    printf("[txn-%lu] quorum = %d\n", get_txn_id(), quorum);
     // wait quorum for local partition
     rpc_log_semaphore->wait();
     increment_replied_acceptors(g_node_id);
     while (get_replied_acceptors(g_node_id) < quorum) {}
+    printf("[txn-%lu] received = %d\n", get_txn_id(), get_replied_acceptors
+    (g_node_id));
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;

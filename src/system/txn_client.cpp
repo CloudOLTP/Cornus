@@ -41,8 +41,8 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         _store_procedure->txn_abort();
     }
     // create log record
-    string data = "[LSN] placehold:" + string(num_local_write *
-                                                       g_log_sz * 8, 'd');
+    string data = "[LSN] placehold:" + string(num_local_write *g_log_sz * 8,
+                                              'd');
 #if EARLY_LOCK_RELEASE
     _cc_manager->retire(); // release lock after log is received
     // enforce dependency if early lock release, regardless of txn type

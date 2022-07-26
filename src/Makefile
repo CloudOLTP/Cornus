@@ -30,12 +30,12 @@ CPPS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp))
 OBJS = $(CPPS:.cpp=.o)
 DEPS = $(CPPS:.cpp=.d)
 
-runstorage: TARGET=storage
-runstorage: $(OBJS)
-	$(CC) -no-pie -o $@ $^ $(LDFLAGS)
-
 rundb: TARGET=rundb
 rundb: $(OBJS)
+	$(CC) -no-pie -o $@ $^ $(LDFLAGS)
+
+runstorage: TARGET=runstorage
+runstorage: $(OBJS)
 	$(CC) -no-pie -o $@ $^ $(LDFLAGS)
 
 -include $(OBJS:%.o=%.d)

@@ -24,7 +24,7 @@ class RedisClient {
     RC log_async_data(uint64_t node_id, uint64_t txn_id, int status,
         std::string & data);
   private:
-    cpp_redis::client client;
+    cpp_redis::client* clients[NUM_WORKER_THREADS];
     bool tls;
 };
 

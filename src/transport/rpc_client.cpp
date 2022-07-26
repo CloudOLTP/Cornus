@@ -8,6 +8,8 @@
 SundialRPCClient::SundialRPCClient() {
     _servers = new SundialRPCClientStub * [g_num_nodes];
     _storage_servers = new SundialRPCClientStub * [g_num_storage_nodes];
+    _threads = new std::thread * [g_num_nodes];
+    _storage_threads = new std::thread * [g_num_storage_nodes];
     // get server names
     std::ifstream in(ifconfig_file);
     string line;
@@ -28,6 +30,10 @@ SundialRPCClient::SundialRPCClient() {
 #endif
             _servers[node_id] = new SundialRPCClientStub(grpc::CreateChannel(url,
                 grpc::InsecureChannelCredentials()));
+            // spawn a reader thread for each server to indefinitely read completion
+            // queue
+            _threads[node_id] = new std::thread(AsyncCompleteRpc,
+                                                        this, node_id);
             cout << "[Sundial] init rpc client to - " << node_id << " at " <<
                 url << endl;
             node_id ++;
@@ -54,6 +60,10 @@ SundialRPCClient::SundialRPCClient() {
 #endif
         _storage_servers[node_id] = new SundialRPCClientStub
           (grpc::CreateChannel(line, grpc::InsecureChannelCredentials()));
+        // spawn a reader thread for each server to indefinitely read completion
+        // queue
+        _storage_threads[node_id] = new std::thread(AsyncCompleteRpcStorage,
+                                                    this, node_id);
         cout << "[Sundial] init rpc storage client - " << node_id << " at " <<
         line << endl;
         node_id ++;
@@ -61,30 +71,51 @@ SundialRPCClient::SundialRPCClient() {
     }
 #endif
     cout << "[Sundial] rpc client is initialized!" << endl;
-    // spawn a reader thread to indefinitely read completion queue
-    _thread = new std::thread(AsyncCompleteRpc, this);
-    // use a single cq for different channels.
 }
 
+
 void
-SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s) {
+SundialRPCClient::AsyncCompleteRpcStorage(SundialRPCClient * s, uint64_t
+node_id) {
     void* got_tag;
     bool ok = false;
     // Block until the next result is available in the completion queue "cq".
-    while (s->cq.Next(&got_tag, &ok)) {
+    while (s->_storage_servers[node_id]->cq_.Next(&got_tag, &ok)) {
         // The tag in this example is the memory location of the call object
-        AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
+        auto call = static_cast<AsyncClientCall*>(got_tag);
         if (!call->status.ok()) {
             printf("[REQ] client rec response fail: (%d) %s\n",
                    call->status.error_code(), call->status.error_message().c_str());
         }
         // handle return value for non-system response
         assert(call->reply->response_type() != SundialResponse::SYS_RESP);
-
         s->sendRequestDone(call->request, call->reply);
         // Once we're complete, deallocate the call object.
         delete call;
     }
+
+}
+
+void
+SundialRPCClient::AsyncCompleteRpc(SundialRPCClient * s, uint64_t
+node_id) {
+    void* got_tag;
+    bool ok = false;
+    // Block until the next result is available in the completion queue "cq".
+    while (s->_servers[node_id]->cq_.Next(&got_tag, &ok)) {
+        // The tag in this example is the memory location of the call object
+        auto call = static_cast<AsyncClientCall*>(got_tag);
+        if (!call->status.ok()) {
+            printf("[REQ] client rec response fail: (%d) %s\n",
+                   call->status.error_code(), call->status.error_message().c_str());
+        }
+        // handle return value for non-system response
+        assert(call->reply->response_type() != SundialResponse::SYS_RESP);
+        s->sendRequestDone(call->request, call->reply);
+        // Once we're complete, deallocate the call object.
+        delete call;
+    }
+
 }
 
 RC
@@ -150,11 +181,11 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_req_msg_size[ request.request_type() ] += request.SpaceUsedLong();
     if (!is_storage)
-        call->response_reader = _servers[node_id]->stub_->PrepareAsynccontactRemote(&call->context, request, &cq);
+        call->response_reader = _servers[node_id]->stub_->PrepareAsynccontactRemote(&call->context, request, &_servers[node_id]->cq_);
     else
         call->response_reader =
             _storage_servers[node_id]->stub_->PrepareAsynccontactRemote
-            (&call->context, request, &cq);
+            (&call->context, request, &_storage_servers[node_id]->cq_);
 
     // StartCall initiates the RPC call
     call->request = &request;

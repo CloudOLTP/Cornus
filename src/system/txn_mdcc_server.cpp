@@ -87,6 +87,7 @@ RC TxnManager::process_mdcc_2bfast(const SundialRequest *request,
     response->set_request_type(SundialResponse::MDCC_Phase2bFast);
     response->set_response_type(type);
     response->set_node_id(request->node_id());
+    return rc;
 }
 
 void
@@ -178,6 +179,10 @@ TxnManager::process_mdcc_visibility(const SundialRequest *request,
     _finish_time = get_sys_clock();
     response->set_request_type(SundialResponse::MDCC_Visibility);
     response->set_response_type(SundialResponse::ACK);
+#if DEBUG_PRINT
+    printf("[node-%u txn-%lu] finish mdcc visibility\n",
+                 g_node_id, _txn_id);
+#endif
     return RCOK;
 }
 
