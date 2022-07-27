@@ -80,7 +80,8 @@ node_id) {
     void* got_tag;
     bool ok = false;
     // Block until the next result is available in the completion queue "cq".
-    while (s->_storage_servers[node_id]->cq_.Next(&got_tag, &ok)) {
+    while (true) {
+        s->_storage_servers[node_id]->cq_.Next(&got_tag, &ok);
         // The tag in this example is the memory location of the call object
         auto call = static_cast<AsyncClientCall*>(got_tag);
         if (!call->status.ok()) {
@@ -102,7 +103,8 @@ node_id) {
     void* got_tag;
     bool ok = false;
     // Block until the next result is available in the completion queue "cq".
-    while (s->_servers[node_id]->cq_.Next(&got_tag, &ok)) {
+    while (true) {
+        s->_servers[node_id]->cq_.Next(&got_tag, &ok);
         // The tag in this example is the memory location of the call object
         auto call = static_cast<AsyncClientCall*>(got_tag);
         if (!call->status.ok()) {

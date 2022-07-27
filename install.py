@@ -152,7 +152,7 @@ class myThread(threading.Thread):
                 if itr == self.node_id:
                     continue
                 # add ssh key to each node's authorized keys
-                self.exec("sudo cat {}.ssh/id_ed25519.pub " \
+                self.exec("sudo cat {}.ssh/id_rsa.pub " \
                           "| sudo ssh {} \"cat >> {}.ssh/authorized_keys\"".format(
                     self.root, addr, self.root))
         elif self.cmd == "sync":
@@ -191,8 +191,8 @@ if __name__ == "__main__":
     # setup range of update
     start = 0
     end = 100
-    storage_start = 0
-    storage_end = 100
+    storage_start = -1
+    storage_end = -1
     if len(sys.argv) > 4:
         limit = sys.argv[3]
         start = int(limit.split("-")[0].strip())

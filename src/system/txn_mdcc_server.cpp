@@ -116,13 +116,11 @@ TxnManager::process_mdcc_2bclassic(const SundialRequest* request,
         response->set_response_type(SundialResponse::ACK);
         response->set_node_type(SundialResponse::STORAGE);
         // send to coordinator
-        SundialRequest new_request;
-        new_request.set_request_type(SundialRequest::MDCC_Phase2bReply);
-        new_request.set_node_type(SundialRequest::STORAGE);
-        SundialResponse new_response;
-        rpc_client->sendRequestAsync(this, request->coord_id(), new_request,
-                                     new_response, true);
-        new_request.set_node_id(request->node_id());
+        txn_request_.set_request_type(SundialRequest::MDCC_Phase2bReply);
+        txn_request_.set_node_type(SundialRequest::STORAGE);
+        txn_request_.set_node_id(request->node_id());
+        rpc_client->sendRequestAsync(this, request->coord_id(), txn_request_,
+                                     txn_response_, true);
     }
 }
 
@@ -151,13 +149,12 @@ TxnManager::process_mdcc_2bclassic_abort(const SundialRequest* request,
         response->set_response_type(SundialResponse::ACK);
         response->set_node_type(SundialResponse::STORAGE);
         // send to coordinator
-        SundialRequest new_request;
-        new_request.set_request_type(SundialRequest::MDCC_Phase2bReplyAbort);
-        new_request.set_node_type(SundialRequest::STORAGE);
+        txn_request_.set_request_type(SundialRequest::MDCC_Phase2bReplyAbort);
+        txn_request_.set_node_type(SundialRequest::STORAGE);
         SundialResponse new_response;
-        rpc_client->sendRequestAsync(this, request->coord_id(), new_request,
-                                     new_response, true);
-        new_request.set_node_id(request->node_id());
+        rpc_client->sendRequestAsync(this, request->coord_id(), txn_request_,
+                                     txn_response_, true);
+        txn_request_.set_node_id(request->node_id());
     }
 }
 
@@ -218,22 +215,20 @@ TxnManager::process_mdcc_local_phase1(RC rc, uint64_t node_id, bool is_singlepar
 #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
   azure_blob_client->log_async_data(g_node_id, get_txn_id(), status, data);
 #endif
-  SundialRequest new_request;
-  SundialResponse new_response;
-  new_request.set_request_type(type);
-  new_request.set_txn_id( get_txn_id() );
-  new_request.set_coord_id(node_id);
-  new_request.set_node_id(g_node_id);
+    txn_request_.set_request_type(type);
+    txn_request_.set_txn_id( get_txn_id() );
+    txn_request_.set_coord_id(node_id);
+    txn_request_.set_node_id(g_node_id);
   if (g_node_id == node_id)
-      new_request.set_node_type(SundialRequest::COORDINATOR);
+      txn_request_.set_node_type(SundialRequest::COORDINATOR);
   else
-      new_request.set_node_type(SundialRequest::PARTICIPANT);
+      txn_request_.set_node_type(SundialRequest::PARTICIPANT);
   assert(CC_ALG == OCC);
 #if COMMIT_ALG == MDCC
-  ((CC_MAN *) _cc_manager)->build_local_req(new_request);
+  ((CC_MAN *) _cc_manager)->build_local_req(txn_request_);
 #endif
   for (size_t i = 0; i < g_num_storage_nodes; i++) {
-    rpc_client->sendRequestAsync(this, i, new_request, new_response,
+    rpc_client->sendRequestAsync(this, i, txn_request_, txn_response_,
                                  true);
   }
 }
