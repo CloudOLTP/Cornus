@@ -8,3 +8,4 @@
 =s
 # please use ip instead hostname here; need to check if the node is local or not
 128.105.145.3:50052
+128.105.144.249:50052

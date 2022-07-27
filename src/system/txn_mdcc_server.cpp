@@ -151,10 +151,9 @@ TxnManager::process_mdcc_2bclassic_abort(const SundialRequest* request,
         // send to coordinator
         txn_request_.set_request_type(SundialRequest::MDCC_Phase2bReplyAbort);
         txn_request_.set_node_type(SundialRequest::STORAGE);
-        SundialResponse new_response;
+        txn_request_.set_node_id(request->node_id());
         rpc_client->sendRequestAsync(this, request->coord_id(), txn_request_,
                                      txn_response_, true);
-        txn_request_.set_node_id(request->node_id());
     }
 }
 

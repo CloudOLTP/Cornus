@@ -167,7 +167,8 @@ def load_ipaddr(curr_node, env):
     for addr in f:
         if addr[0] == '#':
             continue
-        elif itr == env["num_nodes"]:
+        elif (not finish_compute_nodes) and itr == env["num_nodes"]:
+            print("[run_exp.py] finish checking compute node addrs")
             finish_compute_nodes = True
             # do not continue as this line may be =s
         if not finish_compute_nodes:
@@ -178,12 +179,15 @@ def load_ipaddr(curr_node, env):
             con = paramiko.SSHClient()
             con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             con.load_system_host_keys()
+            # TODO: check ed25519 as an alternative choice
             con.connect(addr.split(":")[0], username=env["user"],
-                            key_filename="{}.ssh/id_ed25519".format(env["home"]))
+                            key_filename="{}.ssh/id_rsa".format(env["home"]))
             nodes[itr] = (addr.split(":")[0], (itr, con))
             itr += 1
+            continue
         elif addr[0] == '=' and addr[1] == 's':
             start_storage_nodes = True
+            print("[run_exp.py] start checking storage node addrs")
             itr = 0
             continue
         elif (not finish_compute_nodes) or (not start_storage_nodes):
@@ -199,7 +203,7 @@ def load_ipaddr(curr_node, env):
             con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             con.load_system_host_keys()
             con.connect(addr.split(":")[0], username=env["user"],
-                        key_filename="{}.ssh/id_ed25519".format(env["home"]))
+                        key_filename="{}.ssh/id_rsa".format(env["home"]))
             storage_nodes[itr] = (addr.split(":")[0], (itr, con))
         itr += 1
     f.close()
@@ -344,7 +348,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
             print("[run_exp.py]  starting storage node {}".format(itr))
             # start server remotely
             # use another thread to do it asynchronously
-            full_cmd = """cd {}src ; ./runstorage""".format(env["repo"])
+            full_cmd = """cd {}src ; ./runstorage -Gn{}""".format(env["repo"], itr)
             thread = myThread(storage_nodes[itr][1], full_cmd)
             thread.start()
 

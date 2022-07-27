@@ -218,7 +218,7 @@ response)
     glob_stats->_stats[thread_id]->_resp_msg_count[ response->response_type() ]++;
     glob_stats->_stats[thread_id]->_resp_msg_size[ response->response_type() ] += response->SpaceUsedLong();
 
-    uint64_t txn_id = response->txn_id();
+    uint64_t txn_id = request->txn_id();
 #if DEBUG_PRINT
     printf("[node-%u, txn-%lu] receive remote reply-%d\n", g_node_id,
            txn_id, response->response_type());
@@ -263,5 +263,6 @@ response)
                 txn = txn_table->get_txn(txn_id);
                 break;
         }
-        txn->rpc_semaphore->decr();
+        if (txn)
+            txn->rpc_semaphore->decr();
 }

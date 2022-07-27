@@ -205,7 +205,7 @@ TxnManager::start()
 #endif
     } else {
 #if COMMIT_ALG == MDCC
-        assert(CC_ALG == READ_COMMITTED);
+        assert(ISOLATION_LEVEL == READ_COMMITTED);
         if (rc == COMMIT) {
             _prepare_start_time = get_sys_clock();
             rc = process_mdcc_phase1();
