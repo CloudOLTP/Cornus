@@ -112,7 +112,7 @@
 #define AZURE_ISOLATION_ENABLE          true
 
 // Failure Setup
-#define FAILURE_ENABLE                  true
+#define FAILURE_ENABLE                  false
 #define FAILURE_TIMEPOINT               10 // in seconds
 #define FAILURE_NODE                    0
 

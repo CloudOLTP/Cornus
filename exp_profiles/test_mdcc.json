@@ -8,7 +8,7 @@
   "NUM_WORKER_THREADS": 1,
   "NUM_RPC_SERVER_THREADS": 1,
   "MAX_NUM_ACTIVE_TXNS": 16,
-  "DEBUG_PRINT": "true",
+  "DEBUG_PRINT": "false",
   "LOG_LOCAL": "false",
   "LOG_REMOTE": "true",
   "LOG_DEVICE": "LOG_DVC_REDIS",
