@@ -87,6 +87,7 @@ node_id) {
         if (!call->status.ok()) {
             printf("[REQ] client rec response fail: (%d) %s\n",
                    call->status.error_code(), call->status.error_message().c_str());
+            assert(false);
         }
         // handle return value for non-system response
         assert(call->reply->response_type() != SundialResponse::SYS_RESP);
@@ -110,6 +111,7 @@ node_id) {
         if (!call->status.ok()) {
             printf("[REQ] client rec response fail: (%d) %s\n",
                    call->status.error_code(), call->status.error_message().c_str());
+            assert(false);
         }
         // handle return value for non-system response
         assert(call->reply->response_type() != SundialResponse::SYS_RESP);
@@ -223,7 +225,11 @@ response)
     printf("[node-%u, txn-%lu] receive remote reply-%d\n", g_node_id,
            txn_id, response->response_type());
 #endif
-        TxnManager * txn;
+        TxnManager * txn = txn_table->get_txn(txn_id);
+        // txn may not exist if using mdcc since a txn can commit/abort based
+        // on qurom and without waiting for all responses.
+        if (txn == nullptr)
+            return;
         switch (response->request_type()) {
             case SundialResponse::PREPARE_REQ :
                 txn = txn_table->get_txn(txn_id);
@@ -263,6 +269,5 @@ response)
                 txn = txn_table->get_txn(txn_id);
                 break;
         }
-        if (txn)
-            txn->rpc_semaphore->decr();
+        txn->rpc_semaphore->decr();
 }

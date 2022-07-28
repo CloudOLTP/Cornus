@@ -222,6 +222,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         case SundialRequest::MDCC_Propose:
             // from coordinator to participant in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);
+            // since using occ, it wont check conflict until next step,
+            // so the txn cannot be removed and it must exist
+            assert(txn);
             rc = txn->process_mdcc_2aclassic(request, response);
             if (rc == ABORT) {
                 txn_table->remove_txn(txn);
@@ -233,6 +236,11 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             // leader may be coordinator or participant
             assert(NODE_TYPE == STORAGE_NODE);
             txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                txn = new TxnManager();
+                txn->set_txn_id(txn_id);
+                txn_table->add_txn(txn);
+            }
             txn->process_mdcc_2bclassic(request, response);
             break;
         case SundialRequest::MDCC_Phase2aAbort:
@@ -240,6 +248,11 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             // leader may be coordinator or participant
             assert(NODE_TYPE == STORAGE_NODE);
             txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                txn = new TxnManager();
+                txn->set_txn_id(txn_id);
+                txn_table->add_txn(txn);
+            }
             txn->process_mdcc_2bclassic_abort(request, response);
             // abort
             txn_table->remove_txn(txn);
@@ -248,6 +261,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         case SundialRequest::MDCC_Phase2bReply:
             // from acceptor to leader in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                response->set_request_type(SundialResponse::MDCC_DummyReply);
+            }
             txn->_remote_nodes_involved[request->node_id()]->state =
                 TxnManager::PREPARED;
             txn->increment_replied_acceptors(request->node_id());
@@ -256,6 +272,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         case SundialRequest::MDCC_Phase2bReplyAbort:
             // from acceptor to leader in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                response->set_request_type(SundialResponse::MDCC_DummyReply);
+            }
             // set decision to abort
             // cannot use handle_resp since here we have type of request
             txn->_remote_nodes_involved[request->node_id()]->state =
@@ -266,6 +285,11 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         case SundialRequest::MDCC_ProposeFast:
             // from coordinator to participant/acceptor, fast
             txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                txn = new TxnManager();
+                txn->set_txn_id(txn_id);
+                txn_table->add_txn(txn);
+            }
             rc = txn->process_mdcc_2bfast(request, response);
             if (rc == ABORT) {
               txn_table->remove_txn(txn);

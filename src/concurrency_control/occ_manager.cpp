@@ -406,7 +406,6 @@ OccManager::build_local_req(SundialRequest &request) {
 
 void
 OccManager::restore_from_remote_request(const SundialRequest* request) {
-    RC rc = RCOK;
     auto num_tuples = request->tuple_data_size();
     for (int i = 0; i < num_tuples; i++) {
         uint64_t key = request->tuple_data(i).key();
@@ -421,7 +420,7 @@ OccManager::restore_from_remote_request(const SundialRequest* request) {
         // copy write accesses
         INDEX * index = GET_WORKLOAD->get_index(index_id);
         set<row_t *> * rows = nullptr;
-        rc = index_read(index, key, rows, 1);
+        index_read(index, key, rows, 1);
         row_t * row = *rows->begin();
         remote_key += 1;
         // create a read copy

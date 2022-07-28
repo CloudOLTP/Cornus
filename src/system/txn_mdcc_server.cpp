@@ -120,7 +120,7 @@ TxnManager::process_mdcc_2bclassic(const SundialRequest* request,
         txn_request_.set_node_type(SundialRequest::STORAGE);
         txn_request_.set_node_id(request->node_id());
         rpc_client->sendRequestAsync(this, request->coord_id(), txn_request_,
-                                     txn_response_, true);
+                                     txn_response_, false);
     }
 }
 
@@ -153,7 +153,7 @@ TxnManager::process_mdcc_2bclassic_abort(const SundialRequest* request,
         txn_request_.set_node_type(SundialRequest::STORAGE);
         txn_request_.set_node_id(request->node_id());
         rpc_client->sendRequestAsync(this, request->coord_id(), txn_request_,
-                                     txn_response_, true);
+                                     txn_response_, false);
     }
 }
 
