@@ -111,11 +111,12 @@ RC TxnManager::process_mdcc_phase1() {
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved
         .end(); it++) {
         // wait until quorum
-        while (get_replied_acceptors(it->first) < quorum) {}
-        if (it->second->state == ABORTED) {
-            // abort txn
-            _decision = ABORT;
-            break;
+        while (get_replied_acceptors(it->first) < quorum) {
+            if (it->second->state == ABORTED) {
+                // abort txn
+                _decision = ABORT;
+                break;
+            }
         }
     }
     // wait quorum for local partition

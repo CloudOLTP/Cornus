@@ -106,6 +106,7 @@ TxnManager::process_mdcc_2bclassic(const SundialRequest* request,
 #endif
     rpc_log_semaphore->wait();
     response->set_node_id(request->node_id());
+    response->set_txn_id(request->txn_id());
     if (request->node_type() == SundialRequest::COORDINATOR) {
         response->set_request_type(SundialResponse::MDCC_Phase2bClassic);
         response->set_response_type(SundialResponse::PREPARED_OK);
@@ -119,6 +120,7 @@ TxnManager::process_mdcc_2bclassic(const SundialRequest* request,
         txn_request_.set_request_type(SundialRequest::MDCC_Phase2bReply);
         txn_request_.set_node_type(SundialRequest::STORAGE);
         txn_request_.set_node_id(request->node_id());
+        txn_request_.set_txn_id(request->txn_id());
         rpc_client->sendRequestAsync(this, request->coord_id(), txn_request_,
                                      txn_response_, false);
     }
@@ -139,6 +141,7 @@ TxnManager::process_mdcc_2bclassic_abort(const SundialRequest* request,
 #endif
     rpc_log_semaphore->wait();
     response->set_node_id(request->node_id());
+    response->set_txn_id(request->txn_id());
     if (request->node_type() == SundialRequest::COORDINATOR) {
         response->set_request_type(SundialResponse::MDCC_Phase2bClassic);
         response->set_response_type(SundialResponse::PREPARED_ABORT);
@@ -152,6 +155,7 @@ TxnManager::process_mdcc_2bclassic_abort(const SundialRequest* request,
         txn_request_.set_request_type(SundialRequest::MDCC_Phase2bReplyAbort);
         txn_request_.set_node_type(SundialRequest::STORAGE);
         txn_request_.set_node_id(request->node_id());
+        txn_request_.set_txn_id(request->txn_id());
         rpc_client->sendRequestAsync(this, request->coord_id(), txn_request_,
                                      txn_response_, false);
     }
