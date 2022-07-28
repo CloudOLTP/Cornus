@@ -263,6 +263,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn = txn_table->get_txn(txn_id, true);
             if (txn == nullptr) {
                 response->set_request_type(SundialResponse::MDCC_DummyReply);
+                return;
             }
             txn->_remote_nodes_involved[request->node_id()]->state =
                 TxnManager::PREPARED;
@@ -274,6 +275,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn = txn_table->get_txn(txn_id, true);
             if (txn == nullptr) {
                 response->set_request_type(SundialResponse::MDCC_DummyReply);
+                return;
             }
             // set decision to abort
             // cannot use handle_resp since here we have type of request
