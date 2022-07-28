@@ -194,7 +194,7 @@ TxnManager::process_mdcc_local_phase1(RC rc, uint64_t node_id, bool is_singlepar
   State status;
   if (!is_singlepart) {
     status = (rc == COMMIT) ? PREPARED : ABORTED;
-#if BALLOT_TYPE == CLASSIC_BALLOT
+#if BALLOT_TYPE == BALLOT_CLASSIC
     // participant (leader) for local partiton, send 2a to acceptors
     type = (rc == COMMIT) ? SundialRequest::MDCC_Phase2a :
         SundialRequest::MDCC_Phase2aAbort;
