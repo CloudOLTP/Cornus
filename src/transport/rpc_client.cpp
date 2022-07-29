@@ -233,8 +233,9 @@ response)
             return;
         switch (response->request_type()) {
             case SundialResponse::PREPARE_REQ :
-                txn = txn_table->get_txn(txn_id);
                 txn->handle_prepare_resp(response);
+                txn_table->return_txn(txn);
+                txn->rpc_semaphore->decr();
                 break;
             case SundialResponse::MDCC_Phase2bClassic:
                 if (response->node_type() == SundialResponse::PARTICIPANT) {
@@ -242,8 +243,10 @@ response)
                     printf("[node-%u, txn-%lu] receive phase2aClassic from "
                            "participant\n", g_node_id, txn_id);
 #endif
+                    // TODO: what if txn is aborted? need to check version
+                    //  number; ignore now since replied cnt reset everytime
+                    //  before preparing.
                     // case 1: sent from participant to coordinator as reply
-                    txn = txn_table->get_txn(txn_id);
                     // update remote_node stats as well
                     txn->handle_prepare_resp(response);
                     txn->increment_replied_acceptors(response->node_id());
@@ -256,27 +259,24 @@ response)
                     // as leader. has to be prepared ok.
                     txn->increment_replied_acceptors(response->node_id());
                 }
-                return; // no need to update rpc semaphore
+                txn_table->return_txn(txn);
+                break;
             case SundialResponse::MDCC_Phase2bFast :
                 // sent from participant/acceptors to coordinator
-                txn = txn_table->get_txn(txn_id);
                 // update remote_node stats as well
                 txn->handle_prepare_resp(response);
                 txn->increment_replied_acceptors(response->node_id());
-                return; // no need to update rpc semaphore
+                txn_table->return_txn(txn);
+                break; // no need to update rpc semaphore
             case SundialResponse::MDCC_Visibility :
-                txn = txn_table->get_txn(txn_id);
                 txn->increment_replied_acceptors(request->node_id());
-                return;
-            case SundialResponse::MDCC_DummyReply:
-                // no need decr semaphore as well
-                return;
-            case SundialResponse::TERMINATE_REQ:
-                // dont decr semaphore, and terminate request dont need retrieve txn
-                return;
+                txn_table->return_txn(txn);
+                break;
+            case SundialResponse::MDCC_DummyReply: break;
+            case SundialResponse::TERMINATE_REQ: break;
             default:
-                txn = txn_table->get_txn(txn_id);
+                txn->rpc_semaphore->decr();
                 break;
         }
-        txn->rpc_semaphore->decr();
+
 }

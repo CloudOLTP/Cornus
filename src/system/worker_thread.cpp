@@ -102,7 +102,7 @@ RC WorkerThread::run() {
     if (_native_txn && _native_txn->get_txn_state() == TxnManager::ABORTED) {
         txn_table->remove_txn(_native_txn);
         delete _native_txn;
-        _native_txn = NULL;
+        _native_txn = nullptr;
     }
     glob_manager->worker_thread_done();
     INC_FLOAT_STATS(run_time, get_sys_clock() - _init_time);
