@@ -9,34 +9,19 @@ sudo apt update
 sudo apt -y install python3-pip
 pip3 install pandas
 
-# environment setup
-export MY_INSTALL_DIR=$HOME/.local
-mkdir -p $MY_INSTALL_DIR
-export PATH="$PATH:$MY_INSTALL_DIR/bin"
-
 # update cmake
 wget -q -O cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.19.6/cmake-3.19.6-Linux-x86_64.sh
 sudo sh cmake-linux.sh -- --skip-license --prefix=$MY_INSTALL_DIR
 rm cmake-linux.sh
 
 # install grpc
-cd ~/
-git clone --recurse-submodules -b v1.46.3 --depth 1 --shallow-submodules https://github.com/grpc/grpc
+# make sure no libprotobuf installed before using this script
+cd $HOME
+git clone https://github.com/grpc/grpc
 cd grpc
-mkdir -p cmake/build
-pushd cmake/build
-cmake -DgRPC_INSTALL=ON \
-      -DgRPC_BUILD_TESTS=OFF \
-      -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR \
-      ../..
-make -j
-sudo make install
-popd
-
-#git clone https://github.com/grpc/grpc
-#cd grpc
-#git submodule update --init
-#cd test/distrib/cpp/
-#sudo ./run_distrib_test_cmake.sh
-#export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
-#export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+git submodule update --init
+cd test/distrib/cpp/
+cp ${HOME}/Sundial-Private/tools/run_distrib_test_cmake.sh ./
+./run_distrib_test_cmake.sh
+export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
