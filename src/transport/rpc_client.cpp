@@ -226,18 +226,19 @@ response)
            g_node_id,
            txn_id, response->request_type(), response->response_type());
 #endif
-        TxnManager * txn = txn_table->get_txn(txn_id);
-        // txn may not exist if using mdcc since a txn can commit/abort based
-        // on qurom and without waiting for all responses.
-        if (txn == nullptr)
-            return;
+        TxnManager * txn;
         switch (response->request_type()) {
             case SundialResponse::PREPARE_REQ :
+                txn = txn_table->get_txn(txn_id, false);
                 txn->handle_prepare_resp(response);
-                txn_table->return_txn(txn);
                 txn->rpc_semaphore->decr();
                 break;
             case SundialResponse::MDCC_Phase2bClassic:
+                txn = txn_table->get_txn(txn_id, true);
+                // txn may not exist if using mdcc since a txn can commit/abort based
+                // on qurom and without waiting for all responses.
+                if (txn == nullptr)
+                    return;
                 if (response->node_type() == SundialResponse::PARTICIPANT) {
 #if DEBUG_PRINT
                     printf("[node-%u, txn-%lu] receive phase2aClassic from "
@@ -262,6 +263,11 @@ response)
                 txn_table->return_txn(txn);
                 break;
             case SundialResponse::MDCC_Phase2bFast :
+                txn = txn_table->get_txn(txn_id, true);
+                // txn may not exist if using mdcc since a txn can commit/abort based
+                // on qurom and without waiting for all responses.
+                if (txn == nullptr)
+                    return;
                 // sent from participant/acceptors to coordinator
                 // update remote_node stats as well
                 txn->handle_prepare_resp(response);
@@ -269,14 +275,19 @@ response)
                 txn_table->return_txn(txn);
                 break; // no need to update rpc semaphore
             case SundialResponse::MDCC_Visibility :
+                txn = txn_table->get_txn(txn_id, true);
+                // txn may not exist if using mdcc since a txn can commit/abort based
+                // on qurom and without waiting for all responses.
+                if (txn == nullptr)
+                    return;
                 txn->increment_replied_acceptors(request->node_id());
                 txn_table->return_txn(txn);
                 break;
             case SundialResponse::MDCC_DummyReply: break;
             case SundialResponse::TERMINATE_REQ: break;
             default:
+                txn = txn_table->get_txn(txn_id, false);
                 txn->rpc_semaphore->decr();
                 break;
         }
-
 }

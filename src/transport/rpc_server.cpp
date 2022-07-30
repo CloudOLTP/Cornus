@@ -148,7 +148,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::TERMINATE_REQ:
 #if NODE_TYPE == COMPUTE_NODE
-            txn = txn_table->get_txn(txn_id, true);
+            txn = txn_table->get_txn(txn_id, false, true);
             if (txn == NULL) {
                 return;
             }
@@ -192,7 +192,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
           printf("[node-%u, txn-%lu] receive remote commit request\n",
                  g_node_id, txn_id);
 #endif
-            txn = txn_table->get_txn(txn_id, true);
+            txn = txn_table->get_txn(txn_id, false, true);
             if (txn == nullptr) {
                 response->set_response_type(SundialResponse::ACK);
                 return;
@@ -206,7 +206,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
           printf("[node-%u txn-%lu] receive remote abort request\n",
                  g_node_id, txn_id);
 #endif
-            txn = txn_table->get_txn(txn_id, true);
+            txn = txn_table->get_txn(txn_id, false, true);
             if (txn == nullptr) {
                 response->set_response_type(SundialResponse::ACK);
                 return;
@@ -217,7 +217,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::MDCC_Propose:
             // from coordinator to participant in phase 1, classic
-            txn = txn_table->get_txn(txn_id, false);
+            txn = txn_table->get_txn(txn_id, true);
             // since using occ, it wont check conflict until next step,
             // so the txn cannot be removed and it must exist
             assert(txn);
@@ -225,13 +225,15 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             if (rc == ABORT) {
                 txn_table->remove_txn(txn, false);
                 delete txn;
+            } else {
+                txn_table->return_txn(txn);
             }
             break;
         case SundialRequest::MDCC_Phase2a:
             // from leader to acceptors in phase 1, classic
             // leader may be coordinator or participant
             assert(NODE_TYPE == STORAGE_NODE);
-            txn = txn_table->get_txn(txn_id, false);
+            txn = txn_table->get_txn(txn_id, true);
             if (txn == nullptr) {
                 txn = new TxnManager();
                 txn->set_txn_id(txn_id);
@@ -245,13 +247,14 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             // from leader to acceptors in phase 1, classic
             // leader may be coordinator or participant
             assert(NODE_TYPE == STORAGE_NODE);
-            txn = txn_table->get_txn(txn_id, true);
+            txn = txn_table->get_txn(txn_id, true, true);
             if (txn == nullptr) {
                 txn = new TxnManager();
                 txn->set_txn_id(txn_id);
                 txn_table->add_txn(txn);
             }
             txn->process_mdcc_2bclassic_abort(request, response);
+            txn_table->return_txn(txn);
             // abort
             txn_table->remove_txn(txn, true);
             delete txn;
@@ -290,22 +293,21 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::MDCC_ProposeFast:
             // from coordinator to participant/acceptor, fast
-            txn = txn_table->get_txn(txn_id, false);
+            txn = txn_table->get_txn(txn_id, true);
             if (txn == nullptr) {
                 txn = new TxnManager();
                 txn->set_txn_id(txn_id);
                 txn_table->add_txn(txn);
             }
             rc = txn->process_mdcc_2bfast(request, response);
+            txn_table->return_txn(txn);
             if (rc == ABORT) {
                 txn_table->remove_txn(txn, true);
                 delete txn;
-            } else {
-                txn_table->return_txn(txn);
             }
             break;
         case SundialRequest::MDCC_COMMIT_REQ:
-            txn = txn_table->get_txn(txn_id, true);
+            txn = txn_table->get_txn(txn_id, false, true);
             if (txn == nullptr) {
                 response->set_request_type(SundialResponse::MDCC_Visibility);
                 response->set_response_type(SundialResponse::ACK);
@@ -320,7 +322,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             break;
         case SundialRequest::MDCC_ABORT_REQ:
-            txn = txn_table->get_txn(txn_id, true);
+            txn = txn_table->get_txn(txn_id, false, true);
             if (txn == nullptr) {
                 response->set_request_type(SundialResponse::MDCC_Visibility);
                 response->set_response_type(SundialResponse::ACK);

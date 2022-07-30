@@ -46,7 +46,7 @@ TxnTable::add_txn(TxnManager * txn)
 }
 
 TxnManager *
-TxnTable::get_txn(uint64_t txn_id, bool remove, bool validate)
+TxnTable::get_txn(uint64_t txn_id, bool record_ref, bool remove, bool validate)
 {
     uint32_t bucket_id = txn_id % _txn_table_size;
     Node * node;
@@ -64,7 +64,8 @@ TxnTable::get_txn(uint64_t txn_id, bool remove, bool validate)
                 node->valid = false;
             // increment reference count for safety
             // no need to be atomic since protected by latch.
-            node->ref++;
+            if (record_ref && COMMIT_ALG == MDCC)
+                node->ref++;
             txn = node->txn;
         }
     }
@@ -76,6 +77,8 @@ TxnTable::get_txn(uint64_t txn_id, bool remove, bool validate)
 void
 TxnTable::return_txn(TxnManager * txn)
 {
+    if (COMMIT_ALG != MDCC)
+        return;
     uint32_t bucket_id = txn->get_txn_id() % _txn_table_size;
     Node * node;
     while ( !ATOM_CAS(_buckets[bucket_id]->latch, false, true) )
@@ -90,6 +93,7 @@ TxnTable::return_txn(TxnManager * txn)
     }
     COMPILER_BARRIER
     _buckets[bucket_id]->latch = false;
+
 }
 
 void
@@ -160,7 +164,7 @@ TxnTable::remove_txn(TxnManager * txn, bool check_ref)
         node->next = node->next->next;
     }
     // block until no one reference for future safe delete
-    if (check_ref)
+    if (check_ref && COMMIT_ALG == MDCC)
         while (rm_node->ref > 0) {};
     COMPILER_BARRIER
     _buckets[bucket_id]->latch = false;
