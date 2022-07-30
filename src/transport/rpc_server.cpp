@@ -270,8 +270,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 response->set_request_type(SundialResponse::MDCC_DummyReply);
                 return;
             }
-            txn->_remote_nodes_involved[request->node_id()]->state =
-                TxnManager::PREPARED;
             txn->increment_replied_acceptors(request->node_id());
             response->set_request_type(SundialResponse::MDCC_DummyReply);
             // must return since this txn's home is on this node and delete
