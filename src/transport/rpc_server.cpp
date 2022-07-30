@@ -239,7 +239,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 txn->set_txn_id(txn_id);
                 txn_table->add_txn(txn);
             }
+            txn->lock();
             txn->process_mdcc_2bclassic(request, response);
+            txn->unlock();
             // must return since phase 2a abort may delete it
             txn_table->return_txn(txn);
             break;
@@ -253,7 +255,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 txn->set_txn_id(txn_id);
                 txn_table->add_txn(txn);
             }
+            txn->lock();
             txn->process_mdcc_2bclassic_abort(request, response);
+            txn->unlock();
             txn_table->return_txn(txn);
             // abort
             txn_table->remove_txn(txn, true);
@@ -299,7 +303,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 txn->set_txn_id(txn_id);
                 txn_table->add_txn(txn);
             }
+            txn->lock();
             rc = txn->process_mdcc_2bfast(request, response);
+            txn->unlock();
             txn_table->return_txn(txn);
             if (rc == ABORT) {
                 txn_table->remove_txn(txn, true);
@@ -317,7 +323,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             printf("[node-%u txn-%lu] receive remote commit request\n",
                  g_node_id, txn_id);
 #endif
+            txn->lock();
             txn->process_mdcc_visibility(request, response, COMMIT);
+            txn->unlock();
             txn_table->remove_txn(txn, false);
             delete txn;
             break;
@@ -332,7 +340,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             printf("[node-%u txn-%lu] receive remote abort request\n",
                  g_node_id, txn_id);
 #endif
+            txn->lock();
             txn->process_mdcc_visibility(request, response, ABORT);
+            txn->unlock();
             txn_table->remove_txn(txn, false);
             delete txn;
             break;
