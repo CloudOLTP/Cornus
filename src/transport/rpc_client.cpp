@@ -283,7 +283,7 @@ response)
                 if (txn == nullptr)
                     return;
                 if (response->node_type() == SundialResponse::PARTICIPANT) {
-                    txn->rpc_semaphore->incr();
+                    txn->rpc_semaphore->decr();
                 } else {
                     txn->increment_replied_acceptors2();
                 }

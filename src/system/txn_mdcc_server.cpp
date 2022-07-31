@@ -180,6 +180,7 @@ TxnManager::process_mdcc_visibility(const SundialRequest *request,
     #endif
     ((CC_MAN *) get_cc_manager())->cleanup(rc);
     rpc_log_semaphore->wait();
+    response->set_txn_id(get_txn_id());
     response->set_request_type(SundialResponse::MDCC_Visibility);
     response->set_response_type(SundialResponse::ACK);
     if (request->node_type() ==
@@ -190,7 +191,7 @@ TxnManager::process_mdcc_visibility(const SundialRequest *request,
     }
     assert(NODE_TYPE == COMPUTE_NODE);
     // log to acceptors if it is participant and wait for quorum
-    replied_acceptors2 = 0;
+    replied_acceptors2 = 1; // self is already one of quorum
     for (size_t i = 0; i < g_num_storage_nodes; i++) {
         txn_requests2_[i].set_txn_id( get_txn_id() );
         txn_requests2_[i].set_node_id(g_node_id);
@@ -214,8 +215,6 @@ TxnManager::process_mdcc_visibility(const SundialRequest *request,
     int quorum = (int) floor(num_acceptors / 4 * 3) + 1;
 #endif
     while (get_replied_acceptors2() < quorum) {}
-    // finish after log is stable.
-    _finish_time = get_sys_clock();
     response->set_node_type( sundial_rpc::SundialResponse_NodeType_PARTICIPANT);
     return RCOK;
 }

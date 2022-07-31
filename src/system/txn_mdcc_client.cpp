@@ -159,7 +159,7 @@ RC TxnManager::process_mdcc_phase2(RC rc) {
         rpc_semaphore->incr();
         rpc_client->sendRequestAsync(this, it->first, request, response);
     }
-    replied_acceptors2 = 0;
+    replied_acceptors2 = 1; // self is already one of quorum
     for (size_t i = 0; i < g_num_storage_nodes; i++) {
         txn_requests2_[i].set_txn_id( get_txn_id() );
         txn_requests2_[i].set_node_id(g_node_id);
