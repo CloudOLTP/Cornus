@@ -184,8 +184,8 @@ private:
     SundialRequest txn_requests_[NUM_NODES];
     SundialResponse txn_responses_[NUM_NODES];
 #else
-  SundialRequest txn_requests_[NUM_STORAGE_NODES];
-  SundialResponse txn_responses_[NUM_STORAGE_NODES];
+    SundialRequest txn_requests_[NUM_STORAGE_NODES];
+    SundialResponse txn_responses_[NUM_STORAGE_NODES];
 #endif
 
   private:

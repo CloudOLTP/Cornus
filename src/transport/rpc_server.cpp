@@ -145,6 +145,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 txn_table->remove_txn(txn, false);
                 delete txn;
             }
+            response->set_txn_id(txn_id);
             break;
         case SundialRequest::TERMINATE_REQ:
 #if NODE_TYPE == COMPUTE_NODE
@@ -186,6 +187,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 txn_table->remove_txn(txn, false);
                 delete txn;
             }
+            response->set_txn_id(txn_id);
             break;
         case SundialRequest::COMMIT_REQ:
 #if DEBUG_PRINT
@@ -200,6 +202,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             rc = txn->process_decision_request(request, response, COMMIT);
             txn_table->remove_txn(txn, false);
             delete txn;
+            response->set_txn_id(txn_id);
             break;
         case SundialRequest::ABORT_REQ:
 #if DEBUG_PRINT
@@ -214,6 +217,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             rc = txn->process_decision_request(request, response, ABORT);
             txn_table->remove_txn(txn, false);
             delete txn;
+            response->set_txn_id(txn_id);
             break;
         case SundialRequest::MDCC_Propose:
             // from coordinator to participant in phase 1, classic

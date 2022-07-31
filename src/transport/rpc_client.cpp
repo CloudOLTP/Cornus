@@ -237,8 +237,11 @@ response)
                 txn = txn_table->get_txn(txn_id, true);
                 // txn may not exist if using mdcc since a txn can commit/abort based
                 // on qurom and without waiting for all responses.
-                if (txn == nullptr)
+                if (txn == nullptr) {
+                    response->set_txn_id(txn_id);
+                    response->set_request_type(SundialResponse::)
                     return;
+                }
                 if (response->node_type() == SundialResponse::PARTICIPANT) {
 #if DEBUG_PRINT
                     printf("[node-%u, txn-%lu] receive phase2aClassic from "

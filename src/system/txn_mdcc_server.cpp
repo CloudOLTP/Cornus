@@ -54,7 +54,7 @@ TxnManager::process_mdcc_2aclassic(const SundialRequest* request,
     response->set_response_type(type);
     response->set_node_id(request->node_id());
     response->set_node_type(SundialResponse::PARTICIPANT);
-    response->set_txn_id(request->txn_id());
+    response->set_txn_id(get_txn_id());
     return rc;
 }
 
