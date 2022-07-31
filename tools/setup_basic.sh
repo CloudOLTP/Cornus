@@ -1,4 +1,5 @@
 sudo apt-get update
+sudo apt-get install libssl-dev
 sudo apt-get install -y software-properties-common
 sudo apt-get install -y python-software-properties
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
@@ -20,8 +21,8 @@ pip3 install paramiko
 echo "set tabstop=4" > ~/.vimrc
 
 # setup git
-git config --global user.name "ScarletGuo"
-git config --global user.email "zguo74@wisc.edu"
+#git config --global user.name "ScarletGuo"
+#git config --global user.email "zguo74@wisc.edu"
 
 # set up redis
 git clone https://github.com/redis/redis.git
@@ -31,7 +32,7 @@ cd
 mkdir redis_data/
 
 # set up ssh key
-bash
-(echo ; echo ; echo ; echo ; echo ; echo ;echo ; echo ; echo ; echo ;) | ssh-keygen -t ed25519 -C "zguo74@wisc.edu"
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519
+#bash
+#(echo ; echo ; echo ; echo ; echo ; echo ;echo ; echo ; echo ; echo ;) | ssh-keygen -t ed25519 -C "zguo74@wisc.edu"
+#eval "$(ssh-agent -s)"
+#ssh-add ~/.ssh/id_ed25519

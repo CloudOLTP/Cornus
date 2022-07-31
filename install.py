@@ -79,7 +79,7 @@ class myThread (threading.Thread):
 					  "chmod +x setup_proto.sh; "
 					  "chmod +x compile.sh; "
 					  "chmod +x run.sh; ")
-			self.exec("cd tools; ./setup_grpc.sh; ./setup_redis.sh; ")
+			self.exec("cd tools; ./setup_basic.sh ./setup_grpc.sh; ./setup_redis.sh; ")
 		elif self.cmd == "install_remote":
 			# remote command
 			if self.node_id == curr_node_id:
@@ -87,7 +87,7 @@ class myThread (threading.Thread):
 			self.exec("scp -r {} {}@{}:{};".format(self.homedir, self.usr,
 												self.ipaddr, self.homedir))
 			self.remote_exec("cd Sundial-Private; cd tools; "
-							 #"./setup_basic.sh; "
+							 "./setup_basic.sh; "
 							 "./setup_grpc.sh; "
 							 "./setup_redis.sh; ")
 		elif self.cmd == "config_local":
