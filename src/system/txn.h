@@ -180,8 +180,13 @@ private:
     void increment_replied_acceptors(size_t i) { replied_acceptors[i]++; }
 
     // txn level requests
-    SundialRequest txn_request_;
-    SundialResponse txn_response_;
+#if NODE_TYPE == STORAGE_NODE
+    SundialRequest txn_requests_[NUM_NODES];
+    SundialResponse txn_responses_[NUM_NODES];
+#else
+  SundialRequest txn_requests_[NUM_STORAGE_NODES];
+  SundialResponse txn_responses_[NUM_STORAGE_NODES];
+#endif
 
   private:
     void process_mdcc_local_phase1(RC rc, uint64_t g_node_id, bool is_singlepart=false);
