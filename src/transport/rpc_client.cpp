@@ -185,7 +185,8 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     glob_stats->_stats[GET_THD_ID]->_req_msg_count[ request.request_type() ] ++;
     glob_stats->_stats[GET_THD_ID]->_req_msg_size[ request.request_type() ] += request.SpaceUsedLong();
     if (!is_storage)
-        call->response_reader = _servers[node_id]->stub_->PrepareAsynccontactRemote(&call->context, request, &_servers[node_id]->cq_);
+        call->response_reader = _servers[node_id]->stub_->PrepareAsynccontactRemote(
+            &call->context, request, &_servers[node_id]->cq_);
     else
         call->response_reader =
             _storage_servers[node_id]->stub_->PrepareAsynccontactRemote
@@ -238,8 +239,6 @@ response)
                 // txn may not exist if using mdcc since a txn can commit/abort based
                 // on qurom and without waiting for all responses.
                 if (txn == nullptr) {
-                    response->set_txn_id(txn_id);
-                    response->set_request_type(SundialResponse::)
                     return;
                 }
                 if (response->node_type() == SundialResponse::PARTICIPANT) {
@@ -283,7 +282,11 @@ response)
                 // on qurom and without waiting for all responses.
                 if (txn == nullptr)
                     return;
-                txn->increment_replied_acceptors(request->node_id());
+                if (response->node_type() == SundialResponse::PARTICIPANT) {
+                    txn->rpc_semaphore->incr();
+                } else {
+                    txn->increment_replied_acceptors2();
+                }
                 txn_table->return_txn(txn);
                 break;
             case SundialResponse::MDCC_DummyReply: break;

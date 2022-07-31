@@ -177,15 +177,22 @@ private:
     response, RC rc);
     int get_replied_acceptors(size_t i) {return replied_acceptors[i].load
             (std::memory_order_relaxed);}
+    int get_replied_acceptors2() {return replied_acceptors2.load
+            (std::memory_order_relaxed);}
     void increment_replied_acceptors(size_t i) { replied_acceptors[i]++; }
+    void increment_replied_acceptors2() { replied_acceptors2++; }
 
     // txn level requests
 #if NODE_TYPE == STORAGE_NODE
     SundialRequest txn_requests_[NUM_NODES];
     SundialResponse txn_responses_[NUM_NODES];
 #else
+    // request in phase 1, as leader of paxos
     SundialRequest txn_requests_[NUM_STORAGE_NODES];
     SundialResponse txn_responses_[NUM_STORAGE_NODES];
+    // request in phase 2, as leader of paxos
+    SundialRequest txn_requests2_[NUM_STORAGE_NODES];
+    SundialResponse txn_responses2_[NUM_STORAGE_NODES];
 #endif
 
   private:
@@ -197,4 +204,5 @@ private:
     // rpc_client will update the stats on receiving reply from participant's 2b
     // the txn_mdcc will read the stats
     std::atomic<int> replied_acceptors[NUM_NODES];
+    std::atomic<int> replied_acceptors2;
 };

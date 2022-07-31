@@ -180,14 +180,43 @@ TxnManager::process_mdcc_visibility(const SundialRequest *request,
     #endif
     ((CC_MAN *) get_cc_manager())->cleanup(rc);
     rpc_log_semaphore->wait();
-    // finish after log is stable.
-    _finish_time = get_sys_clock();
     response->set_request_type(SundialResponse::MDCC_Visibility);
     response->set_response_type(SundialResponse::ACK);
-#if DEBUG_PRINT
-    printf("[node-%u txn-%lu] finish mdcc visibility\n",
-                 g_node_id, _txn_id);
+    if (request->node_type() ==
+    sundial_rpc::SundialRequest_NodeType_PARTICIPANT) {
+        assert(NODE_TYPE == STORAGE_NODE);
+        response->set_node_type( sundial_rpc::SundialResponse_NodeType_STORAGE);
+        return RCOK;
+    }
+    assert(NODE_TYPE == COMPUTE_NODE);
+    // log to acceptors if it is participant and wait for quorum
+    replied_acceptors2 = 0;
+    for (size_t i = 0; i < g_num_storage_nodes; i++) {
+        txn_requests2_[i].set_txn_id( get_txn_id() );
+        txn_requests2_[i].set_node_id(g_node_id);
+        // send as leader
+        txn_requests2_[i].set_node_type
+            (sundial_rpc::SundialRequest_NodeType_PARTICIPANT);
+        SundialRequest::RequestType type = (rc == COMMIT)?
+                                           SundialRequest::MDCC_COMMIT_REQ :
+                                           SundialRequest::MDCC_ABORT_REQ;
+        txn_requests2_[i].set_request_type(type);
+        rpc_client->sendRequestAsync(this, i, txn_requests2_[i],
+                                     txn_responses2_[i],
+                                     true);
+    }
+    _cc_manager->cleanup(rc);
+    // wait for ack from quorum of acceptors on all partitions
+    int num_acceptors = (int) g_num_storage_nodes + 1;
+#if BALLOT_TYPE == BALLOT_CLASSIC
+    int quorum = (int) floor(num_acceptors / 2) + 1;
+#else
+    int quorum = (int) floor(num_acceptors / 4 * 3) + 1;
 #endif
+    while (get_replied_acceptors2() < quorum) {}
+    // finish after log is stable.
+    _finish_time = get_sys_clock();
+    response->set_node_type( sundial_rpc::SundialResponse_NodeType_PARTICIPANT);
     return RCOK;
 }
 

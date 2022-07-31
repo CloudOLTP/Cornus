@@ -136,10 +136,11 @@ RC TxnManager::process_mdcc_phase2(RC rc) {
 #else
     int quorum = (int) floor(num_acceptors / 4 * 3) + 1;
 #endif
+    _finish_time = get_sys_clock();
     // start 2nd phase (send visibility request)
-    int leader_id = -1;
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved
         .end(); it ++) {
+        // init a new replied cnt
         if (it->second->state == ABORTED || it->second->state == COMMITTED ||
             it->second->state == FAILED)
             continue;
@@ -149,22 +150,34 @@ RC TxnManager::process_mdcc_phase2(RC rc) {
         response.Clear();
         request.set_txn_id( get_txn_id() );
         request.set_node_id( it->first ); // used for response handling
+        request.set_node_type(sundial_rpc::SundialRequest_NodeType_COORDINATOR);
         SundialRequest::RequestType type = (rc == COMMIT)?
                                            SundialRequest::MDCC_COMMIT_REQ :
                                            SundialRequest::MDCC_ABORT_REQ;
         request.set_request_type( type );
+        // increase semaphore
+        rpc_semaphore->incr();
         rpc_client->sendRequestAsync(this, it->first, request, response);
-        if (leader_id != -1)
-            continue;
-        for (size_t i = 0; i < g_num_storage_nodes; i++) {
-            rpc_client->sendRequestAsync(this, i, request, response,
-                                         true);
-        }
-        leader_id = (int) it->first;
+    }
+    replied_acceptors2 = 0;
+    for (size_t i = 0; i < g_num_storage_nodes; i++) {
+        txn_requests2_[i].set_txn_id( get_txn_id() );
+        txn_requests2_[i].set_node_id(g_node_id);
+        // send as leader
+        txn_requests2_[i].set_node_type
+        (sundial_rpc::SundialRequest_NodeType_PARTICIPANT);
+        SundialRequest::RequestType type = (rc == COMMIT)?
+                                           SundialRequest::MDCC_COMMIT_REQ :
+                                           SundialRequest::MDCC_ABORT_REQ;
+        txn_requests2_[i].set_request_type(type);
+        rpc_client->sendRequestAsync(this, i, txn_requests2_[i],
+                                     txn_responses2_[i],
+                                     true);
     }
     _cc_manager->cleanup(rc);
     // wait for ack from all acceptors on all partitions
-    while (get_replied_acceptors(leader_id) < quorum) {}
+    while (get_replied_acceptors2() < quorum) {}
+    rpc_semaphore->wait();
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     return rc;
 }
