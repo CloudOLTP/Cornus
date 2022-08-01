@@ -47,6 +47,8 @@ def load_environment(fname="info.txt"):
         lines = [line.strip() for line in open(fname)]
         env["user"] = lines[0]
         env["repo"] = lines[1]
+        if env["repo"][-1] != "/":
+            env["repo"] = env["repo"] + "/"
     else:
         f = open(fname)
         env["user"] = input("[run_exp.py] enter user name: ")
@@ -292,7 +294,7 @@ def log_to_errors(job, fname):
     os.system("cp {} {}error_{}_{}.out".format(fname, logpath, exp_name, i))
 
 
-def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
+def start_nodes(env, job, nodes, storage_nodes, compile_only=True, debug=False):
     # compile storage node
     if int(job.get("NUM_STORAGE_NODES", 0)) > 0:
         print("[run_exp.py] try to compile on storage node")
@@ -305,7 +307,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
                     env["repo"],
                     env["user"], storage_nodes[itr][0], env["repo"]),
                     exit_on_err=True)
-            remote_exec(storage_nodes[itr][1], "cd {}/src; make clean; ".format(
+            remote_exec(storage_nodes[itr][1], "cd {}src; make clean; ".format(
                 env["repo"]))
             remote_exec(storage_nodes[itr][1], "sudo pkill runstorage; ")
             remote_exec(storage_nodes[itr][1], "{}tools/compile.sh "
@@ -313,7 +315,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
                 env["repo"], env["repo"]), exit_on_err=True, print_stdout=False,
                         skip_warning=True)
     else:
-        exec("cd {}/src; make clean; ".format(env["repo"]))
+        exec("cd {}src; make clean; ".format(env["repo"]))
 
     # try compile locally
     job["NODE_TYPE"] = "COMPUTE_NODE"
@@ -333,7 +335,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
             env["user"], nodes[itr][0], env["repo"]), exit_on_err=True)
         remote_exec(nodes[itr][1], "sudo pkill rundb; ")
         if int(job.get("NUM_STORAGE_NODES", 0)) == 0:
-            remote_exec(nodes[itr][1], "cd {}/src; make clean; ".format(env["repo"]))
+            remote_exec(nodes[itr][1], "cd {}src; make clean; ".format(env["repo"]))
         # compile
         remote_exec(nodes[itr][1], "{}tools/compile.sh rundb".format(
             env["repo"], env["repo"]), exit_on_err=True, print_stdout=False,
@@ -377,6 +379,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
     for t in threads:
         t.join()
 
+    if debug:
+        return
     # process results
     # copy temp from every non-failed node and rename it
     for itr in nodes:
@@ -427,10 +431,10 @@ def test_exp(env, nodes, storage_nodes, job):
         print("[run_exp.py] issue exp {}/{}".format(i + 1, len(args)))
         print("[run_exp.py] arg = {}".format(arg), flush=True)
         start_nodes(env, load_job(arg.split()), nodes, storage_nodes,
-                    compile_only=(mode == "compile"))
+                    compile_only=(mode == "compile"), debug=(mode=="debug"))
     print("[run_exp.py] FINISH WHOLE EXPERIMENTS", flush=True)
 
-    if mode == "compile":
+    if mode != "release":
         exit(0)
 
     # process result on current node

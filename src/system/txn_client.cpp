@@ -40,8 +40,8 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         _store_procedure->txn_abort();
     }
     // create log record
-    string data = "[LSN] placehold:" + string('d', num_local_write *
-                                                       g_log_sz * 8);
+    string data = "[LSN] placehold:" + string(num_local_write *
+                                                       g_log_sz * 8, 'd');
 #if EARLY_LOCK_RELEASE
 #if DEBUG_ELR
     printf("[txn-%lu] retire locks; \n", _txn_id);
@@ -96,9 +96,9 @@ TxnManager::process_2pc_phase1()
 #endif
 
     // if the entire txn is read-write, log to remote storage
-    if (!is_txn_read_only()) {
-        string data = "[LSN] placehold:" + string('d', num_local_write *
-                g_log_sz * 8);
+    if (!is_txn_read_only() && COMMIT_ALG != COORDINATOR_LOG) {
+        string data = "[LSN] placehold:" + string(num_local_write *
+                g_log_sz * 8, 'd');
         rpc_log_semaphore->incr();
     #if COMMIT_ALG == ONE_PC
         #if LOG_DEVICE == LOG_DVC_REDIS
@@ -107,6 +107,29 @@ TxnManager::process_2pc_phase1()
         if (azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data) == FAIL)
         #endif
             return FAIL;
+	#elif COMMIG_ALG == COORDINATOR_LOG
+        string data = "[LSN] placehold:" + string(num_local_write *
+                g_log_sz * 8, 'd');
+        for (auto it = _remote_nodes_involved.begin();
+             it != _remote_nodes_involved.end(); it++) {
+            if (!(it->second->is_readonly)) {
+                data += + string(num_local_write *
+                g_log_sz * 8, 'd');
+            }
+        }
+        #if LOG_DEVICE == LOG_DVC_REDIS
+        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
+           data) == FAIL) {
+            return FAIL;
+        }
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        if (azure_blob_client->log_sync_data(g_node_id, get_txn_id(),
+                                          rc_to_state(rc)) == FAIL) {
+            return FAIL;
+        }
+        #endif
+        // finish after log is stable.
+        _finish_time = get_sys_clock();
     #else
         #if LOG_DEVICE == LOG_DVC_REDIS
         if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data) == FAIL)

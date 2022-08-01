@@ -78,8 +78,8 @@ class myThread (threading.Thread):
 					  "chmod +x setup_env.sh; "
 					  "chmod +x setup_proto.sh; "
 					  "chmod +x compile.sh; "
-					  "chmod +x run.sh; ")
-			self.exec("cd tools; ./setup_basic.sh ./setup_grpc.sh; ./setup_redis.sh; ")
+					  "chmod +x run.sh; sudo apt-get install openssl")
+			self.exec("cd tools; ./setup_basic.sh ./setup_redis.sh; ./setup_grpc.sh; ./setup_conf.sh")
 		elif self.cmd == "install_remote":
 			# remote command
 			if self.node_id == curr_node_id:

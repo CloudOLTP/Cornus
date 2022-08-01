@@ -1,6 +1,12 @@
 # a list of servers; each on a new line
 newnode-0:50051
 newnode-1:50051
+newnode-2:50051
+newnode-3:50051
+newnode-4:50051
+newnode-5:50051
+newnode-6:50051
+newnode-7:50051
 =l
 #128.105.144.116:6379 sundial-dev
 cornuscornus.redis.cache.windows.net:6379 wrDRGuj6R9Gp3pkff44cfafe9bpBMmms2AzCaIndpCc=
