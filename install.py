@@ -90,6 +90,12 @@ class myThread (threading.Thread):
 							 "./setup_basic.sh; "
 							 "./setup_grpc.sh; "
 							 "./setup_redis.sh; ")
+		elif self.cmd == "install_remote_redis":
+			# remote command
+			if self.node_id == curr_node_id:
+				return
+			self.remote_exec("cd Sundial-Private; cd tools; "
+							 "./setup_redis.sh; ")
 		elif self.cmd == "config_local":
 			if self.node_id != curr_node_id:
 				return

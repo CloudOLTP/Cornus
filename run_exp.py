@@ -329,6 +329,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True, debug=False):
 
     # compile remotely
     for itr in nodes:
+        if itr == int(job["NUM_NODES"]):
+            break
         # copy config file
         exec("scp -r {}src/config.h {}@{}:{}src/config.h".format(
             env["repo"],
@@ -357,6 +359,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True, debug=False):
     # execute
     threads = []
     for itr in nodes:
+        if itr == int(job["NUM_NODES"]):
+            break
         print("[run_exp.py]  starting node {}".format(itr))
         # start server remotely
         # use another thread to do it asynchronously

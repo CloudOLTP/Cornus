@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
     }
 
     // make sure server is setup before moving on
-    sleep(5);
+    sleep(g_num_nodes * 3);
     uint64_t starttime;
     uint64_t endtime;
 #if DISTRIBUTED
