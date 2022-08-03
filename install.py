@@ -35,14 +35,16 @@ def load_ipaddr(ifconfig, start=0, end=100, storage_start=0, storage_end=100):
     itr = 0
     f = open(ifconfig, "r")
     for addr in f:
+        if ":" not in addr and "=" not in addr:
+            continue
         if addr[0] == '#':
             continue
         elif addr[0] == '=' and addr[1] == 'l':
             break
+        if itr > end:
+            break
         if itr >= start:
             nodes.append(addr.split(":")[0])
-        elif itr > end:
-            break
         itr += 1
     f.close()
 
@@ -50,16 +52,19 @@ def load_ipaddr(ifconfig, start=0, end=100, storage_start=0, storage_end=100):
     itr = 0
     f = open(ifconfig, "r")
     for addr in f:
+        if ":" not in addr and "=" not in addr:
+            continue
         if addr[0] == "#":
             continue
         elif addr[0] == '=' and addr[1] == 's':
             is_storage = True
+            print("start storage")
             continue
         if is_storage:
+            if itr > storage_end:
+                break
             if itr >= storage_start:
                 storage_nodes.append(addr.split(":")[0])
-            elif itr > storage_end:
-                break
             itr += 1
     f.close()
     return nodes, storage_nodes
@@ -101,8 +106,7 @@ class myThread(threading.Thread):
                       "chmod +x setup_proto.sh; "
                       "chmod +x compile.sh; "
                       "chmod +x run.sh; ")
-            self.exec("cd tools; ./setup_basic.sh ./setup_grpc.sh; "
-                      "./setup_redis.sh; ")
+            self.exec("cd tools; ./setup_basic.sh; ./setup_redis.sh; ./setup_grpc.sh;")
         elif self.cmd == "install_remote":
             # remote command
             if self.node_id == curr_node_id:
@@ -193,11 +197,11 @@ if __name__ == "__main__":
     end = 100
     storage_start = 100
     storage_end = -1
-    if len(sys.argv) > 4:
+    if len(sys.argv) >= 4:
         limit = sys.argv[3]
         start = int(limit.split("-")[0].strip())
         end = int(limit.split("-")[1].strip())
-        if len(sys.argv) > 5:
+        if len(sys.argv) >= 5:
             limit = sys.argv[4]
             storage_start = int(limit.split("-")[0].strip())
             storage_end = int(limit.split("-")[1].strip())
@@ -209,6 +213,8 @@ if __name__ == "__main__":
         start, end, storage_start, storage_end))
     addrs, storage = load_ipaddr("src/ifconfig.txt", start, end, storage_start,
                          storage_end)
+    print("compute addrs: {}".format(addrs))
+    print("storage addrs: {}".format(storage))
     for itr, addr in enumerate(addrs):
         thread1 = myThread(env, addr, cmd, itr, addrs)
         thread1.start()

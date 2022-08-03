@@ -32,7 +32,7 @@ cd
 mkdir redis_data/
 
 # set up ssh key
-bash
-(echo ; echo ; echo ; echo ; echo ; echo ;echo ; echo ; echo ; echo ;) | ssh-keygen -t ed25519 -C "zguo74@wisc.edu"
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519
+#bash
+#(echo ; echo ; echo ; echo ; echo ; echo ;echo ; echo ; echo ; echo ;) | ssh-keygen -t ed25519 -C "zguo74@wisc.edu"
+#eval "$(ssh-agent -s)"
+#ssh-add ~/.ssh/id_ed25519
