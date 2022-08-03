@@ -191,7 +191,7 @@ if __name__ == "__main__":
     # setup range of update
     start = 0
     end = 100
-    storage_start = -1
+    storage_start = 100
     storage_end = -1
     if len(sys.argv) > 4:
         limit = sys.argv[3]
@@ -205,6 +205,8 @@ if __name__ == "__main__":
         print("operation apply from node 0 to all nodes in ifconfig.txt")
     # go through each node to complete the task
     threads = []
+    print("apply to compute node {} to {} and storage node {} to {}".format(
+        start, end, storage_start, storage_end))
     addrs, storage = load_ipaddr("src/ifconfig.txt", start, end, storage_start,
                          storage_end)
     for itr, addr in enumerate(addrs):

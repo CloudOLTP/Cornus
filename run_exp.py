@@ -292,7 +292,8 @@ def log_to_errors(job, fname):
     os.system("cp {} {}error_{}_{}.out".format(fname, logpath, exp_name, i))
 
 
-def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
+def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
+                is_debug=True):
     # compile storage node
     if int(job.get("NUM_STORAGE_NODES", 0)) > 0:
         print("[run_exp.py] try to compile on storage node")
@@ -327,6 +328,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
 
     # compile remotely
     for itr in nodes:
+        if itr == int(job["NUM_NODES"]):
+            break
         # copy config file
         exec("scp -r {}src/config.h {}@{}:{}src/config.h".format(
             env["repo"],
@@ -355,6 +358,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
     # execute
     threads = []
     for itr in nodes:
+        if itr == job["NUM_NODES"]:
+            break
         print("[run_exp.py]  starting node {}".format(itr))
         # start server remotely
         # use another thread to do it asynchronously
@@ -377,6 +382,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
     for t in threads:
         t.join()
 
+    if is_debug:
+        return
     # process results
     # copy temp from every non-failed node and rename it
     for itr in nodes:
@@ -401,9 +408,11 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True):
 def test(env, nodes, storage_nodes, job):
     mode = job.get("MODE", "compile")
     if mode == "release" or mode == "debug":
-        start_nodes(env, job, nodes, storage_nodes, compile_only=False)
+        start_nodes(env, job, nodes, storage_nodes, compile_only=False,
+                    is_debug=(mode == "debug"))
     elif mode == "compile":
-        start_nodes(env, job, nodes, storage_nodes, compile_only=True)
+        start_nodes(env, job, nodes, storage_nodes, compile_only=True,
+                    is_debug=True)
 
 
 def test_exp(env, nodes, storage_nodes, job):
@@ -417,7 +426,7 @@ def test_exp(env, nodes, storage_nodes, job):
     print("[run_exp.py] syncing codebase with all nodes")
     if env["num_nodes"] > 1:
         exec("python3 install.py sync {} {}".format(
-            env["curr_node"], "0-{}".format(env["num_nodes"]-1)),
+            env["curr_node"], "1-{}".format(env["num_nodes"]-1)),
              exit_on_err=True)
 
     # execute experiments
@@ -427,10 +436,11 @@ def test_exp(env, nodes, storage_nodes, job):
         print("[run_exp.py] issue exp {}/{}".format(i + 1, len(args)))
         print("[run_exp.py] arg = {}".format(arg), flush=True)
         start_nodes(env, load_job(arg.split()), nodes, storage_nodes,
-                    compile_only=(mode == "compile"))
+                    compile_only=(mode == "compile"),
+                    is_debug=(mode == "debug"))
     print("[run_exp.py] FINISH WHOLE EXPERIMENTS", flush=True)
 
-    if mode == "compile":
+    if mode != "release":
         exit(0)
 
     # process result on current node
