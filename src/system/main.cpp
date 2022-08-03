@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
     // terminate on receiving end synchronization
     while (true) {
         if (!glob_manager->active) {
-            sleep(10);
+            sleep(5);
             COMPILER_BARRIER
             break;
         }

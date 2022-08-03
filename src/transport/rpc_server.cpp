@@ -168,9 +168,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             break;
 #else
-#if DEBUG_PRINT
             cout << "receive terminate request" << endl;
-#endif
             response->set_request_type(SundialResponse::SYS_REQ);
             response->set_response_type(SundialResponse::ACK);
             glob_manager->active = false;
