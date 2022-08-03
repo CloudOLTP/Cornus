@@ -25,6 +25,7 @@ git config --global user.name "ScarletGuo"
 git config --global user.email "zguo74@wisc.edu"
 
 # set up redis
+cd
 git clone https://github.com/redis/redis.git
 cd redis
 make
