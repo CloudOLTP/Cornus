@@ -29,7 +29,6 @@ Manager::Manager() {
     pthread_mutex_init(_worker_pool_mutex, NULL);
     _unused_quota = 0;
     active = true;
-    recv_terminate_request = false;
     _max_node_cts = 0;
     //_worker_threads = new WorkerThread * [g_num_worker_threads];
     //_wakeup_thread = g_max_num_active_txns;

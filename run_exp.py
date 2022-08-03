@@ -7,6 +7,7 @@
 import os, sys, re, os.path
 import subprocess, json, paramiko
 import threading
+import multiprocessing
 
 ifconfig = "src/ifconfig.txt"
 
@@ -23,8 +24,9 @@ class myThread(threading.Thread):
     def run(self):
         print("[run_exp.py] executing remotely: " + self.cmd)
         if self.conn[1] is None:
-            return exec(self.cmd, exit_on_err=True)
+            return exec(self.cmd, exit_on_err=False)
         stdin, stdout, stderr = self.conn[1].exec_command(self.cmd)
+        print("[run_exp.py] finished executing remotely: " + self.cmd)
         if stderr.read() == b'':
             if not self.print_stdout:
                 return 0
@@ -33,10 +35,26 @@ class myThread(threading.Thread):
         else:
             print("[run_exp.py] error executing: {}".format(self.cmd))
             print(stderr.read())
-            if self.exit_on_err:
-                exit(0)
             return 1
         return 0
+
+
+def run_process(conn, cmd, exit_on_err=False, print_stdout=True):
+    print("[run_exp.py] executing remotely: " + cmd)
+    if conn[1] is None:
+        return exec(cmd)
+    stdin, stdout, stderr = conn[1].exec_command(cmd)
+    print("[run_exp.py] finished executing remotely: " + cmd)
+    if stderr.read() == b'':
+        if not print_stdout:
+            return 0
+        for line in stdout.readlines():
+            print("[remote-{}] ".format(conn[0]) + line.strip())
+    else:
+        print("[run_exp.py] error executing: {}".format(cmd))
+        print(stderr.read())
+        return 1
+    return 0
 
 
 def load_environment(fname="info.txt"):
@@ -346,14 +364,20 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
         return
 
     # start storage node
+    storage_threads = []
     if int(job.get("NUM_STORAGE_NODES", 0)) > 0:
         for itr in storage_nodes:
             print("[run_exp.py]  starting storage node {}".format(itr))
             # start server remotely
             # use another thread to do it asynchronously
             full_cmd = """cd {}src ; ./runstorage -Gn{}""".format(env["repo"], itr)
-            thread = myThread(storage_nodes[itr][1], full_cmd)
+            # thread = myThread(storage_nodes[itr][1], full_cmd)
+            # thread.start()
+            # storage_threads.append(("storage-%d"%itr, thread))
+            thread = multiprocessing.Process(target=run_process,
+                                           args=(storage_nodes[itr][1], full_cmd))
             thread.start()
+            storage_threads.append(("storage-%d"%itr, thread))
 
     # execute
     threads = []
@@ -365,9 +389,12 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
         # use another thread to do it asynchronously
         full_cmd = """cd {}tools ; ./run.sh -Gn{} | tee {}outputs/temp.out""".format(
             env["repo"], itr, env["repo"])
-        thread = myThread(nodes[itr][1], full_cmd)
+        # thread = myThread(nodes[itr][1], full_cmd)
+        # thread.start()
+        thread = multiprocessing.Process(target=run_process,
+                                         args=(nodes[itr][1], full_cmd))
         thread.start()
-        threads.append(thread)
+        threads.append(("compute-%d"%itr, thread))
     # ret = remote_exec(nodes[itr][1], full_cmd)
 
     # start server locally
@@ -379,8 +406,15 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
         exit(0)
 
     # wait for completion
-    for t in threads:
-        t.join()
+    for i, t in enumerate(threads):
+        print("[run_exp.py] waiting for {} to join".format(t[0]))
+        t[1].join()
+        print("[run_exp.py] {} has joined".format(t[0]))
+
+    for i, t in enumerate(storage_threads):
+        print("[run_exp.py] waiting for {} to join".format(t[0]))
+        t[1].terminate()
+        print("[run_exp.py] {} has joined".format(t[0]))
 
     if is_debug:
         return
@@ -441,7 +475,7 @@ def test_exp(env, nodes, storage_nodes, job):
     print("[run_exp.py] FINISH WHOLE EXPERIMENTS", flush=True)
 
     if mode != "release":
-        exit(0)
+        sys.exit()
 
     # process result on current node
     exec("cd {}outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv "
@@ -489,3 +523,4 @@ if __name__ == "__main__":
         test_exp(env, nodes, storage_nodes, job)
     else:
         test(env, nodes, storage_nodes, job)
+    sys.exit()

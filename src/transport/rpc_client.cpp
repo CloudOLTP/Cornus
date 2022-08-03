@@ -234,6 +234,18 @@ response)
                 txn->handle_prepare_resp(response);
                 txn->rpc_semaphore->decr();
                 break;
+            case SundialResponse::LOG_YES_REQ :
+                txn = txn_table->get_txn(txn_id, false);
+                if (txn == nullptr)
+                    return;
+                txn->increment_replied_acceptors(g_node_id);
+                break;
+            case SundialResponse::LOG_COMMIT_REQ :
+                txn = txn_table->get_txn(txn_id, false);
+                if (txn == nullptr)
+                    return;
+                txn->increment_replied_acceptors2();
+                break;
             case SundialResponse::MDCC_Phase2bClassic:
                 txn = txn_table->get_txn(txn_id, true);
                 // txn may not exist if using mdcc since a txn can commit/abort based

@@ -50,6 +50,25 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 #endif
     // if logging didn't happen, process commit phase
     if (!is_read_only()) {
+#if NUM_STORAGE_NODES > 0
+        // log to quorum
+        int num_acceptors = (int) g_num_storage_nodes + 1;
+        int quorum = (int) floor(num_acceptors / 2) + 1;
+        replied_acceptors[g_node_id] = 0;
+        // send log request
+        for (size_t i = 0; i < g_num_storage_nodes; i++) {
+            _worker_thread->thd_requests_[i].set_request_type
+            (SundialRequest::LOG_YES_REQ);
+            _worker_thread->thd_requests_[i].set_log_data_size
+            (num_local_write * g_log_sz * 8);
+            _worker_thread->thd_requests_[i].set_txn_id(get_txn_id());
+            rpc_client->sendRequestAsync(this,
+                                         i,
+                                         _worker_thread->thd_requests_[i],
+                                         _worker_thread->thd_responses_[i],
+                                         true);
+        }
+#endif
     #if LOG_DEVICE == LOG_DVC_REDIS
        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
            data) == FAIL)
@@ -59,6 +78,10 @@ TxnManager::process_commit_phase_singlepart(RC rc)
            data) == FAIL)
            return FAIL;
     #endif
+#if NUM_STORAGE_NODES > 0
+        increment_replied_acceptors(g_node_id);
+        while (get_replied_acceptors(g_node_id) < quorum) {}
+#endif
     }
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
@@ -225,6 +248,23 @@ TxnManager::process_2pc_phase2(RC rc)
         // 2pc: persistent decision
         #if LOG_DEVICE == LOG_DVC_REDIS
         rpc_log_semaphore->incr();
+        #if NUM_STORAGE_NODES > 0
+        // log to quorum
+        replied_acceptors2 = 0;
+        int num_acceptors = (int) g_num_storage_nodes + 1;
+        int quorum = (int) floor(num_acceptors / 2) + 1;
+        // send log request
+        for (size_t i = 0; i < g_num_storage_nodes; i++) {
+            _worker_thread->thd_requests2_[i].set_request_type
+            (SundialRequest::LOG_COMMIT_REQ);
+            _worker_thread->thd_requests2_[i].set_txn_id(get_txn_id());
+            rpc_client->sendRequestAsync(this,
+                                         i,
+                                         _worker_thread->thd_requests2_[i][i],
+                                         _worker_thread->thd_responses2_[i][i],
+                                         true);
+        }
+        #endif
         if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
         FAIL) {
             return FAIL;
@@ -237,6 +277,10 @@ TxnManager::process_2pc_phase2(RC rc)
         }
         #endif
         rpc_log_semaphore->wait();
+        #if NUM_STORAGE_NODES > 0
+        increment_replied_acceptors2();
+        while (get_replied_acceptors2() < quorum) {}
+        #endif
         // finish after log is stable.
         _finish_time = get_sys_clock();
     #elif COMMIG_ALG == COORDINATOR_LOG
@@ -265,6 +309,22 @@ TxnManager::process_2pc_phase2(RC rc)
     #elif COMMIT_ALG == ONE_PC
         // finish before sending out logs.
         _finish_time = get_sys_clock();
+        #if NUM_STORAGE_NODES > 0
+        // log to quorum
+        replied_acceptors2 = 0;
+        int num_acceptors = (int) g_num_storage_nodes + 1;
+        int quorum = (int) floor(num_acceptors / 2) + 1;
+        // send log request
+        for (size_t i = 0; i < g_num_storage_nodes; i++) {
+            _worker_thread->thd_requests2_[i].set_request_type(SundialRequest::LOG_COMMIT_REQ);
+            _worker_thread->thd_requests2_[i].set_txn_id(get_txn_id());
+            rpc_client->sendRequestAsync(this,
+                                         i,
+                                         _worker_thread->thd_requests2_[i],
+                                         _worker_thread->thd_responses2_[i],
+                                         true);
+        }
+        #endif
         #if LOG_DEVICE == LOG_DVC_REDIS
             rpc_log_semaphore->incr();
             if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
@@ -307,6 +367,10 @@ TxnManager::process_2pc_phase2(RC rc)
     // No need to wait for this log since it is optional (shared log optimization)
 #if COMMIT_ALG == ONE_PC
     rpc_log_semaphore->wait();
+    #if NUM_STORAGE_NODES > 0
+    increment_replied_acceptors2();
+    while (get_replied_acceptors2() < quorum) {}
+    #endif
 #endif
     _cc_manager->cleanup(rc);
     rpc_semaphore->wait();

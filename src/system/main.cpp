@@ -26,7 +26,11 @@ int main(int argc, char* argv[])
 {
 
     parser(argc, argv);
+#if NODE_TYPE == COMPUTE_NODE
     cout << "[Sundial] start node " << g_node_id << endl;
+#else
+    cout << "[Sundial] start storage node " << g_node_id << endl;
+#endif
     g_total_num_threads = g_num_worker_threads;
 
     glob_manager = new Manager;
@@ -163,8 +167,14 @@ int main(int argc, char* argv[])
     delete [] worker_threads;
 #else // #if NODE_TYPE == COMPUTE_NODE
     // terminate on receiving end synchronization
-    while (glob_manager->active) {}
-    cout << "Terminate." << endl;
+    while (true) {
+        if (!glob_manager->active) {
+            sleep(10);
+            COMPILER_BARRIER
+            break;
+        }
+    }
+    cout << "Storage node-" << g_node_id << " terminate." << endl;
 #endif // #if NODE_TYPE == COMPUTE_NODE
     return 0;
 }

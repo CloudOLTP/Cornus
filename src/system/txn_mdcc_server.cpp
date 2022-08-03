@@ -63,7 +63,9 @@ RC TxnManager::process_mdcc_2bfast(const SundialRequest *request,
     // both storage node and participant share the same function
 #if NODE_TYPE == STORAGE_NODE
     // if acceptor, need to copy the access info to restore
+#if COMMIT_ALG == MDCC
     ((CC_MAN *) get_cc_manager())->restore_from_remote_request(request);
+#endif
     response->set_node_type(SundialResponse::STORAGE);
 #else
     response->set_node_type(SundialResponse::PARTICIPANT);

@@ -11,7 +11,8 @@ public:
     enum ThreadType { WORKER_THREAD,
                       INPUT_THREAD,
                       OUTPUT_THREAD,
-                      LOGGING_THREAD};
+                      LOGGING_THREAD,
+                      RPC_THREAD};
 
     BaseThread(uint64_t thd_id, ThreadType thread_type);
     virtual ~BaseThread() {}

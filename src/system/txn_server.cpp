@@ -117,7 +117,31 @@ TxnManager::process_prepare_request(const SundialRequest* request,
                 }
             #endif  // ONE_PC
         #endif  // LOG_DEVICE
+#if NUM_STORAGE_NODES > 0
+        // log to quorum
+        int num_acceptors = (int) g_num_storage_nodes + 1;
+        int quorum = (int) floor(num_acceptors / 2) + 1;
+        replied_acceptors[g_node_id] = 0;
+        // send log request
+        // XXX(zhihan): we only send to number of quorum nodes
+        // otherwise, we need to storage txn requests elsewhere to avoid null
+        // ptr
+        for (size_t i = 0; i < quorum - 1; i++) {
+            txn_requests_[i].set_request_type(SundialRequest::LOG_YES_REQ);
+            txn_requests_[i].set_log_data_size(num_tuples * g_log_sz * 8);
+            txn_requests_[i].set_txn_id(get_txn_id());
+            rpc_client->sendRequestAsync(this,
+                                         i,
+                                         txn_requests_[i],
+                                         txn_responses_[i],
+                                         true);
+        }
+#endif
         rpc_log_semaphore->wait();
+#if NUM_STORAGE_NODES > 0
+        increment_replied_acceptors(g_node_id);
+        while (get_replied_acceptors(g_node_id) < quorum) {}
+#endif
     }
 
     // log msg no matter it is readonly or not
@@ -226,8 +250,30 @@ TxnManager::process_decision_request(const SundialRequest* request,
         return FAIL;
     }
     #endif
-
+#if NUM_STORAGE_NODES > 0
+    // log to quorum
+    replied_acceptors2 = 0;
+    int num_acceptors = (int) g_num_storage_nodes + 1;
+    int quorum = (int) floor(num_acceptors / 2) + 1;
+    // send log request
+    // XXX(zhihan): we only send to number of quorum nodes
+    // otherwise, we need to store txn requests elsewhere to avoid null
+    // ptr
+    for (size_t i = 0; i < quorum - 1; i++) {
+        txn_requests2_[i].set_request_type(SundialRequest::LOG_COMMIT_REQ);
+        txn_requests2_[i].set_txn_id(get_txn_id());
+        rpc_client->sendRequestAsync(this,
+                                     i,
+                                     txn_requests2_[i],
+                                     txn_responses2_[i],
+                                     true);
+    }
+#endif
     rpc_log_semaphore->wait();
+#if NUM_STORAGE_NODES > 0
+    increment_replied_acceptors2();
+    while (get_replied_acceptors2() < quorum) {}
+#endif
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();

@@ -4,6 +4,8 @@
 #include "txn_table.h"
 #include "manager.h"
 #include "log.h"
+#include "redis_client.h"
+#include "azure_blob_client.h"
 
 
 /*
@@ -62,6 +64,10 @@ SundialRPCServerImpl::run() {
     #else
     uint32_t num_thds = NUM_WORKER_THREADS;
     #endif
+//    _thread_pool = new RPCServerThread * [num_thds];
+//    for (uint32_t i = 0; i < num_thds; i++) {
+//        _thread_pool[i] = new RPCServerThread(this);
+//    }
     _thread_pool = new std::thread * [num_thds];
     for (uint32_t i = 0; i < num_thds; i++) {
         _thread_pool[i] = new std::thread(HandleRpcs, this);
@@ -83,6 +89,7 @@ void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
       GPR_ASSERT(s->cq_->Next(&tag, &ok));
       GPR_ASSERT(ok);
       static_cast<CallData*>(tag)->Proceed();
+
     }
 }
 
@@ -110,6 +117,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     response->set_node_id(g_node_id);
     RC rc = RCOK;
     TxnManager * txn;
+    string data;
 
     switch (request->request_type()) {
         case SundialRequest::SYS_REQ:
@@ -165,7 +173,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 #endif
             response->set_request_type(SundialResponse::SYS_REQ);
             response->set_response_type(SundialResponse::ACK);
-            glob_manager->recv_terminate_request = true;
+            glob_manager->active = false;
 #if DEBUG_PRINT
             cout << "set active status to false" << endl;
 #endif
@@ -372,17 +380,44 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn_table->remove_txn(txn, false);
             delete txn;
             break;
+        case SundialRequest::LOG_YES_REQ:
+            response->set_request_type(SundialResponse::LOG_YES_REQ);
+            response->set_txn_id(request->txn_id());
+            data = "[LSN] placehold:" + string(request->log_data_size(), 'd');
+#if LOG_DEVICE == LOG_DVC_REDIS
+            redis_client->log_sync_data(g_node_id, request->txn_id(),
+                                            TxnManager::COMMITTED,
+                                            data);
+#elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+            azure_blob_client->log_sync_data(g_node_id, request->txn_id(),
+                                            TxnManager::COMMITTED,
+                                            data)
+#endif
+            break;
+        case SundialRequest::LOG_COMMIT_REQ:
+            response->set_request_type(SundialResponse::LOG_COMMIT_REQ);
+            response->set_txn_id(request->txn_id());
+#if LOG_DEVICE == LOG_DVC_REDIS
+            redis_client->log_sync(g_node_id, request->txn_id(),
+                                        TxnManager::COMMITTED);
+#elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+            azure_blob_client->log_sync(g_node_id, request->txn_id(),
+                                            TxnManager::COMMITTED)
+#endif
+            break;
         default:
             assert(false);
     }
     // the transaction handles the RPC call
-    if (rc == FAIL || !glob_manager->active) {
+#if FAILURE_ENABLE
+    if (rc == FAIL || (!glob_manager->active)) {
 #if DEBUG_PRINT
         printf("[node-%u, txn-%lu] reply failure response\n", g_node_id,
             txn_id);
 #endif
         response->set_response_type(SundialResponse::RESP_FAIL);
     }
+#endif
 }
 
 
@@ -411,11 +446,5 @@ SundialRPCServerImpl::CallData::Proceed() {
     } else  {
         GPR_ASSERT(status_ == FINISH);
         delete this;
-        if (glob_manager->recv_terminate_request) {
-            glob_manager->active = false;
-        }
-#if DEBUG_PRINT
-        printf("finished request is deleted\n");
-#endif
     }
 }
