@@ -319,6 +319,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
         job["NODE_TYPE"] = "STORAGE_NODE"
         build_config(env, job)
         for itr in storage_nodes:
+            if itr == int(job["NUM_STORAGE_NODES"]):
+                break
             if storage_nodes[itr][0] != "local":
                 exec("scp -r {}src/config.h {}@{}:{}src/config.h".format(
                     env["repo"],
@@ -367,6 +369,8 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
     storage_threads = []
     if int(job.get("NUM_STORAGE_NODES", 0)) > 0:
         for itr in storage_nodes:
+            if itr == int(job["NUM_STORAGE_NODES"]):
+                break
             print("[run_exp.py]  starting storage node {}".format(itr))
             # start server remotely
             # use another thread to do it asynchronously
@@ -375,7 +379,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
             # thread.start()
             # storage_threads.append(("storage-%d"%itr, thread))
             thread = multiprocessing.Process(target=run_process,
-                                           args=(storage_nodes[itr][1], full_cmd))
+                                            args=(storage_nodes[itr][1], full_cmd))
             thread.start()
             storage_threads.append(("storage-%d"%itr, thread))
 

@@ -126,7 +126,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         // XXX(zhihan): we only send to number of quorum nodes
         // otherwise, we need to storage txn requests elsewhere to avoid null
         // ptr
-        for (size_t i = 0; i < quorum - 1; i++) {
+        for (size_t i = 0; (int) i < quorum - 1; i++) {
             txn_requests_[i].set_request_type(SundialRequest::LOG_YES_REQ);
             txn_requests_[i].set_log_data_size(num_tuples * g_log_sz * 8);
             txn_requests_[i].set_txn_id(get_txn_id());
@@ -259,7 +259,7 @@ TxnManager::process_decision_request(const SundialRequest* request,
     // XXX(zhihan): we only send to number of quorum nodes
     // otherwise, we need to store txn requests elsewhere to avoid null
     // ptr
-    for (size_t i = 0; i < quorum - 1; i++) {
+    for (size_t i = 0; (int) i < quorum - 1; i++) {
         txn_requests2_[i].set_request_type(SundialRequest::LOG_COMMIT_REQ);
         txn_requests2_[i].set_txn_id(get_txn_id());
         rpc_client->sendRequestAsync(this,
