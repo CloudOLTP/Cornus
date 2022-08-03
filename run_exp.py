@@ -43,18 +43,19 @@ def run_process(conn, cmd, exit_on_err=False, print_stdout=True):
     print("[run_exp.py] executing remotely: " + cmd)
     if conn[1] is None:
         return exec(cmd)
-    stdin, stdout, stderr = conn[1].exec_command(cmd)
-    print("[run_exp.py] finished executing remotely: " + cmd)
-    if stderr.read() == b'':
-        if not print_stdout:
-            return 0
-        for line in stdout.readlines():
-            print("[remote-{}] ".format(conn[0]) + line.strip())
-    else:
-        print("[run_exp.py] error executing: {}".format(cmd))
-        print(stderr.read())
-        return 1
-    return 0
+    return os.system("ssh {} \"{}\"".format(conn[1], cmd))
+    # stdin, stdout, stderr = conn[1].exec_command(cmd)
+    # print("[run_exp.py] finished executing remotely: " + cmd)
+    # if stderr.read() == b'':
+    #     if not print_stdout:
+    #         return 0
+    #     for line in stdout.readlines():
+    #         print("[remote-{}] ".format(conn[0]) + line.strip())
+    # else:
+    #     print("[run_exp.py] error executing: {}".format(cmd))
+    #     print(stderr.read())
+    #     return 1
+    # return 0
 
 
 def load_environment(fname="info.txt"):
@@ -98,25 +99,26 @@ def remote_exec(conn, cmd, exit_on_err=False, print_stdout=True,
     if conn[1] is None:
         return exec(cmd, exit_on_err=exit_on_err)
     print("[run_exp.py] executing remotely: " + cmd)
-    stdin, stdout, stderr = conn[1].exec_command(cmd)
-    err = stderr.read().decode("utf-8")
-    if len(err) > 0:
-        warning_only = True
-        print("[run_exp.py] error executing: {}".format(cmd))
-        print("stderr: [remote-{}] \"".format(conn[0]) + err.strip() + "\"")
-        if "error" in err.lower():
-            warning_only = False
-        if exit_on_err:
-            if warning_only and skip_warning:
-                return 0
-            exit(0)
-        return 1
-    else:
-        if not print_stdout:
-            return 0
-        for line in stdout.readlines():
-            print("stdout: [remote-{}] ".format(conn[0]) + line.strip())
-    return 0
+    return os.system("ssh {} \"{}\"".format(conn[1], cmd))
+    # stdin, stdout, stderr = conn[1].exec_command(cmd)
+    # err = stderr.read().decode("utf-8")
+    # if len(err) > 0:
+    #     warning_only = True
+    #     print("[run_exp.py] error executing: {}".format(cmd))
+    #     print("stderr: [remote-{}] \"".format(conn[0]) + err.strip() + "\"")
+    #     if "error" in err.lower():
+    #         warning_only = False
+    #     if exit_on_err:
+    #         if warning_only and skip_warning:
+    #             return 0
+    #         exit(0)
+    #     return 1
+    # else:
+    #     if not print_stdout:
+    #         return 0
+    #     for line in stdout.readlines():
+    #         print("stdout: [remote-{}] ".format(conn[0]) + line.strip())
+    # return 0
 
 
 # job loading methods
@@ -194,13 +196,14 @@ def load_ipaddr(curr_node, env):
                 itr += 1
                 continue
             print("[run_exp.py] try to connect to: node {} at {}".format(itr, addr.split(":")[0]))
-            con = paramiko.SSHClient()
-            con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            con.load_system_host_keys()
-            # TODO: check ed25519 as an alternative choice
-            con.connect(addr.split(":")[0], username=env["user"],
-                            key_filename="{}.ssh/id_rsa".format(env["home"]))
-            nodes[itr] = (addr.split(":")[0], (itr, con))
+            # con = paramiko.SSHClient()
+            # con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            # con.load_system_host_keys()
+            # # TODO: check ed25519 as an alternative choice
+            # con.connect(addr.split(":")[0], username=env["user"],
+            #                 key_filename="{}.ssh/id_rsa".format(env["home"]))
+            # nodes[itr] = (addr.split(":")[0], (itr, con))
+            nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
             itr += 1
             continue
         elif addr[0] == '=' and addr[1] == 's':
@@ -217,12 +220,13 @@ def load_ipaddr(curr_node, env):
             print(
                 "[run_exp.py] try to connect to: storage node {} at {}".format(itr,
                                                                         addr.split(":")[0]))
-            con = paramiko.SSHClient()
-            con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            con.load_system_host_keys()
-            con.connect(addr.split(":")[0], username=env["user"],
-                        key_filename="{}.ssh/id_rsa".format(env["home"]))
-            storage_nodes[itr] = (addr.split(":")[0], (itr, con))
+            # con = paramiko.SSHClient()
+            # con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            # con.load_system_host_keys()
+            # con.connect(addr.split(":")[0], username=env["user"],
+            #             key_filename="{}.ssh/id_rsa".format(env["home"]))
+            # storage_nodes[itr] = (addr.split(":")[0], (itr, con))
+            storage_nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
         itr += 1
     f.close()
     return nodes, storage_nodes
@@ -314,6 +318,10 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
                 is_debug=True):
     # compile storage node
     if int(job.get("NUM_STORAGE_NODES", 0)) > 0:
+        exec("python3 install.py sync {} {} {}".format(
+            env["curr_node"], "100-0", "0-{}".format(job.get(
+                "NUM_STORAGE_NODES", 0))),
+            exit_on_err=True)
         print("[run_exp.py] try to compile on storage node")
         # set up configuration
         job["NODE_TYPE"] = "STORAGE_NODE"
@@ -326,7 +334,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
                     env["repo"],
                     env["user"], storage_nodes[itr][0], env["repo"]),
                     exit_on_err=True)
-            remote_exec(storage_nodes[itr][1], "cd {}/src; make clean; ".format(
+            remote_exec(storage_nodes[itr][1], "cd {}src; make clean; ".format(
                 env["repo"]))
             remote_exec(storage_nodes[itr][1], "sudo pkill runstorage; ")
             remote_exec(storage_nodes[itr][1], "{}tools/compile.sh "
@@ -334,7 +342,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
                 env["repo"], env["repo"]), exit_on_err=True, print_stdout=False,
                         skip_warning=True)
     else:
-        exec("cd {}/src; make clean; ".format(env["repo"]))
+        exec("cd {}src; make clean; ".format(env["repo"]))
 
     # try compile locally
     job["NODE_TYPE"] = "COMPUTE_NODE"
@@ -356,7 +364,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
             env["user"], nodes[itr][0], env["repo"]), exit_on_err=True)
         remote_exec(nodes[itr][1], "sudo pkill rundb; ")
         if int(job.get("NUM_STORAGE_NODES", 0)) == 0:
-            remote_exec(nodes[itr][1], "cd {}/src; make clean; ".format(env["repo"]))
+            remote_exec(nodes[itr][1], "cd {}src; make clean; ".format(env["repo"]))
         # compile
         remote_exec(nodes[itr][1], "{}tools/compile.sh rundb".format(
             env["repo"], env["repo"]), exit_on_err=True, print_stdout=False,

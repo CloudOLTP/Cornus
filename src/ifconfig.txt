@@ -8,6 +8,8 @@
 =s
 # please use ip instead hostname here; need to check if the node is local or not
 # node 0 and 1 from WI
-128.105.144.207:50051
-128.105.144.222:50051
+#128.105.144.207:50051
+#128.105.144.222:50051
+128.105.145.3:50052
+128.105.144.249:50052
 # node 0 and 1 from CL
