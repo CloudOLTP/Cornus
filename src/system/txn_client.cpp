@@ -96,7 +96,7 @@ TxnManager::process_2pc_phase1()
 #endif
 
     // if the entire txn is read-write, log to remote storage
-    if (!is_txn_read_only() && COMMIT_ALG != COORDINATOR_LOG) {
+    if (!is_txn_read_only()) {
         string data = "[LSN] placehold:" + string(num_local_write *
                 g_log_sz * 8, 'd');
         rpc_log_semaphore->incr();
@@ -118,18 +118,16 @@ TxnManager::process_2pc_phase1()
             }
         }
         #if LOG_DEVICE == LOG_DVC_REDIS
-        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
+        if (redis_client->log_async_data(g_node_id, get_txn_id(), rc_to_state(rc),
            data) == FAIL) {
             return FAIL;
         }
         #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-        if (azure_blob_client->log_sync_data(g_node_id, get_txn_id(),
+        if (azure_blob_client->log_async_data(g_node_id, get_txn_id(),
                                           rc_to_state(rc)) == FAIL) {
             return FAIL;
         }
         #endif
-        // finish after log is stable.
-        _finish_time = get_sys_clock();
     #else
         #if LOG_DEVICE == LOG_DVC_REDIS
         if (redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data) == FAIL)
@@ -195,7 +193,8 @@ TxnManager::process_2pc_phase1()
     INC_INT_STATS(num_prepare, 1);
 
     // wait for log if the txn is read/write
-    if (!is_txn_read_only())
+    // if coodinator log, will wait for data logging in next stage
+    if (!is_txn_read_only() && COMMIT_ALG != COORDINATOR_LOG)
         rpc_log_semaphore->wait();
 
     // wait for vote
@@ -304,6 +303,29 @@ TxnManager::process_2pc_phase2(RC rc)
                 return FAIL;
             }
         #endif
+    #elif COMMIT_ALG == COORDINATOR_LOG
+        rpc_log_semaphore->wait();
+        // 2pc: persistent decision
+        #if LOG_DEVICE == LOG_DVC_NATIVE
+        SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
+                SundialRequest::LOG_ABORT_REQ;
+        send_log_request(g_storage_node_id, type);
+        #elif LOG_DEVICE == LOG_DVC_REDIS
+        rpc_log_semaphore->incr();
+        if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
+        FAIL) {
+            return FAIL;
+        }
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        rpc_log_semaphore->incr();
+        if (azure_blob_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
+        FAIL) {
+            return FAIL;
+        }
+        #endif
+        rpc_log_semaphore->wait();
+        // finish after log is stable.
+        _finish_time = get_sys_clock();
     #endif
 
 
