@@ -22,7 +22,7 @@ class myThread(threading.Thread):
         self.print_stdout = print_stdout
 
     def run(self):
-        print("[run_exp.py] executing remotely: " + self.cmd)
+        print("[run_exp.py] executing remotely on {}: " + self.cmd)
         if self.conn[1] is None:
             return exec(self.cmd, exit_on_err=False)
         stdin, stdout, stderr = self.conn[1].exec_command(self.cmd)
@@ -40,7 +40,7 @@ class myThread(threading.Thread):
 
 
 def run_process(conn, cmd, exit_on_err=False, print_stdout=True):
-    print("[run_exp.py] executing remotely: " + cmd)
+    print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd)
     if conn[1] is None:
         return exec(cmd)
     return os.system("ssh {} \"{}\"".format(conn[1], cmd))
@@ -98,7 +98,7 @@ def remote_exec(conn, cmd, exit_on_err=False, print_stdout=True,
                 skip_warning=False):
     if conn[1] is None:
         return exec(cmd, exit_on_err=exit_on_err)
-    print("[run_exp.py] executing remotely: " + cmd)
+    print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd)
     return os.system("ssh {} \"{}\"".format(conn[1], cmd))
     # stdin, stdout, stderr = conn[1].exec_command(cmd)
     # err = stderr.read().decode("utf-8")
@@ -318,9 +318,10 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
                 is_debug=True):
     # compile storage node
     if int(job.get("NUM_STORAGE_NODES", 0)) > 0:
-        exec("python3 install.py sync {} {} {}".format(
-            env["curr_node"], "100-0", "0-{}".format(job.get(
-                "NUM_STORAGE_NODES", 0))),
+        exec("cd {}; python3 install.py sync {} {} {}".format(
+            env["repo"],
+            env["curr_node"], "100-0", "0-{}".format(int(job.get(
+                "NUM_STORAGE_NODES", 0)) - 1)),
             exit_on_err=True)
         print("[run_exp.py] try to compile on storage node")
         # set up configuration
