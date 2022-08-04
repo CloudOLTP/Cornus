@@ -5,57 +5,19 @@
 # the values meaning multiple exps will be issued under each value
 # the last argument is the index of current node corresponding to the ifconfig.txt
 import os, sys, re, os.path
-import subprocess, json, paramiko
+import subprocess, json
 import threading
 import multiprocessing
+import time
 
 ifconfig = "src/ifconfig.txt"
 
-
-class myThread(threading.Thread):
-
-    def __init__(self, conn, cmd, exit_on_err=False, print_stdout=True):
-        threading.Thread.__init__(self)
-        self.conn = conn
-        self.cmd = cmd
-        self.exit_on_err = exit_on_err
-        self.print_stdout = print_stdout
-
-    def run(self):
-        print("[run_exp.py] executing remotely on {}: " + self.cmd)
-        if self.conn[1] is None:
-            return exec(self.cmd, exit_on_err=False)
-        stdin, stdout, stderr = self.conn[1].exec_command(self.cmd)
-        print("[run_exp.py] finished executing remotely: " + self.cmd)
-        if stderr.read() == b'':
-            if not self.print_stdout:
-                return 0
-            for line in stdout.readlines():
-                print("[remote-{}] ".format(self.conn[0]) + line.strip())
-        else:
-            print("[run_exp.py] error executing: {}".format(self.cmd))
-            print(stderr.read())
-            return 1
-        return 0
-
-
 def run_process(conn, cmd, exit_on_err=False, print_stdout=True):
-    print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd)
+    print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd, flush=True)
+    time.sleep(5)
     if conn[1] is None:
         return exec(cmd)
     return os.system("ssh {} \"{}\"".format(conn[1], cmd))
-    # stdin, stdout, stderr = conn[1].exec_command(cmd)
-    # print("[run_exp.py] finished executing remotely: " + cmd)
-    # if stderr.read() == b'':
-    #     if not print_stdout:
-    #         return 0
-    #     for line in stdout.readlines():
-    #         print("[remote-{}] ".format(conn[0]) + line.strip())
-    # else:
-    #     print("[run_exp.py] error executing: {}".format(cmd))
-    #     print(stderr.read())
-    #     return 1
-    # return 0
 
 
 def load_environment(fname="info.txt"):
@@ -100,25 +62,6 @@ def remote_exec(conn, cmd, exit_on_err=False, print_stdout=True,
         return exec(cmd, exit_on_err=exit_on_err)
     print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd)
     return os.system("ssh {} \"{}\"".format(conn[1], cmd))
-    # stdin, stdout, stderr = conn[1].exec_command(cmd)
-    # err = stderr.read().decode("utf-8")
-    # if len(err) > 0:
-    #     warning_only = True
-    #     print("[run_exp.py] error executing: {}".format(cmd))
-    #     print("stderr: [remote-{}] \"".format(conn[0]) + err.strip() + "\"")
-    #     if "error" in err.lower():
-    #         warning_only = False
-    #     if exit_on_err:
-    #         if warning_only and skip_warning:
-    #             return 0
-    #         exit(0)
-    #     return 1
-    # else:
-    #     if not print_stdout:
-    #         return 0
-    #     for line in stdout.readlines():
-    #         print("stdout: [remote-{}] ".format(conn[0]) + line.strip())
-    # return 0
 
 
 # job loading methods
@@ -196,13 +139,6 @@ def load_ipaddr(curr_node, env):
                 itr += 1
                 continue
             print("[run_exp.py] try to connect to: node {} at {}".format(itr, addr.split(":")[0]))
-            # con = paramiko.SSHClient()
-            # con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            # con.load_system_host_keys()
-            # # TODO: check ed25519 as an alternative choice
-            # con.connect(addr.split(":")[0], username=env["user"],
-            #                 key_filename="{}.ssh/id_rsa".format(env["home"]))
-            # nodes[itr] = (addr.split(":")[0], (itr, con))
             nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
             itr += 1
             continue
@@ -219,13 +155,7 @@ def load_ipaddr(curr_node, env):
         else:
             print(
                 "[run_exp.py] try to connect to: storage node {} at {}".format(itr,
-                                                                        addr.split(":")[0]))
-            # con = paramiko.SSHClient()
-            # con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            # con.load_system_host_keys()
-            # con.connect(addr.split(":")[0], username=env["user"],
-            #             key_filename="{}.ssh/id_rsa".format(env["home"]))
-            # storage_nodes[itr] = (addr.split(":")[0], (itr, con))
+                                                                               addr.split(":")[0]))
             storage_nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
         itr += 1
     f.close()
@@ -351,7 +281,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
     os.chdir("{}src/".format(env["repo"]))
     exec("sudo pkill rundb; ")
     exec("{}tools/compile.sh rundb > {}temp.out 2>&1".format(env["repo"],
-                                                       env["repo"]),
+                                                             env["repo"]),
          exit_on_err=True)
     exec("rm -f {}outputs/temp.out".format(env["repo"]))
 
@@ -388,14 +318,14 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
             # thread.start()
             # storage_threads.append(("storage-%d"%itr, thread))
             thread = multiprocessing.Process(target=run_process,
-                                            args=(storage_nodes[itr][1], full_cmd))
+                                             args=(storage_nodes[itr][1], full_cmd))
             thread.start()
             storage_threads.append(("storage-%d"%itr, thread))
 
     # execute
     threads = []
     for itr in nodes:
-        if itr == job["NUM_NODES"]:
+        if itr == int(job["NUM_NODES"]):
             break
         print("[run_exp.py]  starting node {}".format(itr))
         # start server remotely
@@ -434,12 +364,16 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
     # process results
     # copy temp from every non-failed node and rename it
     for itr in nodes:
+        if itr == int(job["NUM_NODES"]):
+            break
         addr = nodes[itr][0]
         # copy config file
         exec("scp {}@{}:{}outputs/temp.out {}outputs/temp-{}.out".format(
             env["user"], addr, env["repo"], env["repo"], itr))
     # then execute process command for each one.
     for itr in nodes:
+        if itr == int(job["NUM_NODES"]):
+            break
         job["NODE_ID"] = itr
         # if not successfully parsing, write to log
         if not parse_output(env, job, "{}outputs/temp-{}.out".format(
@@ -474,7 +408,7 @@ def test_exp(env, nodes, storage_nodes, job):
     if env["num_nodes"] > 1:
         exec("python3 install.py sync {} {}".format(
             env["curr_node"], "1-{}".format(env["num_nodes"]-1)),
-             exit_on_err=True)
+            exit_on_err=True)
 
     # execute experiments
     mode = job.get("MODE", "debug")
@@ -493,30 +427,7 @@ def test_exp(env, nodes, storage_nodes, job):
     # process result on current node
     exec("cd {}outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv "
          "stats.json {}.json".format(env["repo"], exp_name, exp_name))
-
-    # # process results on remote nodes
-    # print("[LOG] Start processing results on remote node", flush=True)
-    # for itr in nodes:
-    # 	# skip failed node
-    # 	if job.get("FAILURE_ENABLE", "false") == "true" and itr == job["FAILURE_NODE"]:
-    # 		continue
-    # 	# process result on each server if not a failure node
-    # 	remote_exec(nodes[itr][1], "cd {}outputs/; python3 collect_stats.py; "
-    # 		 "mv stats.csv {}.csv; mv stats.json {}.json".format(env["repo"],
-    # 															 exp_name,
-    # 															 exp_name))
     print("[run_exp.py] FINISH processing results", flush=True)
-
-
-# # collect results from remote nodes
-# print("[LOG] Start collecting results on remote node", flush=True)
-# suffix = ""
-# if job.get("FAILURE_ENABLE", "false") == "true":
-# 	suffix = " {}".format(job["FAILURE_NODE"])
-# exec("cd {}tools; python3 remote_collect.py {} {}".format(env["repo"],
-# 														  exp_name,
-# 														num_nodes) + suffix)
-# print("[LOG] FINISH collecting results")
 
 
 if __name__ == "__main__":
