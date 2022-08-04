@@ -5,38 +5,19 @@
 # the values meaning multiple exps will be issued under each value
 # the last argument is the index of current node corresponding to the ifconfig.txt
 import os, sys, re, os.path
-import subprocess, json, paramiko
+import subprocess, json
 import threading
+import multiprocessing
+import time
 
 ifconfig = "src/ifconfig.txt"
 
-
-class myThread(threading.Thread):
-
-    def __init__(self, conn, cmd, exit_on_err=False, print_stdout=True):
-        threading.Thread.__init__(self)
-        self.conn = conn
-        self.cmd = cmd
-        self.exit_on_err = exit_on_err
-        self.print_stdout = print_stdout
-
-    def run(self):
-        print("[run_exp.py] executing remotely: " + self.cmd)
-        if self.conn[1] is None:
-            return exec(self.cmd, exit_on_err=True)
-        stdin, stdout, stderr = self.conn[1].exec_command(self.cmd)
-        if stderr.read() == b'':
-            if not self.print_stdout:
-                return 0
-            for line in stdout.readlines():
-                print("[remote-{}] ".format(self.conn[0]) + line.strip())
-        else:
-            print("[run_exp.py] error executing: {}".format(self.cmd))
-            print(stderr.read())
-            if self.exit_on_err:
-                exit(0)
-            return 1
-        return 0
+def run_process(conn, cmd, exit_on_err=False, print_stdout=True):
+    print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd, flush=True)
+    time.sleep(5)
+    if conn[1] is None:
+        return exec(cmd)
+    return os.system("ssh -i /home/cornus/cornus.pem {} \"{}\"".format(conn[1], cmd))
 
 
 def load_environment(fname="info.txt"):
@@ -47,8 +28,6 @@ def load_environment(fname="info.txt"):
         lines = [line.strip() for line in open(fname)]
         env["user"] = lines[0]
         env["repo"] = lines[1]
-        if env["repo"][-1] != "/":
-            env["repo"] = env["repo"] + "/"
     else:
         f = open(fname)
         env["user"] = input("[run_exp.py] enter user name: ")
@@ -81,28 +60,9 @@ def remote_exec(conn, cmd, exit_on_err=False, print_stdout=True,
                 skip_warning=False):
     if conn[1] is None:
         return exec(cmd, exit_on_err=exit_on_err)
-    print("[run_exp.py] executing remotely: " + cmd)
-    stdin, stdout, stderr = conn[1].exec_command(cmd)
-    err = stderr.read().decode("utf-8")
-    if len(err) > 0:
-        warning_only = True
-        print("[run_exp.py] error executing: {}".format(cmd))
-        print("stderr: [remote-{}] \"".format(conn[0]) + err.strip() + "\"")
-        if "error" in err.lower():
-            warning_only = False
-        if exit_on_err:
-            if warning_only and skip_warning:
-                return 0
-            exit(0)
-        return 1
-    else:
-        if not print_stdout:
-            return 0
-        for line in stdout.readlines():
-            print("stdout: [remote-{}] ".format(conn[0]) + line.strip())
-    return 0
-
-
+    print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd)
+    return os.system("ssh -i /home/cornus/cornus.pem {} \"{}\"".format(conn[1], cmd))
+    
 # job loading methods
 def load_job(args):
     # generate a dictionary based on a string
@@ -178,13 +138,7 @@ def load_ipaddr(curr_node, env):
                 itr += 1
                 continue
             print("[run_exp.py] try to connect to: node {} at {}".format(itr, addr.split(":")[0]))
-            con = paramiko.SSHClient()
-            con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            con.load_system_host_keys()
-            # TODO: check ed25519 as an alternative choice
-            con.connect(addr.split(":")[0], username=env["user"],
-                            key_filename="/home/cornus/cornus.pem".format(env["home"]))
-            nodes[itr] = (addr.split(":")[0], (itr, con))
+            nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
             itr += 1
             continue
         elif addr[0] == '=' and addr[1] == 's':
@@ -201,12 +155,7 @@ def load_ipaddr(curr_node, env):
             print(
                 "[run_exp.py] try to connect to: storage node {} at {}".format(itr,
                                                                         addr.split(":")[0]))
-            con = paramiko.SSHClient()
-            con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            con.load_system_host_keys()
-            con.connect(addr.split(":")[0], username=env["user"],
-                        key_filename="{}.ssh/id_rsa".format(env["home"]))
-            storage_nodes[itr] = (addr.split(":")[0], (itr, con))
+            storage_nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
         itr += 1
     f.close()
     return nodes, storage_nodes
@@ -294,14 +243,22 @@ def log_to_errors(job, fname):
     os.system("cp {} {}error_{}_{}.out".format(fname, logpath, exp_name, i))
 
 
-def start_nodes(env, job, nodes, storage_nodes, compile_only=True, debug=False):
+def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
+                is_debug=True):
     # compile storage node
     if int(job.get("NUM_STORAGE_NODES", 0)) > 0:
+        exec("cd {}; python3 install.py sync {} {} {}".format(
+            env["repo"],
+            env["curr_node"], "100-0", "0-{}".format(int(job.get(
+                "NUM_STORAGE_NODES", 0)) - 1)),
+            exit_on_err=True)
         print("[run_exp.py] try to compile on storage node")
         # set up configuration
         job["NODE_TYPE"] = "STORAGE_NODE"
         build_config(env, job)
         for itr in storage_nodes:
+            if itr == int(job["NUM_STORAGE_NODES"]):
+                break
             if storage_nodes[itr][0] != "local":
                 exec("scp -r {}src/config.h {}@{}:{}src/config.h".format(
                     env["repo"],
@@ -347,14 +304,22 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True, debug=False):
         return
 
     # start storage node
+    storage_threads = []
     if int(job.get("NUM_STORAGE_NODES", 0)) > 0:
         for itr in storage_nodes:
+            if itr == int(job["NUM_STORAGE_NODES"]):
+                break
             print("[run_exp.py]  starting storage node {}".format(itr))
             # start server remotely
             # use another thread to do it asynchronously
             full_cmd = """cd {}src ; ./runstorage -Gn{}""".format(env["repo"], itr)
-            thread = myThread(storage_nodes[itr][1], full_cmd)
+            # thread = myThread(storage_nodes[itr][1], full_cmd)
+            # thread.start()
+            # storage_threads.append(("storage-%d"%itr, thread))
+            thread = multiprocessing.Process(target=run_process,
+                                            args=(storage_nodes[itr][1], full_cmd))
             thread.start()
+            storage_threads.append(("storage-%d"%itr, thread))
 
     # execute
     threads = []
@@ -366,9 +331,12 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True, debug=False):
         # use another thread to do it asynchronously
         full_cmd = """cd {}tools ; ./run.sh -Gn{} | tee {}outputs/temp.out""".format(
             env["repo"], itr, env["repo"])
-        thread = myThread(nodes[itr][1], full_cmd)
+        # thread = myThread(nodes[itr][1], full_cmd)
+        # thread.start()
+        thread = multiprocessing.Process(target=run_process,
+                                         args=(nodes[itr][1], full_cmd))
         thread.start()
-        threads.append(thread)
+        threads.append(("compute-%d"%itr, thread))
     # ret = remote_exec(nodes[itr][1], full_cmd)
 
     # start server locally
@@ -380,20 +348,31 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True, debug=False):
         exit(0)
 
     # wait for completion
-    for t in threads:
-        t.join()
+    for i, t in enumerate(threads):
+        print("[run_exp.py] waiting for {} to join".format(t[0]))
+        t[1].join()
+        print("[run_exp.py] {} has joined".format(t[0]))
 
-    if debug:
+    for i, t in enumerate(storage_threads):
+        print("[run_exp.py] waiting for {} to join".format(t[0]))
+        t[1].terminate()
+        print("[run_exp.py] {} has joined".format(t[0]))
+
+    if is_debug:
         return
     # process results
     # copy temp from every non-failed node and rename it
     for itr in nodes:
+        if itr == int(job["NUM_NODES"]):
+            break
         addr = nodes[itr][0]
         # copy config file
         exec("scp {}@{}:{}outputs/temp.out {}outputs/temp-{}.out".format(
             env["user"], addr, env["repo"], env["repo"], itr))
     # then execute process command for each one.
     for itr in nodes:
+        if itr == int(job["NUM_NODES"]):
+            break
         job["NODE_ID"] = itr
         # if not successfully parsing, write to log
         if not parse_output(env, job, "{}outputs/temp-{}.out".format(
@@ -409,9 +388,11 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True, debug=False):
 def test(env, nodes, storage_nodes, job):
     mode = job.get("MODE", "compile")
     if mode == "release" or mode == "debug":
-        start_nodes(env, job, nodes, storage_nodes, compile_only=False)
+        start_nodes(env, job, nodes, storage_nodes, compile_only=False,
+                    is_debug=(mode == "debug"))
     elif mode == "compile":
-        start_nodes(env, job, nodes, storage_nodes, compile_only=True)
+        start_nodes(env, job, nodes, storage_nodes, compile_only=True,
+                    is_debug=True)
 
 
 def test_exp(env, nodes, storage_nodes, job):
@@ -425,7 +406,7 @@ def test_exp(env, nodes, storage_nodes, job):
     print("[run_exp.py] syncing codebase with all nodes")
     if env["num_nodes"] > 1:
         exec("python3 install.py sync {} {}".format(
-            env["curr_node"], "0-{}".format(env["num_nodes"]-1)),
+            env["curr_node"], "1-{}".format(env["num_nodes"]-1)),
              exit_on_err=True)
 
     # execute experiments
@@ -435,11 +416,12 @@ def test_exp(env, nodes, storage_nodes, job):
         print("[run_exp.py] issue exp {}/{}".format(i + 1, len(args)))
         print("[run_exp.py] arg = {}".format(arg), flush=True)
         start_nodes(env, load_job(arg.split()), nodes, storage_nodes,
-                    compile_only=(mode == "compile"), debug=(mode=="debug"))
+                    compile_only=(mode == "compile"),
+                    is_debug=(mode == "debug"))
     print("[run_exp.py] FINISH WHOLE EXPERIMENTS", flush=True)
 
     if mode != "release":
-        exit(0)
+        sys.exit()
 
     # process result on current node
     exec("cd {}outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv "
@@ -487,3 +469,5 @@ if __name__ == "__main__":
         test_exp(env, nodes, storage_nodes, job)
     else:
         test(env, nodes, storage_nodes, job)
+    sys.exit()
+
