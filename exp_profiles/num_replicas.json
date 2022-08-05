@@ -2,7 +2,7 @@
   "DISTRIBUTED": "true",
   "CC_ALG": "NO_WAIT",
   "NUM_NODES": 2,
-  "NUM_STORAGE_NODES": 0,
+  "NUM_STORAGE_NODES": [2, 0],
   "ISOLATION_LEVEL": "SERIALIZABLE",
   "NUM_WORKER_THREADS": 8,
   "NUM_RPC_SERVER_THREADS": 8,
@@ -11,7 +11,7 @@
   "LOG_LOCAL": "false",
   "LOG_REMOTE": "true",
   "LOG_DEVICE": "LOG_DVC_REDIS",
-  "COMMIT_ALG": "ONE_PC",
+  "COMMIT_ALG": ["TWO_PC", "ONE_PC"],
   "WORKLOAD": "YCSB",
   "ZIPF_THETA": 0,
   "READ_PERC": 0.5,
@@ -19,5 +19,5 @@
   "RUN_TIME": 30,
   "PERC_REMOTE": 0.5,
   "SYNTH_TABLE_SIZE": "10485760",
-  "i": 0
+  "i": [0, 1, 2]
 }

@@ -51,10 +51,10 @@ RC WorkerThread::run() {
             glob_manager->worker_thread_done();
             return FAIL;
         }
-        if (GET_THD_ID == 0 && get_sys_clock() - last_stats_cp_time > STATS_CP_INTERVAL * 1000 * 1000) {
-            glob_stats->checkpoint();
-            last_stats_cp_time += STATS_CP_INTERVAL * 1000000;
-        }
+//        if (GET_THD_ID == 0 && get_sys_clock() - last_stats_cp_time > STATS_CP_INTERVAL * 1000 * 1000) {
+//            glob_stats->checkpoint();
+//            last_stats_cp_time += STATS_CP_INTERVAL * 1000000;
+//        }
         if (_native_txn) {
 #if DEBUG_PRINT
             printf("[node-%u, txn-%lu] restart for %lu times.\n",

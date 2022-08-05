@@ -157,6 +157,7 @@ int main(int argc, char* argv[])
 #endif
     endtime = get_server_clock();
     cout << "Complete." << endl;
+    glob_manager->active = false;
     if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
         glob_stats->print();
     for (uint32_t i = 0; i < g_num_worker_threads; i ++) {

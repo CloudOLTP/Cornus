@@ -260,8 +260,8 @@ TxnManager::process_2pc_phase2(RC rc)
             _worker_thread->thd_requests2_[i].set_txn_id(get_txn_id());
             rpc_client->sendRequestAsync(this,
                                          i,
-                                         _worker_thread->thd_requests2_[i][i],
-                                         _worker_thread->thd_responses2_[i][i],
+                                         _worker_thread->thd_requests2_[i],
+                                         _worker_thread->thd_responses2_[i],
                                          true);
         }
         #endif
