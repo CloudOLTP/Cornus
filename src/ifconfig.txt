@@ -8,7 +8,4 @@ newnode-5:50051
 newnode-6:50051
 newnode-7:50051
 =l
-#128.105.144.116:6379 sundial-dev
-cornuscornus.redis.cache.windows.net:6379 wrDRGuj6R9Gp3pkff44cfafe9bpBMmms2AzCaIndpCc=
-# cornus-redis-replication.redis.cache.windows.net:6379 SQU0wAWeBbOkOxjtIHhQsyHksrVpVt3xkTJtmEtp8rM=
-# cornusredis.redis.cache.windows.net:6379 GiJPjtKcoOlNel4GCWZctbysmmml1KkkXG6OikkrKPs=
+newredis.redis.cache.windows.net:6379 akCt0j9jbhlUBdaeoR7COQvATuUedFQBnAzCaJvscYA=

@@ -9,7 +9,7 @@
     "RUN_TIME": 45,
     "LOG_DELAY": 0,
     "WORKLOAD": "YCSB",
-    "NUM_NODES": [2, 4, 6, 8],
+    "NUM_NODES": [8],
     "PERC_REMOTE": 0.05,
     "READ_PERC": 0.5,
     "ZIPF_THETA": 0,

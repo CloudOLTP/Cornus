@@ -342,7 +342,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
     # start server locally
     os.chdir(env["repo"] + "tools")
     ret = exec("""./run.sh -Gn{} | tee {}outputs/temp-{}.out""".format(
-        env["curr_node"], env["repo"], env["curr_node"]))
+        0, env["repo"], 0))
     if ret != 0:
         kill_nodes(env["user"], nodes)
         exit(0)
@@ -406,7 +406,7 @@ def test_exp(env, nodes, storage_nodes, job):
     print("[run_exp.py] syncing codebase with all nodes")
     if env["num_nodes"] > 1:
         exec("python3 install.py sync {} {}".format(
-            env["curr_node"], "1-{}".format(env["num_nodes"]-1)),
+            env["curr_node"], "0-{}".format(env["num_nodes"]-1)),
              exit_on_err=True)
 
     # execute experiments
