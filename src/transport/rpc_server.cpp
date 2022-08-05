@@ -86,8 +86,6 @@ void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
       // memory address of a CallData instance.
       // The return value of Next should always be checked. This return value
       // tells us whether there is any kind of event or cq_ is shutting down.
-      if (!glob_manager->active)
-          break;
       GPR_ASSERT(s->cq_->Next(&tag, &ok));
       GPR_ASSERT(ok);
       static_cast<CallData*>(tag)->Proceed();

@@ -3,13 +3,8 @@
 128.105.144.249:50051
 =l
 127.0.0.1:6379 sundial-dev
-# cornus-redis-replication.redis.cache.windows.net:6379 SQU0wAWeBbOkOxjtIHhQsyHksrVpVt3xkTJtmEtp8rM=
-# cornusredis.redis.cache.windows.net:6379 GiJPjtKcoOlNel4GCWZctbysmmml1KkkXG6OikkrKPs=
 =s
-# please use ip instead hostname here; need to check if the node is local or not
-# node 0 and 1 from WI
 128.105.144.207:50051
 128.105.144.222:50051
-#128.105.145.3:50052
-#128.105.144.249:50052
-# node 0 and 1 from CL
+130.127.133.144:50051
+130.127.133.147:50051
