@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     pthread_t * pthread_rpc = new pthread_t;
     pthread_create(pthread_rpc, nullptr, start_rpc_server, nullptr);
 #endif
-    #if LOG_DEVICE == LOG_DVC_REDIS
+    #if LOG_DEVICE == LOG_DVC_REDIS || LOG_DEVICE == LOG_DVC_CUSTOMIZED
         // assume a shared logging but store different node's info to different key
         cout << "[Sundial] creating Redis client" << endl;
         redis_client = new RedisClient();

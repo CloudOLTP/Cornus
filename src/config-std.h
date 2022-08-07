@@ -6,6 +6,7 @@
 #define NUM_NODES                       1
 #define NUM_STORAGE_NODES               0
 #define NODE_TYPE                       COMPUTE_NODE
+#define COLOCATE                        false
 
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024
@@ -223,7 +224,7 @@
 // Log Device
 #define LOG_DVC_REDIS                   1
 #define LOG_DVC_AZURE_BLOB              2
-#define LOG_DVC_NATIVE                  3
+#define LOG_DVC_CUSTOMIZED              3
 // Isolation Level
 #define SERIALIZABLE                    1
 #define READ_COMMITTED                  2

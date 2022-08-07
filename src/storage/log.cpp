@@ -66,40 +66,6 @@ reply->set_response_type(request_to_response(request->request_type()));
     return RCOK;
 }
 
-// if no log return INVALID else return the log type
-/*
-LogRecord::Type LogManager::check_log(Message * msg) {
-    LogRecord::Type vote = LogRecord::INVALID;
-    uint16_t watermark = msg->get_lsn();
-    if (watermark == -1) {
-        // no log for this txn
-        return vote;
-    }
-    FILE * fp = fopen(_log_name, "r");
-    fseek(fp, 0, SEEK_END);
-    fseek(fp, -sizeof(LogRecord), SEEK_CUR);
-    LogRecord cur_log;
-    if (fread((void *)&cur_log, sizeof(LogRecord), 1, fp) != 1) {
-        return vote;
-    }
-    while (cur_log.get_latest_lsn() > watermark) {
-        //TODO: whether to add log type equals?
-        if (cur_log.get_txn_id() == msg->get_txn_id() &&
-        log_to_message(cur_log.get_log_record_type()) == msg->get_type()) {
-            // log exists
-            vote = cur_log.get_log_record_type();
-            break;
-        }
-        if (fseek(fp, -2 * sizeof(LogRecord), SEEK_CUR) == -1)
-            break;
-        assert(fread((void *)&cur_log, sizeof(LogRecord), 1, fp) == 1);
-    }
-    fseek(fp, 0, SEEK_END);
-    fclose(fp);
-    return vote;
-}
-*/
-
 void LogManager::log_request(const SundialRequest* request, SundialResponse * reply) {
     std::unique_lock<std::mutex> latch(*latch_);
     ATOM_FETCH_ADD(_lsn, 1);
@@ -130,22 +96,6 @@ void LogManager::log_request(const SundialRequest* request, SundialResponse * re
 uint64_t LogManager::get_last_lsn() {
     return _lsn;
 }
-
-//SundialRequest::RequestType LogManager::log_to_request(LogRecord::Type vote) {
-//    switch (vote)
-//    {
-//        case LogRecord::INVALID :
-//            return SundialRequest:: LOG_ACK;
-//        case LogRecord::COMMIT :
-//            return SundialRequest:: LOG_COMMIT;
-//        case LogRecord::ABORT :
-//            return SundialRequest:: LOG_ABORT;
-//        case LogRecord::YES :
-//            return SundialRequest:: LOG_YES;
-//        default:
-//            assert(false);
-//    }
-//}
 
 SundialResponse::ResponseType LogManager::request_to_response(SundialRequest::RequestType type) {
     switch (type)

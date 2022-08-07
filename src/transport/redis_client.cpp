@@ -1,7 +1,6 @@
 //
 // Created by Zhihan Guo on 4/5/21.
 //
-#if LOG_DEVICE == LOG_DVC_REDIS
 #include <sstream>
 #include <cstdlib>
 
@@ -9,6 +8,8 @@
 #include "txn.h"
 #include "txn_table.h"
 #include "manager.h"
+
+#if LOG_DEVICE == LOG_DVC_REDIS || LOG_DEVICE == LOG_DVC_CUSTOMIZED
 
 void async_callback(cpp_redis::reply & response);
 void ne_callback(cpp_redis::reply & response);
