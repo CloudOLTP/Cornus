@@ -219,12 +219,7 @@
 #define MDCC                            3
 #define CORNUS_CUSTOMIZED               4
 #define COORDINATOR_LOG                 5
-<<<<<<< HEAD
 
-#define LOG_DVC_NATIVE                  1
-#define LOG_DVC_REDIS                   2
-#define LOG_DVC_AZURE_BLOB              3
-=======
 // Log Device
 #define LOG_DVC_REDIS                   1
 #define LOG_DVC_AZURE_BLOB              2
@@ -238,4 +233,4 @@
 // Node Type
 #define COMPUTE_NODE                    1
 #define STORAGE_NODE                    2
->>>>>>> 188386a406a6b34259be8ed6aaa2e4914c7a4f3e
+

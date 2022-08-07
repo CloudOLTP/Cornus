@@ -86,13 +86,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0 && COMMIT_ALG != COORDINATOR_LOG) {
-<<<<<<< HEAD
-        #if LOG_DEVICE == LOG_DVC_NATIVE
-            send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
-        #elif LOG_DEVICE == LOG_DVC_REDIS
-=======
         #if LOG_DEVICE == LOG_DVC_REDIS
->>>>>>> 188386a406a6b34259be8ed6aaa2e4914c7a4f3e
             string data = "[LSN] placehold:" + string(num_tuples *
             g_log_sz * 8, 'd');
             rpc_log_semaphore->incr();
