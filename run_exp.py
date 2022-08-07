@@ -154,8 +154,7 @@ def load_ipaddr(curr_node, env):
             storage_nodes[itr] = ("local", (itr, None))
         else:
             print(
-                "[run_exp.py] try to connect to: storage node {} at {}".format(itr,
-                                                                               addr.split(":")[0]))
+                "[run_exp.py] try to connect to: storage node {} at {}".format(itr, addr.split(":")[0]))
             storage_nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
         itr += 1
     f.close()
@@ -280,8 +279,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
     build_config(env, job)
     os.chdir("{}src/".format(env["repo"]))
     exec("sudo pkill rundb; ")
-    exec("{}tools/compile.sh rundb > {}temp.out 2>&1".format(env["repo"],
-                                                             env["repo"]),
+    exec("{}tools/compile.sh rundb > {}temp.out 2>&1".format(env["repo"], env["repo"]),
          exit_on_err=True)
     exec("rm -f {}outputs/temp.out".format(env["repo"]))
 
@@ -317,8 +315,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
             # thread = myThread(storage_nodes[itr][1], full_cmd)
             # thread.start()
             # storage_threads.append(("storage-%d"%itr, thread))
-            thread = multiprocessing.Process(target=run_process,
-                                             args=(storage_nodes[itr][1], full_cmd))
+            thread = multiprocessing.Process(target=run_process, args=(storage_nodes[itr][1], full_cmd))
             thread.start()
             storage_threads.append(("storage-%d"%itr, thread))
 
@@ -343,7 +340,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
     # start server locally
     os.chdir(env["repo"] + "tools")
     ret = exec("""./run.sh -Gn{} | tee {}outputs/temp-{}.out""".format(
-        env["curr_node"], env["repo"], env["curr_node"]))
+        0, env["repo"], 0))
     if ret != 0:
         kill_nodes(env["user"], nodes)
         exit(0)

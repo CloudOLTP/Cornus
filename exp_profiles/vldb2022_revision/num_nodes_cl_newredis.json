@@ -1,0 +1,19 @@
+{
+    "DISTRIBUTED": "true",
+    "NUM_WORKER_THREADS": 8,
+    "NUM_RPC_SERVER_THREADS": 8,
+	"MAX_NUM_ACTIVE_TXNS": 32,
+    "CC_ALG": "NO_WAIT",
+    "COMMIT_ALG": ["COORDINATOR_LOG", "ONE_PC", "TWO_PC"], 
+    "LOG_DEVICE": "LOG_DVC_REDIS",
+    "i": [0, 1, 2],
+    "RUN_TIME": 45,
+    "LOG_DELAY": 0,
+    "WORKLOAD": "YCSB",
+    "NUM_NODES": [2, 4, 6, 8],
+    "PERC_REMOTE": 0.05,
+    "READ_PERC": 0.5,
+    "ZIPF_THETA": 0,
+    "SYNTH_TABLE_SIZE": "10485760",
+    "FAILURE_ENABLE": "false"
+}
