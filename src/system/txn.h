@@ -72,7 +72,6 @@ public:
     RC send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t index_id,
                                 uint64_t table_id, access_t access_type);
     RC send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> > &remote_requests);
-    RC send_log_request(uint64_t node_id, SundialRequest::RequestType type);
     RC process_2pc_phase1();
     RC process_2pc_phase2(RC rc);
     // server
@@ -160,4 +159,50 @@ private:
 
   public:
     std::map<uint32_t, RemoteNodeInfo *> _remote_nodes_involved;
+
+    // Distributed transactions for MDCC
+    // =================================
+  public:
+    // client
+    RC process_mdcc_singlepart(RC rc);
+    RC process_mdcc_phase1();
+    RC process_mdcc_phase2(RC rc);
+    // server
+    RC process_mdcc_2aclassic(const SundialRequest* request, SundialResponse* response);
+    void process_mdcc_2bclassic(const SundialRequest* request, SundialResponse*
+    response);
+    void process_mdcc_2bclassic_abort(const SundialRequest* request, SundialResponse* response);
+    RC process_mdcc_2bfast(const SundialRequest* request, SundialResponse* response);
+    RC process_mdcc_visibility(const SundialRequest* request, SundialResponse*
+    response, RC rc);
+    int get_replied_acceptors(size_t i) {return replied_acceptors[i].load
+            (std::memory_order_relaxed);}
+    int get_replied_acceptors2() {return replied_acceptors2.load
+            (std::memory_order_relaxed);}
+    void increment_replied_acceptors(size_t i) { replied_acceptors[i]++; }
+    void increment_replied_acceptors2() { replied_acceptors2++; }
+
+    // txn level requests
+#if NODE_TYPE == STORAGE_NODE
+    SundialRequest txn_requests_[NUM_NODES];
+    SundialResponse txn_responses_[NUM_NODES];
+#else
+    // request in phase 1, as leader of paxos
+    SundialRequest txn_requests_[NUM_STORAGE_NODES];
+    SundialResponse txn_responses_[NUM_STORAGE_NODES];
+#endif
+    // request in phase 2, as leader of paxos
+    SundialRequest txn_requests2_[NUM_STORAGE_NODES];
+    SundialResponse txn_responses2_[NUM_STORAGE_NODES];
+
+  private:
+    void process_mdcc_local_phase1(RC rc, uint64_t g_node_id, bool is_singlepart=false);
+    // used to track # of replies from each node and the stats will be used for
+    // calculating quorum
+    // each count should not exceed g_num_storage_nodes + 1
+    // rpc_server will update the stats on receiving storage node's 2b msg
+    // rpc_client will update the stats on receiving reply from participant's 2b
+    // the txn_mdcc will read the stats
+    std::atomic<int> replied_acceptors[NUM_NODES];
+    std::atomic<int> replied_acceptors2;
 };

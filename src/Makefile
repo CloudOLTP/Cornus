@@ -30,9 +30,12 @@ CPPS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp))
 OBJS = $(CPPS:.cpp=.o)
 DEPS = $(CPPS:.cpp=.d)
 
-all : rundb
+rundb: TARGET=rundb
+rundb: $(OBJS)
+	$(CC) -no-pie -o $@ $^ $(LDFLAGS)
 
-rundb : $(OBJS) 
+runstorage: TARGET=runstorage
+runstorage: $(OBJS)
 	$(CC) -no-pie -o $@ $^ $(LDFLAGS)
 
 -include $(OBJS:%.o=%.d)
@@ -45,4 +48,4 @@ rundb : $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f rundb $(OBJS) $(DEPS) 
+	rm -f rundb runstorage $(OBJS) $(DEPS)

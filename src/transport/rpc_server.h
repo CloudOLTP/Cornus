@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config.h"
 #include "sundial.grpc.pb.h"
 #include "sundial.pb.h"
 #include <iostream>
@@ -28,6 +29,29 @@ public:
     static void processContactRemote(ServerContext* context, const SundialRequest* request,
                      SundialResponse* response);
 private:
+    /*
+    class RPCServerThread {
+      public:
+        RPCServerThread(SundialRPCServerImpl * server) {
+            thread_ = new std::thread(HandleRpcs, server);
+        };
+        ~RPCServerThread() {
+            delete thread_;
+        };
+        std::thread * thread_;
+#if NODE_TYPE == STORAGE_NODE
+        SundialRequest thd_requests_[NUM_NODES];
+        SundialResponse thd_responses_[NUM_NODES];
+#else
+        // request in phase 1, as leader of paxos
+        SundialRequest thd_requests_[NUM_STORAGE_NODES];
+        SundialResponse thd_responses_[NUM_STORAGE_NODES];
+#endif
+        // request in phase 2, as leader of paxos
+        SundialRequest thd_requests2_[NUM_STORAGE_NODES];
+        SundialResponse thd_responses2_[NUM_STORAGE_NODES];
+    };
+     */
     class CallData {
     public:
         CallData(SundialRPC::AsyncService* service, ServerCompletionQueue* cq);
@@ -44,6 +68,7 @@ private:
     };
     //pthread_t **    _thread_pool;
     std::thread **  _thread_pool;
+    // RPCServerThread ** _thread_pool;
     SundialRPC::AsyncService service_;
     std::unique_ptr<Server> server_;
     std::unique_ptr<ServerCompletionQueue> cq_;

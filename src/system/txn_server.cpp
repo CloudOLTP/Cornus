@@ -46,6 +46,20 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     assert(_txn_state == RUNNING);
     RC rc = RCOK;
     uint32_t num_tuples = request->tuple_data_size();
+#if CC_ALG == OCC
+    // if occ, validate if can commit or not
+    rc = _cc_manager->validate();
+    if (rc == ABORT) {
+        _cc_manager->cleanup(rc);
+        response->set_response_type( SundialResponse::PREPARED_ABORT );
+#if DEBUG_PRINT
+        printf("[node-%u, txn-%lu] participant fail to handle prepare: "
+               "due to abort in handling request.\n",
+               g_node_id, get_txn_id());
+#endif
+        return rc;
+    }
+#else
     // copy data to the write set.
     for (uint32_t i = 0; i < num_tuples; i++) {
         uint64_t key = request->tuple_data(i).key();
@@ -53,6 +67,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         char * data = get_cc_manager()->get_data(key, table_id);
         memcpy(data, request->tuple_data(i).data().c_str(), request->tuple_data(i).size());
     }
+#endif
     // set up all nodes involved (including sender, excluding self)
     // so that termination protocol will know where to find
     for (int i = 0; i < request->nodes_size(); i++) {
@@ -65,25 +80,19 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     }
 
 #if EARLY_LOCK_RELEASE
-#if DEBUG_ELR
-    printf("[remote txn-%lu] retire locks; \n", _txn_id);
-#endif
     _cc_manager->retire(); // release lock after log is received
-#if DEBUG_ELR
-    printf("[remote txn-%lu] waiting for dependency semaphore; \n", _txn_id);
-#endif
     dependency_semaphore->wait();
-#if DEBUG_ELR
-    printf("[remote txn-%lu] finished waiting for dependency semaphore; \n",
-           _txn_id);
-#endif
 #endif
 
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0 && COMMIT_ALG != COORDINATOR_LOG) {
+<<<<<<< HEAD
         #if LOG_DEVICE == LOG_DVC_NATIVE
             send_log_request(g_storage_node_id, SundialRequest::LOG_YES_REQ);
         #elif LOG_DEVICE == LOG_DVC_REDIS
+=======
+        #if LOG_DEVICE == LOG_DVC_REDIS
+>>>>>>> 188386a406a6b34259be8ed6aaa2e4914c7a4f3e
             string data = "[LSN] placehold:" + string(num_tuples *
             g_log_sz * 8, 'd');
             rpc_log_semaphore->incr();
@@ -114,23 +123,42 @@ TxnManager::process_prepare_request(const SundialRequest* request,
                 }
             #endif  // ONE_PC
         #endif  // LOG_DEVICE
+#if NUM_STORAGE_NODES > 0
+        // log to quorum
+        int num_acceptors = (int) g_num_storage_nodes + 1;
+        int quorum = (int) floor(num_acceptors / 2) + 1;
+        replied_acceptors[g_node_id] = 0;
+        // send log request
+        // XXX(zhihan): we only send to number of quorum nodes
+        // otherwise, we need to storage txn requests elsewhere to avoid null
+        // ptr
+        for (size_t i = 0; (int) i < quorum - 1; i++) {
+            txn_requests_[i].set_request_type(SundialRequest::LOG_YES_REQ);
+            txn_requests_[i].set_log_data_size(num_tuples * g_log_sz * 8);
+            txn_requests_[i].set_txn_id(get_txn_id());
+            rpc_client->sendRequestAsync(this,
+                                         i,
+                                         txn_requests_[i],
+                                         txn_responses_[i],
+                                         true);
+        }
+#endif
         rpc_log_semaphore->wait();
+#if NUM_STORAGE_NODES > 0
+        increment_replied_acceptors(g_node_id);
+        while (get_replied_acceptors(g_node_id) < quorum) {}
+#endif
     }
 
     // log msg no matter it is readonly or not
     if (num_tuples != 0) {
         // read-write
         _txn_state = PREPARED;
-#if DEBUG_ELR
-        printf("[remote txn-%lu] prepared\n", _txn_id);
-#endif
     } else {
         // readonly remote nodes
         _txn_state = COMMITTED;
-        _cc_manager->cleanup(COMMIT); // release lock after log is received
-#if DEBUG_ELR
-        printf("[remote txn-%lu] readonly committed and cleaned up\n", _txn_id);
-#endif
+        // release lock (for pessimistic) and delete accesses
+        _cc_manager->cleanup(COMMIT);
         response->set_response_type( SundialResponse::PREPARED_OK_RO );
         return rc;
     }
@@ -167,10 +195,6 @@ TxnManager::process_read_request(const SundialRequest* request,
         row_t * row = *rows->begin();
         get_cc_manager()->remote_key += 1;
         rc = get_cc_manager()->get_row(row, access_type, key);
-#if DEBUG_ELR
-        printf("[remote txn-%lu] acquire row %p type=%d\n", _txn_id,
-               row->manager, access_type);
-#endif
         if (rc == ABORT) {
             break;
         }
@@ -181,6 +205,7 @@ TxnManager::process_read_request(const SundialRequest* request,
         tuple->set_table_id( table_id );
         tuple->set_size( tuple_size );
         tuple->set_access_type( access_type );
+        tuple->set_index_id( index_id );
         tuple->set_data( get_cc_manager()->get_data(key, table_id), tuple_size );
     }
 
@@ -192,14 +217,14 @@ TxnManager::process_read_request(const SundialRequest* request,
         }
 #else
 	_cc_manager->cleanup(ABORT);
-#if DEBUG_ELR
+#if DEBUG_PRINT
         printf("[remote txn-%lu] abort and cleaned up\n", _txn_id);
 #endif
          _txn_state = ABORTED;
 #endif
         response->set_response_type( SundialResponse::RESP_ABORT );
     } else {
-#if DEBUG_ELR
+#if DEBUG_PRINT
         printf("[remote txn-%lu] read completed, do not release lock yet\n",
                _txn_id);
 #endif
@@ -216,12 +241,7 @@ TxnManager::process_decision_request(const SundialRequest* request,
         return FAIL;
     }
 
-    #if LOG_DEVICE == LOG_DVC_NATIVE
-    SundialRequest::RequestType log_type = (request->request_type() ==
-        SundialRequest::COMMIT_REQ)? SundialRequest::LOG_COMMIT_REQ :
-            SundialRequest::LOG_ABORT_REQ;
-    send_log_request(g_storage_node_id, log_type);
-    #elif LOG_DEVICE == LOG_DVC_REDIS
+    #if LOG_DEVICE == LOG_DVC_REDIS
     State status = (rc == COMMIT)? COMMITTED : ABORTED;
     rpc_log_semaphore->incr();
     if (redis_client->log_async(g_node_id, get_txn_id(), status) == FAIL) {
@@ -236,13 +256,32 @@ TxnManager::process_decision_request(const SundialRequest* request,
         return FAIL;
     }
     #endif
-
-    rpc_log_semaphore->wait();
-    _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
-    _cc_manager->cleanup(rc); // release lock after log is received
-#if DEBUG_ELR
-    printf("[remote txn-%lu] status = %d, cleaned up\n", _txn_id, _txn_state);
+#if NUM_STORAGE_NODES > 0
+    // log to quorum
+    replied_acceptors2 = 0;
+    int num_acceptors = (int) g_num_storage_nodes + 1;
+    int quorum = (int) floor(num_acceptors / 2) + 1;
+    // send log request
+    // XXX(zhihan): we only send to number of quorum nodes
+    // otherwise, we need to store txn requests elsewhere to avoid null
+    // ptr
+    for (size_t i = 0; (int) i < quorum - 1; i++) {
+        txn_requests2_[i].set_request_type(SundialRequest::LOG_COMMIT_REQ);
+        txn_requests2_[i].set_txn_id(get_txn_id());
+        rpc_client->sendRequestAsync(this,
+                                     i,
+                                     txn_requests2_[i],
+                                     txn_responses2_[i],
+                                     true);
+    }
 #endif
+    rpc_log_semaphore->wait();
+#if NUM_STORAGE_NODES > 0
+    increment_replied_acceptors2();
+    while (get_replied_acceptors2() < quorum) {}
+#endif
+    _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
+    _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
 #if FAILURE_ENABLE
     // termination protocol is called when timeout (i.e. receiving terminate
@@ -273,9 +312,7 @@ TxnManager::process_terminate_request(const SundialRequest* request,
     switch (_txn_state) {
         case RUNNING:
             // self has not voted yes, log abort and cleanup
-            #if LOG_DEVICE == LOG_DVC_NATIVE
-            send_log_request(g_storage_node_id, SundialRequest::LOG_ABORT_REQ);
-            #elif LOG_DEVICE == LOG_DVC_REDIS
+            #if LOG_DEVICE == LOG_DVC_REDIS
             if (redis_client->log_sync(g_node_id, get_txn_id(), ABORTED)
             == FAIL) {
                 return FAIL;

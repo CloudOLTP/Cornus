@@ -33,23 +33,27 @@ RedisClient::RedisClient() {
     }
     std::cout << "[Sundial] connecting to redis server at " << line.substr(0, line.find(" ")) << std::endl;
 	// host, port, timeout, callback ptr, timeout(ms), max_#retry, retry_interval
-	size_t port;
-	std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
-	iss >> port;
-    client.connect(line.substr(0, line.find(":")), port, [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
-        if (status == cpp_redis::connect_state::dropped) {
-      		std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
-		}
-	});
-    if (iss.eof() == false) { // an auth string is following
-        string auth;
-        iss >> auth;
-        client.auth(auth, [](cpp_redis::reply & response){
-            std::cout << "[Sundial] Auth response: " << response.as_string() << std::endl;
-        });
+    for (size_t i = 0; i < g_num_worker_threads; i++) {
+        size_t port;
+        std::istringstream iss(line.substr(line.find(":") + 1, line.size()));
+        iss >> port;
+        clients[i] = new cpp_redis::client();
+        clients[i]->connect(line.substr(0, line.find(":")), port,
+                       [](const std::string& host, std::size_t port, cpp_redis::connect_state status) {
+                           if (status == cpp_redis::connect_state::dropped) {
+                               std::cout << "[Sundial] client disconnected from " << host << ":" << port << std::endl;
+                           }
+                       });
+        if (!iss.eof()) { // an auth string is following
+            string auth;
+            iss >> auth;
+            clients[i]->auth(auth, [](cpp_redis::reply & response){
+                std::cout << "[Sundial] Auth response: " << response.as_string() << std::endl;
+            });
+        }
     }
-    client.flushall(sync_callback);
-    client.sync_commit();
+    clients[0]->flushall(sync_callback);
+    clients[0]->sync_commit();
     std::cout << "[Sundial] connected to redis server!" << std::endl;
 }
 
@@ -122,8 +126,8 @@ RedisClient::log_sync(uint64_t node_id, uint64_t txn_id, int status) {
     std::vector<std::string> keys = {"status-" + id};
     std::vector<std::string> args = {std::to_string(status),
                                      std::to_string(txn_id)};
-    client.eval(script, keys, args, sync_callback);
-    client.sync_commit();
+    clients[0]->eval(script, keys, args, sync_callback);
+    clients[0]->sync_commit();
     INC_FLOAT_STATS(log_sync, get_sys_clock() - starttime);
     INC_INT_STATS(num_log_sync, 1);
     return RCOK;
@@ -143,8 +147,8 @@ RedisClient::log_async(uint64_t node_id, uint64_t txn_id, int status) {
     std::vector<std::string> keys = {"status-" + id};
     std::vector<std::string> args = {std::to_string(status), tid,
                                      std::to_string(starttime)};
-    client.eval(script, keys, args, async_callback);
-    client.commit();
+    clients[0]->eval(script, keys, args, async_callback);
+    clients[0]->commit();
     return RCOK;
 }
 
@@ -166,8 +170,8 @@ RedisClient::log_if_ne(uint64_t node_id, uint64_t txn_id) {
     std::vector<std::string> keys = {key};
     std::vector<std::string> args = {std::to_string(TxnManager::ABORTED),
                                      tid, std::to_string(starttime)};
-    client.eval(script, keys, args, tp_callback);
-    client.commit();
+    clients[0]->eval(script, keys, args, tp_callback);
+    clients[0]->commit();
     return RCOK;
 }
 
@@ -189,8 +193,8 @@ RedisClient::log_if_ne_data(uint64_t node_id, uint64_t txn_id, string & data) {
     std::vector<std::string> keys = {"data-" + id, "status" + id};
     std::vector<std::string> args = {data, std::to_string(TxnManager::PREPARED),
                                      tid, std::to_string(starttime)};
-    client.eval(script, keys, args, ne_callback);
-    client.commit();
+    clients[0]->eval(script, keys, args, ne_callback);
+    clients[0]->commit();
     return RCOK;
 }
 
@@ -214,8 +218,8 @@ RedisClient::log_sync_data(uint64_t node_id, uint64_t txn_id, int status,
     std::vector<std::string> args = {data,
                                      std::to_string(status),
 									 tid};
-    client.eval(script, keys, args, sync_callback);
-    client.sync_commit();
+    clients[0]->eval(script, keys, args, sync_callback);
+    clients[0]->sync_commit();
     INC_FLOAT_STATS(log_sync_data, get_sys_clock() - starttime);
     INC_INT_STATS(num_log_sync_data, 1);
     return RCOK;
@@ -239,8 +243,8 @@ RedisClient::log_async_data(uint64_t node_id, uint64_t txn_id, int status,
     std::vector<std::string> keys = {"data-" + id, "status" + id};
     std::vector<std::string> args = {data, std::to_string(status),
                                      tid, std::to_string(starttime)};
-    client.eval(script, keys, args, async_callback);
-    client.commit();
+    clients[0]->eval(script, keys, args, async_callback);
+    clients[0]->commit();
     return RCOK;
 }
 #endif

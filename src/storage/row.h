@@ -15,6 +15,7 @@ class Row_tictoc;
 class Row_silo;
 class Row_f1;
 class Row_maat;
+class Row_occ;
 class LocalityManager;
 class INDEX;
 

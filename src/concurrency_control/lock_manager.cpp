@@ -240,7 +240,7 @@ LockManager::cleanup(RC rc)
         for (const auto& access : _access_set) {
 #if !EARLY_LOCK_RELEASE
             if (access.type == WR)
-        access.row->copy(access.data);
+                access.row->copy(access.data);
 #endif
             access.row->manager->lock_release(_txn, rc);
         }

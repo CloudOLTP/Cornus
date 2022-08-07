@@ -17,7 +17,7 @@ def run_process(conn, cmd, exit_on_err=False, print_stdout=True):
     time.sleep(5)
     if conn[1] is None:
         return exec(cmd)
-    return os.system("ssh -i /home/cornus/cornus.pem {} \"{}\"".format(conn[1], cmd))
+    return os.system("ssh {} \"{}\"".format(conn[1], cmd))
 
 
 def load_environment(fname="info.txt"):
@@ -61,8 +61,9 @@ def remote_exec(conn, cmd, exit_on_err=False, print_stdout=True,
     if conn[1] is None:
         return exec(cmd, exit_on_err=exit_on_err)
     print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd)
-    return os.system("ssh -i /home/cornus/cornus.pem {} \"{}\"".format(conn[1], cmd))
-    
+    return os.system("ssh {} \"{}\"".format(conn[1], cmd))
+
+
 # job loading methods
 def load_job(args):
     # generate a dictionary based on a string
@@ -153,8 +154,7 @@ def load_ipaddr(curr_node, env):
             storage_nodes[itr] = ("local", (itr, None))
         else:
             print(
-                "[run_exp.py] try to connect to: storage node {} at {}".format(itr,
-                                                                        addr.split(":")[0]))
+                "[run_exp.py] try to connect to: storage node {} at {}".format(itr, addr.split(":")[0]))
             storage_nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
         itr += 1
     f.close()
@@ -279,8 +279,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
     build_config(env, job)
     os.chdir("{}src/".format(env["repo"]))
     exec("sudo pkill rundb; ")
-    exec("{}tools/compile.sh rundb > {}temp.out 2>&1".format(env["repo"],
-                                                       env["repo"]),
+    exec("{}tools/compile.sh rundb > {}temp.out 2>&1".format(env["repo"], env["repo"]),
          exit_on_err=True)
     exec("rm -f {}outputs/temp.out".format(env["repo"]))
 
@@ -316,8 +315,7 @@ def start_nodes(env, job, nodes, storage_nodes, compile_only=True,
             # thread = myThread(storage_nodes[itr][1], full_cmd)
             # thread.start()
             # storage_threads.append(("storage-%d"%itr, thread))
-            thread = multiprocessing.Process(target=run_process,
-                                            args=(storage_nodes[itr][1], full_cmd))
+            thread = multiprocessing.Process(target=run_process, args=(storage_nodes[itr][1], full_cmd))
             thread.start()
             storage_threads.append(("storage-%d"%itr, thread))
 
@@ -407,7 +405,7 @@ def test_exp(env, nodes, storage_nodes, job):
     if env["num_nodes"] > 1:
         exec("python3 install.py sync {} {}".format(
             env["curr_node"], "0-{}".format(env["num_nodes"]-1)),
-             exit_on_err=True)
+            exit_on_err=True)
 
     # execute experiments
     mode = job.get("MODE", "debug")
@@ -426,30 +424,7 @@ def test_exp(env, nodes, storage_nodes, job):
     # process result on current node
     exec("cd {}outputs/; python3 collect_stats.py; mv stats.csv {}.csv; mv "
          "stats.json {}.json".format(env["repo"], exp_name, exp_name))
-
-    # # process results on remote nodes
-    # print("[LOG] Start processing results on remote node", flush=True)
-    # for itr in nodes:
-    # 	# skip failed node
-    # 	if job.get("FAILURE_ENABLE", "false") == "true" and itr == job["FAILURE_NODE"]:
-    # 		continue
-    # 	# process result on each server if not a failure node
-    # 	remote_exec(nodes[itr][1], "cd {}outputs/; python3 collect_stats.py; "
-    # 		 "mv stats.csv {}.csv; mv stats.json {}.json".format(env["repo"],
-    # 															 exp_name,
-    # 															 exp_name))
     print("[run_exp.py] FINISH processing results", flush=True)
-
-
-# # collect results from remote nodes
-# print("[LOG] Start collecting results on remote node", flush=True)
-# suffix = ""
-# if job.get("FAILURE_ENABLE", "false") == "true":
-# 	suffix = " {}".format(job["FAILURE_NODE"])
-# exec("cd {}tools; python3 remote_collect.py {} {}".format(env["repo"],
-# 														  exp_name,
-# 														num_nodes) + suffix)
-# print("[LOG] FINISH collecting results")
 
 
 if __name__ == "__main__":
@@ -470,4 +445,3 @@ if __name__ == "__main__":
     else:
         test(env, nodes, storage_nodes, job)
     sys.exit()
-

@@ -5,9 +5,9 @@
   </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
-      <config projectName="Sundial-Private" targetName="rundb" />
-      <config projectName="Sundial-Private" targetName="Makefile" />
-      <config projectName="Sundial-Private" targetName="all" />
+      <config projectName="config-std.h" targetName="all" />
+      <config projectName="config-std.h" targetName="rundb" />
+      <config projectName="config-std.h" targetName="Makefile" />
     </generated>
   </component>
   <component name="CMakeSettings">
@@ -17,9 +17,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="963a16de-0926-4f99-88c8-98a9f80fa508" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/system/txn_mdcc.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/outputs/zipf_redis_elr.csv" beforeDir="false" afterPath="$PROJECT_DIR$/outputs/zipf_redis_elr.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cornus_storage/system/global.h" beforeDir="false" afterPath="$PROJECT_DIR$/cornus_storage/system/global.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/concurrency_control/occ_manager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/occ_manager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/config-std.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/config-std.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/global.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/global.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/global.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/global.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/txn.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/txn.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/txn_client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_client.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/txn_server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_server.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/transport/rpc_client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/transport/rpc_client.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/transport/rpc_client.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/transport/rpc_client.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/transport/rpc_server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/transport/rpc_server.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,14 +70,14 @@
         <entry>
           <key>
             <ExternalProjectPojo>
-              <option name="name" value="Sundial-Private" />
+              <option name="name" value="config-std.h" />
               <option name="path" value="$PROJECT_DIR$/src" />
             </ExternalProjectPojo>
           </key>
           <value>
             <list>
               <ExternalProjectPojo>
-                <option name="name" value="Sundial" />
+                <option name="name" value="Sundial-Private" />
                 <option name="path" value="$PROJECT_DIR$/src" />
               </ExternalProjectPojo>
             </list>
@@ -89,7 +101,7 @@
     <property name="cf.advertisement.text.overridden" value="true" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/exp_profiles" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/concurrency_control" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -97,10 +109,11 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_package_manager_path" value="npm" />
-    <property name="settings.editor.selected.configurable" value="web.server" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.C/C++" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/concurrency_control" />
       <recent name="$PROJECT_DIR$/exp_profiles" />
       <recent name="$PROJECT_DIR$" />
     </key>
@@ -111,24 +124,24 @@
     </key>
   </component>
   <component name="RunManager" selected="Gradle./Users/scarlet/Documents/GitHub/Sundial-Private">
-    <configuration name="Makefile" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="Makefile" CONFIG_NAME="Makefile" version="1">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Makefile" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="config-std.h" TARGET_NAME="Makefile" CONFIG_NAME="Makefile" version="1">
       <method v="2">
         <option name="CLION.COMPOUND.BUILD" enabled="true" />
       </method>
     </configuration>
-    <configuration name="all" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="all" CONFIG_NAME="all" version="1">
+    <configuration name="all" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="config-std.h" TARGET_NAME="all" CONFIG_NAME="all" version="1">
       <method v="2">
         <option name="CLION.COMPOUND.BUILD" enabled="true" />
       </method>
     </configuration>
-    <configuration name="rundb" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="rundb" CONFIG_NAME="rundb" version="1">
+    <configuration name="rundb" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="config-std.h" TARGET_NAME="rundb" CONFIG_NAME="rundb" version="1">
       <method v="2">
         <option name="CLION.COMPOUND.BUILD" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
@@ -194,7 +207,10 @@
       <workItem from="1654547346268" duration="19000" />
       <workItem from="1654614170707" duration="43594000" />
       <workItem from="1654970579414" duration="19719000" />
-      <workItem from="1656301871432" duration="428000" />
+      <workItem from="1656301871432" duration="2651000" />
+      <workItem from="1657486578654" duration="1364000" />
+      <workItem from="1657488454002" duration="254000" />
+      <workItem from="1657489886333" duration="6457000" />
     </task>
     <servers />
   </component>

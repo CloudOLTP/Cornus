@@ -51,17 +51,14 @@ RC WorkerThread::run() {
             glob_manager->worker_thread_done();
             return FAIL;
         }
-        if (GET_THD_ID == 0 && get_sys_clock() - last_stats_cp_time > STATS_CP_INTERVAL * 1000 * 1000) {
-            glob_stats->checkpoint();
-            last_stats_cp_time += STATS_CP_INTERVAL * 1000000;
-        }
+//        if (GET_THD_ID == 0 && get_sys_clock() - last_stats_cp_time > STATS_CP_INTERVAL * 1000 * 1000) {
+//            glob_stats->checkpoint();
+//            last_stats_cp_time += STATS_CP_INTERVAL * 1000000;
+//        }
         if (_native_txn) {
-#if DEBUG_ELR
+#if DEBUG_PRINT
             printf("[node-%u, txn-%lu] restart for %lu times.\n",
                  g_node_id, _native_txn->get_txn_id(), _native_txn->num_aborted);
-//            if (_native_txn->num_aborted > 150) {
-//              assert(false);
-//            }
 #endif
             // restart a previously aborted transaction
             _native_txn->restart();
@@ -76,14 +73,14 @@ RC WorkerThread::run() {
 
             _native_txn = new TxnManager(query, this);
             _native_txn->set_txn_id( txn_id );
-#if DEBUG_ELR
+#if DEBUG_PRINT
             printf("[node-%u, txn-%lu] start.\n",
                    g_node_id, _native_txn->get_txn_id());
 #endif
             txn_table->add_txn( _native_txn );
             _native_txn->start();
         }
-#if DEBUG_ELR
+#if DEBUG_PRINT
         printf("[node-%u, txn-%lu] finish native txn (state=%d).\n",
                g_node_id, _native_txn->get_txn_id(),
                _native_txn->get_txn_state());
@@ -105,7 +102,7 @@ RC WorkerThread::run() {
     if (_native_txn && _native_txn->get_txn_state() == TxnManager::ABORTED) {
         txn_table->remove_txn(_native_txn);
         delete _native_txn;
-        _native_txn = NULL;
+        _native_txn = nullptr;
     }
     glob_manager->worker_thread_done();
     INC_FLOAT_STATS(run_time, get_sys_clock() - _init_time);

@@ -51,6 +51,8 @@ protected:
     virtual RC        index_insert(INDEX * index, uint64_t key) { assert(false); return RCOK; }
     virtual RC        index_delete(INDEX * index, uint64_t key) { assert(false); return RCOK; }
 public:
+    // used by optimistic concurrency control
+    virtual RC      validate() { assert(false); }
     // rc is either COMMIT or Abort.
     // the following function will cleanup the txn. e.g., release locks, etc.
     virtual void      cleanup(RC rc) { assert(false); }

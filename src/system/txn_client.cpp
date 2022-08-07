@@ -25,6 +25,7 @@
 #include "tictoc_manager.h"
 #include "lock_manager.h"
 #include "f1_manager.h"
+#include "occ_manager.h"
 #if CC_ALG == NO_WAIT || CC_ALG == WAIT_DIE
 #include "row_lock.h"
 #endif
@@ -43,21 +44,31 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     string data = "[LSN] placehold:" + string(num_local_write *
                                                        g_log_sz * 8, 'd');
 #if EARLY_LOCK_RELEASE
-#if DEBUG_ELR
-    printf("[txn-%lu] retire locks; \n", _txn_id);
-#endif
     _cc_manager->retire(); // release lock after log is received
     // enforce dependency if early lock release, regardless of txn type
-#if DEBUG_ELR
-    printf("[txn-%lu] waiting for dependency semaphore; \n", _txn_id);
-#endif
     dependency_semaphore->wait();
-#if DEBUG_ELR
-    printf("[txn-%lu] finished waiting for dependency semaphore; \n", _txn_id);
-#endif
 #endif
     // if logging didn't happen, process commit phase
     if (!is_read_only()) {
+#if NUM_STORAGE_NODES > 0
+        // log to quorum
+        int num_acceptors = (int) g_num_storage_nodes + 1;
+        int quorum = (int) floor(num_acceptors / 2) + 1;
+        replied_acceptors[g_node_id] = 0;
+        // send log request
+        for (size_t i = 0; i < g_num_storage_nodes; i++) {
+            _worker_thread->thd_requests_[i].set_request_type
+            (SundialRequest::LOG_YES_REQ);
+            _worker_thread->thd_requests_[i].set_log_data_size
+            (num_local_write * g_log_sz * 8);
+            _worker_thread->thd_requests_[i].set_txn_id(get_txn_id());
+            rpc_client->sendRequestAsync(this,
+                                         i,
+                                         _worker_thread->thd_requests_[i],
+                                         _worker_thread->thd_responses_[i],
+                                         true);
+        }
+#endif
     #if LOG_DEVICE == LOG_DVC_REDIS
        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
            data) == FAIL)
@@ -67,6 +78,10 @@ TxnManager::process_commit_phase_singlepart(RC rc)
            data) == FAIL)
            return FAIL;
     #endif
+#if NUM_STORAGE_NODES > 0
+        increment_replied_acceptors(g_node_id);
+        while (get_replied_acceptors(g_node_id) < quorum) {}
+#endif
     }
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
@@ -81,18 +96,8 @@ TxnManager::process_2pc_phase1()
     _decision = COMMIT;
 
 #if EARLY_LOCK_RELEASE
-#if DEBUG_ELR
-    printf("[remote txn-%lu] retire locks; \n", _txn_id);
-#endif
     _cc_manager->retire(); // release lock after log is received
-#if DEBUG_ELR
-    printf("[remote txn-%lu] waiting for dependency semaphore; \n", _txn_id);
-#endif
     dependency_semaphore->wait();
-#if DEBUG_ELR
-    printf("[remote txn-%lu] finished waiting for dependency semaphore; \n",
-           _txn_id);
-#endif
 #endif
 
     // if the entire txn is read-write, log to remote storage
@@ -155,16 +160,16 @@ TxnManager::process_2pc_phase1()
         participant = request.add_nodes();
         participant->set_nid(g_node_id);
         // attach participants
-        if (!is_txn_read_only()) {
+        if (!is_txn_read_only() || CC_ALG == OCC ) {
             for (auto itr = _remote_nodes_involved.begin(); itr !=
                 _remote_nodes_involved.end(); itr++) {
-                if (itr->second->is_readonly)
+                if (itr->second->is_readonly && CC_ALG != OCC)
                     continue;
                 participant = request.add_nodes();
                 participant->set_nid(it->first);
             }
         }
-        ((LockManager *)_cc_manager)->build_prepare_req( it->first, request );
+        ((CC_MAN *)_cc_manager)->build_prepare_req( it->first, request );
         if (rpc_client->sendRequestAsync(this, it->first, request, response)
         == FAIL) {
             return FAIL; // self is down, no msg can be sent out
@@ -245,7 +250,7 @@ RC
 TxnManager::process_2pc_phase2(RC rc)
 {
     bool remote_readonly = is_read_only() && (rc == COMMIT);
-    if (remote_readonly) {
+    if (remote_readonly && CC_ALG != OCC) {
         for (auto it = _remote_nodes_involved.begin();
              it != _remote_nodes_involved.end(); it++) {
             if (!(it->second->is_readonly)) {
@@ -263,12 +268,25 @@ TxnManager::process_2pc_phase2(RC rc)
 
     #if COMMIT_ALG == TWO_PC
         // 2pc: persistent decision
-        #if LOG_DEVICE == LOG_DVC_NATIVE
-        SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-                SundialRequest::LOG_ABORT_REQ;
-        send_log_request(g_storage_node_id, type);
-        #elif LOG_DEVICE == LOG_DVC_REDIS
+        #if LOG_DEVICE == LOG_DVC_REDIS
         rpc_log_semaphore->incr();
+        #if NUM_STORAGE_NODES > 0
+        // log to quorum
+        replied_acceptors2 = 0;
+        int num_acceptors = (int) g_num_storage_nodes + 1;
+        int quorum = (int) floor(num_acceptors / 2) + 1;
+        // send log request
+        for (size_t i = 0; i < g_num_storage_nodes; i++) {
+            _worker_thread->thd_requests2_[i].set_request_type
+            (SundialRequest::LOG_COMMIT_REQ);
+            _worker_thread->thd_requests2_[i].set_txn_id(get_txn_id());
+            rpc_client->sendRequestAsync(this,
+                                         i,
+                                         _worker_thread->thd_requests2_[i],
+                                         _worker_thread->thd_responses2_[i],
+                                         true);
+        }
+        #endif
         if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
         FAIL) {
             return FAIL;
@@ -281,16 +299,55 @@ TxnManager::process_2pc_phase2(RC rc)
         }
         #endif
         rpc_log_semaphore->wait();
+        #if NUM_STORAGE_NODES > 0
+        increment_replied_acceptors2();
+        while (get_replied_acceptors2() < quorum) {}
+        #endif
+        // finish after log is stable.
+        _finish_time = get_sys_clock();
+    #elif COMMIG_ALG == COORDINATOR_LOG
+        string data = "[LSN] placehold:" + string(num_local_write *
+                                                       g_log_sz * 8, 'd');
+        for (auto it = _remote_nodes_involved.begin();
+             it != _remote_nodes_involved.end(); it++) {
+            if (!(it->second->is_readonly)) {
+                data += + string('d', num_local_write *
+                g_log_sz * 8);
+            }
+        }
+        #if LOG_DEVICE == LOG_DVC_REDIS
+        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
+           data)) == FAIL) {
+            return FAIL;
+        }
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        if (azure_blob_client->log_sync_data(g_node_id, get_txn_id(),
+                                          rc_to_state(rc)) == FAIL) {
+            return FAIL;
+        }
+        #endif
         // finish after log is stable.
         _finish_time = get_sys_clock();
     #elif COMMIT_ALG == ONE_PC
         // finish before sending out logs.
         _finish_time = get_sys_clock();
-        #if LOG_DEVICE == LOG_DVC_NATIVE
-            SundialRequest::RequestType type = rc == COMMIT ? SundialRequest::LOG_COMMIT_REQ :
-                    SundialRequest::LOG_ABORT_REQ;
-            send_log_request(g_storage_node_id, type);
-        #elif LOG_DEVICE == LOG_DVC_REDIS
+        #if NUM_STORAGE_NODES > 0
+        // log to quorum
+        replied_acceptors2 = 0;
+        int num_acceptors = (int) g_num_storage_nodes + 1;
+        int quorum = (int) floor(num_acceptors / 2) + 1;
+        // send log request
+        for (size_t i = 0; i < g_num_storage_nodes; i++) {
+            _worker_thread->thd_requests2_[i].set_request_type(SundialRequest::LOG_COMMIT_REQ);
+            _worker_thread->thd_requests2_[i].set_txn_id(get_txn_id());
+            rpc_client->sendRequestAsync(this,
+                                         i,
+                                         _worker_thread->thd_requests2_[i],
+                                         _worker_thread->thd_responses2_[i],
+                                         true);
+        }
+        #endif
+        #if LOG_DEVICE == LOG_DVC_REDIS
             rpc_log_semaphore->incr();
             if (redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc)) ==
             FAIL) {
@@ -355,6 +412,10 @@ TxnManager::process_2pc_phase2(RC rc)
     // No need to wait for this log since it is optional (shared log optimization)
 #if COMMIT_ALG == ONE_PC
     rpc_log_semaphore->wait();
+    #if NUM_STORAGE_NODES > 0
+    increment_replied_acceptors2();
+    while (get_replied_acceptors2() < quorum) {}
+    #endif
 #endif
     _cc_manager->cleanup(rc);
     rpc_semaphore->wait();
@@ -399,7 +460,8 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
 
     // handle RPC response
     if (response.response_type() == SundialResponse::RESP_OK) {
-        ((LockManager *)_cc_manager)->process_remote_read_response(node_id, access_type, response);
+        ((CC_MAN *)_cc_manager)->process_remote_read_response(node_id,
+                                                         access_type, response);
         return RCOK;
     } else if (response.response_type() == SundialResponse::RESP_ABORT) {
         _remote_nodes_involved[node_id]->state = ABORTED;
@@ -449,16 +511,12 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             rpc_semaphore->incr();
         }
     }
-
-#if DEBUG_PRINT
-    printf("[txn-%lu] waiting for read request reply\n", get_txn_id());
-#endif
     rpc_semaphore->wait();
     RC rc = RCOK;
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         SundialResponse &response = it->second->response;
         if (response.response_type() == SundialResponse::RESP_OK) {
-            ((LockManager *)_cc_manager)->process_remote_read_response(it->first, response);
+            ((CC_MAN *)_cc_manager)->process_remote_read_response(it->first, response);
         } else if (response.response_type() == SundialResponse::RESP_ABORT) {
             _remote_nodes_involved[it->first]->state = ABORTED;
             _is_remote_abort = true;
@@ -470,40 +528,8 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             rc = ABORT;
         }
     }
-#if DEBUG_PRINT
-    printf("[txn-%lu] finished waiting for read request reply, state=%d\n",
-get_txn_id(), rc);
-#endif
     return rc;
 }
 
-
-// For Logging
-// ====================
-RC
-TxnManager::send_log_request(uint64_t node_id, SundialRequest::RequestType type)
-{
-    if ( _log_nodes_involved.find(node_id) == _log_nodes_involved.end() ) {
-        _log_nodes_involved[node_id] = new RemoteNodeInfo;
-        _log_nodes_involved[node_id]->state = RUNNING;
-    }
-    SundialRequest &request = _log_nodes_involved[node_id]->request;
-    SundialResponse &response = _log_nodes_involved[node_id]->response;
-    request.Clear();
-    response.Clear();
-    request.set_txn_id( get_txn_id() );
-    request.set_request_type( type );
-
-    char * log_record = NULL;
-    uint32_t log_record_size = 0;
-    if (type == SundialRequest::LOG_COMMIT_REQ) {   // only commit need to log modified data
-        log_record_size = _cc_manager->get_log_record(log_record);
-        request.set_log_data(log_record);
-    }
-    request.set_log_data_size(log_record_size);
-    rpc_log_semaphore->incr();
-    rpc_client->sendRequestAsync(this, node_id, request, response);
-    return RCOK;
-}
 
 

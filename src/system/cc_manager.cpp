@@ -3,6 +3,7 @@
 #include "lock_manager.h"
 #include "f1_manager.h"
 #include "tictoc_manager.h"
+#include "occ_manager.h"
 #include "index_btree.h"
 #include "index_hash.h"
 #include "manager.h"

@@ -4,11 +4,12 @@
 // ==========
 #define DISTRIBUTED                     false
 #define NUM_NODES                       1
+#define NUM_STORAGE_NODES               0
+#define NODE_TYPE                       COMPUTE_NODE
 
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024
 #define NUM_RPC_SERVER_THREADS          24
-#define NUM_STORAGE_RPC_SERVER_THREADS  24
 
 // Statistics
 // ==========
@@ -36,6 +37,7 @@
 // Concurrency Control
 // ===================
 // Supported concurrency control algorithms: WAIT_DIE, NO_WAIT, TICTOC, F_ONE
+#define ISOLATION_LEVEL                 SERIALIZABLE
 #define CC_ALG                          NO_WAIT
 #define ABORT_PENALTY                   10000000  // in nanoseconds
 
@@ -110,7 +112,7 @@
 #define AZURE_ISOLATION_ENABLE          true
 
 // Failure Setup
-#define FAILURE_ENABLE                  true
+#define FAILURE_ENABLE                  false
 #define FAILURE_TIMEPOINT               10 // in seconds
 #define FAILURE_NODE                    0
 
@@ -180,6 +182,7 @@
 #define SEND_BUFFER_SIZE                32768
 #define MAX_CLOCK_SKEW                  0 // in us
 #define COMMIT_ALG                      ONE_PC
+#define BALLOT_TYPE                     BALLOT_CLASSIC
 #define DEBUG_LOG                       false
 #define WORKER_SERVER_SAME              false
 
@@ -200,6 +203,7 @@
 #define NAIVE_TICTOC                    6
 #define TICTOC                          7
 #define TCM                             8
+#define OCC                             9
 // TIMESTAMP allocation method.
 #define TS_MUTEX                        1
 #define TS_CAS                          2
@@ -209,13 +213,29 @@
 #define ALWAYS_READ                     1    // always read cached data
 #define ALWAYS_CHECK                    2    // always contact remote node
 #define READ_INTENSIVE                  3    // only read cached data that is read-intensive
-
+// Commit Algorithm
 #define ONE_PC                          1
 #define TWO_PC                          2
 #define MDCC                            3
 #define CORNUS_CUSTOMIZED               4
 #define COORDINATOR_LOG                 5
+<<<<<<< HEAD
 
 #define LOG_DVC_NATIVE                  1
 #define LOG_DVC_REDIS                   2
 #define LOG_DVC_AZURE_BLOB              3
+=======
+// Log Device
+#define LOG_DVC_REDIS                   1
+#define LOG_DVC_AZURE_BLOB              2
+#define LOG_DVC_NATIVE                  3
+// Isolation Level
+#define SERIALIZABLE                    1
+#define READ_COMMITTED                  2
+// MDCC Ballot Type
+#define BALLOT_FAST                     1
+#define BALLOT_CLASSIC                  2
+// Node Type
+#define COMPUTE_NODE                    1
+#define STORAGE_NODE                    2
+>>>>>>> 188386a406a6b34259be8ed6aaa2e4914c7a4f3e

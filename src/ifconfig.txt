@@ -1,4 +1,5 @@
 # a list of servers; each on a new line
+<<<<<<< HEAD
 newnode-0:50051
 newnode-1:50051
 newnode-2:50051
@@ -9,3 +10,14 @@ newnode-6:50051
 newnode-7:50051
 =l
 newredis.redis.cache.windows.net:6379 akCt0j9jbhlUBdaeoR7COQvATuUedFQBnAzCaJvscYA=
+=======
+128.105.145.3:50051
+128.105.144.249:50051
+=l
+127.0.0.1:6379 sundial-dev
+=s
+128.105.144.207:50051
+128.105.144.222:50051
+130.127.133.144:50051
+130.127.133.147:50051
+>>>>>>> 188386a406a6b34259be8ed6aaa2e4914c7a4f3e

@@ -3,13 +3,12 @@
 #include "cc_manager.h"
 #include "rpc_client.h"
 
-class LockManager : public CCManager
+class OccManager : public CCManager
 {
 public:
-    LockManager(TxnManager * txn);
-    ~LockManager() {}
+    OccManager(TxnManager * txn);
+    ~OccManager() {}
 
-    //bool          is_read_only() { return _is_read_only; }
     RC            get_row(row_t * row, access_t type, uint64_t key);
     RC            get_row(row_t * row, access_t type, char * &data, uint64_t key);
     char *        get_data( uint64_t key, uint32_t table_id);
@@ -22,32 +21,41 @@ public:
     void          process_remote_read_response(uint32_t node_id, access_t type, SundialResponse &response);
     void          process_remote_read_response(uint32_t node_id, SundialResponse &response);
     void          build_prepare_req(uint32_t node_id, SundialRequest &request);
+    void          build_local_req(SundialRequest &request);
+    void          restore_from_remote_request(const SundialRequest* request);
 
+    RC            validate();
     RC            commit_insdel();
     void          cleanup(RC rc);
-    RC            validate() { return COMMIT; };
+
     // Logging
     // Get the log record for a single partition transaction.
     // Return value: size of the log record.
     uint32_t      get_log_record(char *& record);
 
 #if EARLY_LOCK_RELEASE
-    void          retire();
+    void          retire() { assert(false); };
 #endif
 
 private:
-    class AccessLock : public Access {
+    struct IndexAccessOcc : IndexAccess {
+        uint64_t version;
+    };
+    class AccessOcc : public Access {
       public:
-        ~AccessLock() {}
-        AccessLock() { data = NULL; data_size = 0; }
+        ~AccessOcc() {}
+        AccessOcc() { data = NULL; data_size = 0; }
         char *        data;    // original data.
         uint32_t      data_size;
+        uint64_t      version;
+        uint64_t      index_id;
     };
 
-    AccessLock * find_access(uint64_t key, uint32_t table_id, vector<AccessLock> * set);
+    AccessOcc * find_access(uint64_t key, uint32_t table_id, vector<AccessOcc>
+        * set);
 
-    vector<AccessLock>        _access_set;
-    vector<AccessLock>        _remote_set;
+    vector<AccessOcc>        _access_set;
+    vector<AccessOcc>        _remote_set;
 
-    vector<IndexAccess>       _index_access_set;
+    vector<IndexAccessOcc>       _index_access_set;
 };

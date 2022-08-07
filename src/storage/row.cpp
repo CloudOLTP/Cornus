@@ -7,6 +7,7 @@
 #include "row_lock.h"
 #include "row_f1.h"
 #include "row_tictoc.h"
+#include "row_occ.h"
 #include "manager.h"
 #include "workload.h"
 #include "index_hash.h"

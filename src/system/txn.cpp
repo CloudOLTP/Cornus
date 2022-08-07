@@ -58,6 +58,10 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     rpc_semaphore = new SemaphoreSync();
     rpc_log_semaphore = new SemaphoreSync();
     pthread_mutex_init(&_latch, NULL);
+
+    for (size_t i = 0; i < g_num_nodes; i++) {
+        replied_acceptors[i] = 0;
+    }
 }
 
 TxnManager::~TxnManager()
@@ -188,11 +192,27 @@ TxnManager::start()
     _is_coordinator = true;
     // running transaction on the host node
     rc = _store_procedure->execute();
+    // TODO: used by occ, but may overlap with tictoc's method
+    if (rc == COMMIT)
+        rc = _cc_manager->validate();
     // Handle single-partition transactions, skip if self failed
     if (is_single_partition()) {
         _commit_start_time = get_sys_clock();
+#if COMMIT_ALG == MDCC
+        rc = process_mdcc_singlepart(rc);
+#else
         rc = process_commit_phase_singlepart(rc);
+#endif
     } else {
+#if COMMIT_ALG == MDCC
+        assert(ISOLATION_LEVEL == READ_COMMITTED);
+        if (rc == COMMIT) {
+            _prepare_start_time = get_sys_clock();
+            rc = process_mdcc_phase1();
+        }
+        _commit_start_time = get_sys_clock();
+        rc = process_mdcc_phase2(rc);
+#else
         if (rc == COMMIT) {
             _prepare_start_time = get_sys_clock();
             rc = process_2pc_phase1();
@@ -201,6 +221,7 @@ TxnManager::start()
             _commit_start_time = get_sys_clock();
             rc = process_2pc_phase2(rc);
         }
+#endif
     }
     if (rc != FAIL) {
         update_stats();

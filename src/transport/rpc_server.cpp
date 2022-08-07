@@ -4,6 +4,8 @@
 #include "txn_table.h"
 #include "manager.h"
 #include "log.h"
+#include "redis_client.h"
+#include "azure_blob_client.h"
 
 
 /*
@@ -20,6 +22,7 @@ SundialRPCServerImpl::run() {
     std::ifstream in(ifconfig_file);
     string line;
     uint32_t num_nodes = 0;
+#if NODE_TYPE == COMPUTE_NODE
     while (getline (in, line)) {
         if (line[0] == '#')
             continue;
@@ -29,6 +32,25 @@ SundialRPCServerImpl::run() {
             num_nodes ++;
         }
     }
+#else
+    bool is_storage_node = false;
+    while (getline (in, line)) {
+      if (line[0] == '#')
+        continue;
+      else if (line[0] == '=' && line[1] == 's') {
+        is_storage_node = true;
+        continue;
+      }
+      if (is_storage_node) {
+        if (num_nodes == g_node_id) {
+          cout << "[Sundial] will start rpc server at " << line << endl;
+          break;
+        }
+        num_nodes ++;
+      }
+    }
+#endif
+
     ServerBuilder builder;
     builder.AddListeningPort(line, grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
@@ -42,11 +64,15 @@ SundialRPCServerImpl::run() {
     #else
     uint32_t num_thds = NUM_WORKER_THREADS;
     #endif
+//    _thread_pool = new RPCServerThread * [num_thds];
+//    for (uint32_t i = 0; i < num_thds; i++) {
+//        _thread_pool[i] = new RPCServerThread(this);
+//    }
     _thread_pool = new std::thread * [num_thds];
     for (uint32_t i = 0; i < num_thds; i++) {
         _thread_pool[i] = new std::thread(HandleRpcs, this);
     }
-    cout <<"[Sundial] rpc server initialized, lisentening on " << line << endl;
+    cout <<"[Sundial] rpc server initialized, listening on " << line << endl;
 }
 
 void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
@@ -63,6 +89,7 @@ void SundialRPCServerImpl::HandleRpcs(SundialRPCServerImpl * s) {
       GPR_ASSERT(s->cq_->Next(&tag, &ok));
       GPR_ASSERT(ok);
       static_cast<CallData*>(tag)->Proceed();
+
     }
 }
 
@@ -72,6 +99,9 @@ SundialRPCServerImpl::contactRemote(ServerContext* context, const SundialRequest
     // Calls done_callback->Run() when it goes out of scope.
     // AutoClosureRunner done_runner(done_callback);
     processContactRemote(context, request, response);
+#if DEBUG_PRINT
+    printf("finish processing contact remote\n");
+#endif
     return Status::OK;
 }
 
@@ -85,19 +115,25 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     response->set_request_type(tpe);
     response->set_txn_id(txn_id);
     response->set_node_id(g_node_id);
-    RC rc;
+    RC rc = RCOK;
     TxnManager * txn;
+    string data;
 
     switch (request->request_type()) {
         case SundialRequest::SYS_REQ:
+#if DEBUG_PRINT
+            printf("[node-%u] receive system request\n",
+                 g_node_id);
+#endif
             glob_manager->receive_sync_request();
             return;
         case SundialRequest::READ_REQ:
 #if DEBUG_PRINT
-          printf("[remote txn-%lu] receive remote read request\n", txn_id);
+          printf("[node-%u, txn-%lu] receive remote read request\n",
+                 g_node_id, txn_id);
 #endif
-            txn = txn_table->get_txn(txn_id, false);
-            if (txn  == NULL) {
+            txn = txn_table->get_txn(txn_id);
+            if (txn  == nullptr) {
                 txn = new TxnManager();
                 txn->set_txn_id(txn_id);
                 txn_table->add_txn(txn);
@@ -106,82 +142,280 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             // only read and terminate need latch since
             // (1) read can only be concurrent with read and terminate
             // (2) read does not remove txn from txn table when getting txn
+#if FAILURE_ENABLE
             txn->lock();
             rc = txn->process_read_request(request, response);
             txn->unlock();
-#if !FAILURE_ENABLE
-            if (rc == ABORT) {
-              txn_table->remove_txn(txn);
-              delete txn;
-            }
+#else
+            rc = txn->process_read_request(request, response);
 #endif
+            if (rc == ABORT) {
+                txn_table->remove_txn(txn, false);
+                delete txn;
+            }
+            response->set_txn_id(txn_id);
             break;
         case SundialRequest::TERMINATE_REQ:
-            txn = txn_table->get_txn(txn_id, true);
+#if NODE_TYPE == COMPUTE_NODE
+            txn = txn_table->get_txn(txn_id, false, true);
             if (txn == NULL) {
                 return;
             }
             txn->lock();
             rc = txn->process_terminate_request(request, response);
             txn->unlock();
-            txn_table->remove_txn(txn);
+            txn_table->remove_txn(txn, false);
             delete txn;
             break;
+#else
+            cout << "receive terminate request" << endl;
+            response->set_request_type(SundialResponse::SYS_REQ);
+            response->set_response_type(SundialResponse::ACK);
+            glob_manager->active = false;
+#if DEBUG_PRINT
+            cout << "set active status to false" << endl;
+#endif
+            return;
+#endif
         case SundialRequest::PREPARE_REQ:
 #if DEBUG_PRINT
-          printf("[remote txn-%lu] receive remote prepare request\n",
-                 txn_id);
+          printf("[node-%u, txn-%lu] receive remote prepare request\n",
+                 g_node_id, txn_id);
 #endif
-            txn = txn_table->get_txn(txn_id, false);
-            if (txn == NULL) {
+            txn = txn_table->get_txn(txn_id);
+            if (txn == nullptr) {
                 // txn already cleaned up
                 response->set_response_type(SundialResponse::PREPARED_ABORT);
                 return;
             }
             rc = txn->process_prepare_request(request, response);
             if (txn->get_txn_state() != TxnManager::PREPARED) {
-                txn_table->remove_txn(txn);
+                txn_table->remove_txn(txn, false);
                 delete txn;
             }
+            response->set_txn_id(txn_id);
             break;
         case SundialRequest::COMMIT_REQ:
 #if DEBUG_PRINT
-          printf("[remote txn-%lu] receive remote commit request\n",
-                 txn_id);
+          printf("[node-%u, txn-%lu] receive remote commit request\n",
+                 g_node_id, txn_id);
 #endif
-            txn = txn_table->get_txn(txn_id, true);
-            if (txn == NULL) {
+            txn = txn_table->get_txn(txn_id, false, true);
+            if (txn == nullptr) {
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
             rc = txn->process_decision_request(request, response, COMMIT);
-            txn_table->remove_txn(txn);
+            txn_table->remove_txn(txn, false);
             delete txn;
+            response->set_txn_id(txn_id);
             break;
         case SundialRequest::ABORT_REQ:
 #if DEBUG_PRINT
-          printf("[remote txn-%lu] receive remote abort request\n", txn_id);
+          printf("[node-%u txn-%lu] receive remote abort request\n",
+                 g_node_id, txn_id);
 #endif
-            txn = txn_table->get_txn(txn_id, true);
-            if (txn == NULL) {
+            txn = txn_table->get_txn(txn_id, false, true);
+            if (txn == nullptr) {
                 response->set_response_type(SundialResponse::ACK);
                 return;
             }
             rc = txn->process_decision_request(request, response, ABORT);
-            txn_table->remove_txn(txn);
+            txn_table->remove_txn(txn, false);
             delete txn;
+            response->set_txn_id(txn_id);
+            break;
+        case SundialRequest::MDCC_Propose:
+            // from coordinator to participant in phase 1, classic
+            txn = txn_table->get_txn(txn_id, true);
+            // since using occ, it wont check conflict until next step,
+            // so the txn cannot be removed and it must exist
+            assert(txn);
+            rc = txn->process_mdcc_2aclassic(request, response);
+            if (rc == ABORT) {
+                txn_table->remove_txn(txn, false);
+                delete txn;
+            } else {
+                txn_table->return_txn(txn);
+            }
+            break;
+        case SundialRequest::MDCC_Phase2a:
+            // from leader to acceptors in phase 1, classic
+            // leader may be coordinator or participant
+            assert(NODE_TYPE == STORAGE_NODE);
+            txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                txn = new TxnManager();
+                txn->set_txn_id(txn_id);
+                txn_table->add_txn(txn);
+            }
+            txn->lock();
+            txn->process_mdcc_2bclassic(request, response);
+            txn->unlock();
+            // must return since phase 2a abort may delete it
+            txn_table->return_txn(txn);
+            break;
+        case SundialRequest::MDCC_Phase2aAbort:
+            // from leader to acceptors in phase 1, classic
+            // leader may be coordinator or participant
+            assert(NODE_TYPE == STORAGE_NODE);
+            txn = txn_table->get_txn(txn_id, true, true);
+            if (txn == nullptr) {
+                txn = new TxnManager();
+                txn->set_txn_id(txn_id);
+                txn_table->add_txn(txn);
+            }
+            txn->lock();
+            txn->process_mdcc_2bclassic_abort(request, response);
+            txn->unlock();
+            txn_table->return_txn(txn);
+            // abort
+            txn_table->remove_txn(txn, true);
+            delete txn;
+            break;
+        case SundialRequest::MDCC_Phase2bReply:
+            // from acceptor to leader in phase 1, classic
+            txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                response->set_request_type(SundialResponse::MDCC_DummyReply);
+                return;
+            }
+            txn->increment_replied_acceptors(request->node_id());
+            response->set_request_type(SundialResponse::MDCC_DummyReply);
+            // must return since this txn's home is on this node and delete
+            // is handled in worker_thread.cpp
+            txn_table->return_txn(txn);
+            break;
+        case SundialRequest::MDCC_Phase2bReplyAbort:
+            // from acceptor to leader in phase 1, classic
+            txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                response->set_request_type(SundialResponse::MDCC_DummyReply);
+                return;
+            }
+            // set decision to abort
+            // cannot use handle_resp since here we have type of request
+            txn->_remote_nodes_involved[request->node_id()]->state =
+                TxnManager::ABORTED;
+            txn->increment_replied_acceptors(request->node_id());
+            response->set_request_type(SundialResponse::MDCC_DummyReply);
+            // must return since this txn's home is on this node and delete
+            // is handled in worker_thread.cpp
+            txn_table->return_txn(txn);
+            break;
+        case SundialRequest::MDCC_ProposeFast:
+            // from coordinator to participant/acceptor, fast
+            txn = txn_table->get_txn(txn_id, true);
+            if (txn == nullptr) {
+                txn = new TxnManager();
+                txn->set_txn_id(txn_id);
+                txn_table->add_txn(txn);
+            }
+            txn->lock();
+            rc = txn->process_mdcc_2bfast(request, response);
+            txn->unlock();
+            txn_table->return_txn(txn);
+            if (rc == ABORT) {
+                txn_table->remove_txn(txn, true);
+                delete txn;
+            }
+            break;
+        case SundialRequest::MDCC_COMMIT_REQ:
+            txn = txn_table->get_txn(txn_id, false, true);
+            if (txn == nullptr) {
+                response->set_request_type(SundialResponse::MDCC_Visibility);
+                response->set_response_type(SundialResponse::ACK);
+                return;
+            }
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive remote commit request\n",
+                 g_node_id, txn_id);
+#endif
+            txn->lock();
+            txn->process_mdcc_visibility(request, response, COMMIT);
+            txn->unlock();
+            txn_table->remove_txn(txn, false);
+            delete txn;
+            break;
+        case SundialRequest::MDCC_ABORT_REQ:
+            txn = txn_table->get_txn(txn_id, false, true);
+            if (txn == nullptr) {
+                response->set_request_type(SundialResponse::MDCC_Visibility);
+                response->set_response_type(SundialResponse::ACK);
+                return;
+            }
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive remote abort request\n",
+                 g_node_id, txn_id);
+#endif
+            txn->lock();
+            txn->process_mdcc_visibility(request, response, ABORT);
+            txn->unlock();
+            txn_table->remove_txn(txn, false);
+            delete txn;
+            break;
+        case SundialRequest::MDCC_SINGLEPART_COMMIT:
+            txn = new TxnManager();
+            txn->set_txn_id(txn_id);
+            txn_table->add_txn(txn);
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive single part request\n",
+                 g_node_id, txn_id);
+#endif
+            txn->process_mdcc_visibility(request, response, COMMIT);
+            txn_table->remove_txn(txn, false);
+            delete txn;
+            break;
+        case SundialRequest::MDCC_SINGLEPART_ABORT:
+            txn = new TxnManager();
+            txn->set_txn_id(txn_id);
+            txn_table->add_txn(txn);
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive single part request\n",
+                 g_node_id, txn_id);
+#endif
+            txn->process_mdcc_visibility(request, response, ABORT);
+            txn_table->remove_txn(txn, false);
+            delete txn;
+            break;
+        case SundialRequest::LOG_YES_REQ:
+            response->set_request_type(SundialResponse::LOG_YES_REQ);
+            response->set_txn_id(request->txn_id());
+            data = "[LSN] placehold:" + string(request->log_data_size(), 'd');
+#if LOG_DEVICE == LOG_DVC_REDIS
+            redis_client->log_sync_data(g_node_id, request->txn_id(),
+                                            TxnManager::COMMITTED,
+                                            data);
+#elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+            azure_blob_client->log_sync_data(g_node_id, request->txn_id(),
+                                            TxnManager::COMMITTED,
+                                            data)
+#endif
+            break;
+        case SundialRequest::LOG_COMMIT_REQ:
+            response->set_request_type(SundialResponse::LOG_COMMIT_REQ);
+            response->set_txn_id(request->txn_id());
+#if LOG_DEVICE == LOG_DVC_REDIS
+            redis_client->log_sync(g_node_id, request->txn_id(),
+                                        TxnManager::COMMITTED);
+#elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+            azure_blob_client->log_sync(g_node_id, request->txn_id(),
+                                            TxnManager::COMMITTED)
+#endif
             break;
         default:
             assert(false);
     }
     // the transaction handles the RPC call
-    if (rc == FAIL || !glob_manager->active) {
+#if FAILURE_ENABLE
+    if (rc == FAIL || (!glob_manager->active)) {
 #if DEBUG_PRINT
         printf("[node-%u, txn-%lu] reply failure response\n", g_node_id,
             txn_id);
 #endif
         response->set_response_type(SundialResponse::RESP_FAIL);
     }
+#endif
 }
 
 
@@ -194,7 +428,9 @@ SundialRPCServerImpl::CallData::CallData(SundialRPC::AsyncService* service,
 void
 SundialRPCServerImpl::CallData::Proceed() {
     if (status_ == CREATE) {
-        service_->RequestcontactRemote(&ctx_, &request_, &responder_, cq_, cq_, this);  
+        //ctx_.AsyncNotifyWhenDone(this);
+        service_->RequestcontactRemote(&ctx_, &request_, &responder_, cq_,
+                                       cq_, this);
         status_ = PROCESS;
     } else if (status_ == PROCESS) {
         // Spawn a new CallData instance to serve new clients while processing
@@ -202,7 +438,10 @@ SundialRPCServerImpl::CallData::Proceed() {
         processContactRemote(&ctx_, &request_ , &reply_);
         status_ = FINISH;
         responder_.Finish(reply_, Status::OK, this);
-    } else {
+#if DEBUG_PRINT
+        printf("request-%d is finish\n", request_.request_type());
+#endif
+    } else  {
         GPR_ASSERT(status_ == FINISH);
         delete this;
     }

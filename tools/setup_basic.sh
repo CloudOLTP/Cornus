@@ -25,9 +25,11 @@ echo "set tabstop=4" > ~/.vimrc
 #git config --global user.email "zguo74@wisc.edu"
 
 # set up redis
+cd
 git clone https://github.com/redis/redis.git
 cd redis
 make
+cp $HOME/Sundial-Private/tools/redis.conf ./
 cd
 mkdir redis_data/
 

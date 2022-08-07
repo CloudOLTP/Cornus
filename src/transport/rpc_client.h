@@ -38,21 +38,24 @@ public:
 	    return s;
     };
     std::unique_ptr<SundialRPC::Stub> stub_;
+    // create a cq for each server
+    CompletionQueue cq_;
 };
 
 class SundialRPCClient {
 public:
     SundialRPCClient();
-    static void AsyncCompleteRpc(SundialRPCClient * s);
+    static void AsyncCompleteRpc(SundialRPCClient * s, uint64_t node_id);
+    static void AsyncCompleteRpcStorage(SundialRPCClient * s, uint64_t node_id);
     RC sendRequest(uint64_t node_id, SundialRequest &request, SundialResponse
-    &response);
+    &response, bool is_storage=false);
     RC sendRequestAsync(TxnManager * txn, uint64_t node_id,
-                          SundialRequest &request, SundialResponse &response);
-    void sendRequestDone(SundialRequest * request, SundialResponse * response);
-private:
-    //std::unique_ptr<SundialRPC::Stub> ** _servers;
+                          SundialRequest &request, SundialResponse &response,
+                          bool is_storage=false);
+    void sendRequestDone(SundialRequest * request, SundialResponse *
+    response);
     SundialRPCClientStub ** _servers;
-    CompletionQueue cq;
-    //pthread_t * _thread;
-    std::thread * _thread;
+    SundialRPCClientStub ** _storage_servers;
+    std::thread ** _threads;
+    std::thread ** _storage_threads;
 };

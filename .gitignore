@@ -13,3 +13,5 @@ outputs/*.json
 tools/*.csv
 src/config.h
 src/rundb
+*.xml
+.idea/workspace.xml

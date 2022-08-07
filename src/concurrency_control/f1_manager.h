@@ -26,6 +26,7 @@ public:
     RC            index_delete(INDEX * index, uint64_t key);
 
     void         cleanup(RC rc);
+    RC            validate() { return COMMIT; };
 
     // normal execution
     void         add_remote_req_header(UnstructuredBuffer * buffer);
