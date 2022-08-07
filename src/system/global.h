@@ -210,7 +210,7 @@ extern  uint32_t        g_log_sz;
 
 extern SundialRPCClient * rpc_client;
 extern SundialRPCServerImpl * rpc_server;
-#if LOG_DEVICE == LOG_DVC_REDIS
+#if LOG_DEVICE == LOG_DVC_REDIS || LOG_DEVICE == LOG_DVC_CUSTOMIZED
 extern RedisClient *      redis_client;
 #endif
 #if LOG_DEVICE == LOG_DVC_AZURE_BLOB

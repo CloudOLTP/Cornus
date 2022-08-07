@@ -58,10 +58,11 @@ public:
 
     // Synchronization
     // ===============
-    SemaphoreSync *   log_semaphore;
     SemaphoreSync *   dependency_semaphore;
     SemaphoreSync *   rpc_semaphore;
     SemaphoreSync *   rpc_log_semaphore;
+    SemaphoreSync *   phase1_log_semaphore;
+    SemaphoreSync *   phase2_log_semaphore;
     pthread_mutex_t   _latch;
 
 
@@ -197,6 +198,8 @@ private:
 
   private:
     void process_mdcc_local_phase1(RC rc, uint64_t g_node_id, bool is_singlepart=false);
+    void sendRemoteLogRequest(SundialRequest::LogType log_type, State state,
+                              uint64_t log_data_size);
     // used to track # of replies from each node and the stats will be used for
     // calculating quorum
     // each count should not exceed g_num_storage_nodes + 1

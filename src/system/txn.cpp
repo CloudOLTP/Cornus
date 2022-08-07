@@ -53,10 +53,11 @@ TxnManager::TxnManager(QueryBase * query, WorkerThread * thread)
     _is_remote_abort = false;
     _is_coordinator = false;
 
-    log_semaphore = new SemaphoreSync();
     dependency_semaphore = new SemaphoreSync();
     rpc_semaphore = new SemaphoreSync();
     rpc_log_semaphore = new SemaphoreSync();
+    phase1_log_semaphore = new SemaphoreSync();
+    phase2_log_semaphore = new SemaphoreSync();
     pthread_mutex_init(&_latch, NULL);
 
     for (size_t i = 0; i < g_num_nodes; i++) {
@@ -73,10 +74,11 @@ TxnManager::~TxnManager()
         delete kvp.second;
     for (auto kvp : _log_nodes_involved)
         delete kvp.second;
-    delete log_semaphore;
     delete dependency_semaphore;
     delete rpc_semaphore;
     delete rpc_log_semaphore;
+    delete phase1_log_semaphore;
+    delete phase2_log_semaphore;
 }
 
 void
@@ -168,7 +170,8 @@ TxnManager::restart() {
     _terminate_time = 0;
 
     // reset semaphore
-    log_semaphore->reset();
+    phase1_log_semaphore->reset();
+    phase2_log_semaphore->reset();
     dependency_semaphore->reset();
     rpc_semaphore->reset();
     rpc_log_semaphore->reset();

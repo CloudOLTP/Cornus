@@ -60,11 +60,7 @@ public:
     { return _num_finished_worker_threads == g_num_worker_threads; }
 
     bool                    are_all_remote_nodes_done()
-#if LOG_REMOTE && LOG_DEVICE == LOG_DVC_NATIVE
     { return _num_sync_received == (g_num_nodes - 1) * 2; }
-#else
-    { return _num_sync_received == (g_num_nodes - 1) * 2; }
-#endif
     void                    receive_sync_request();
     uint32_t                num_sync_requests_received() { return _num_sync_received; }
 
