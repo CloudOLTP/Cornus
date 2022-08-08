@@ -59,14 +59,15 @@ TxnManager::process_commit_phase_singlepart(RC rc)
            data) == FAIL)
            return FAIL;
     #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
-        sendRemoteLogRequest(SundialRequest::LOG_SYNC_DATA, rc_to_state(rc),
-                             num_local_write *  g_log_sz * 8);
         // log locally
         redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
+        rpc_log_semaphore->incr();
+        sendRemoteLogRequest(rc_to_state(rc), num_local_write *  g_log_sz * 8);
     #if COLOCATE
         while (get_replied_acceptors(g_node_id) < g_quorum) {}
     #else
-        rpc_log_semaphore->wait(); // wait for both if not colocate
+        // wait for (1) remote log request sent to paxos leader (2) redis
+        rpc_log_semaphore->wait(); // wait for redis
     #endif
     #endif
     }
@@ -94,16 +95,14 @@ TxnManager::process_2pc_phase1()
         rpc_log_semaphore->incr();
     #if COMMIT_ALG == ONE_PC
         #if LOG_DEVICE == LOG_DVC_REDIS
-        if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) == FAIL)
-            return FAIL;
-        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-        if (azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data) == FAIL)
-            return FAIL;
-        #elif LOG_LOG_DEVICE == LOG_DVC_CUSTOMIZED
-        rpc_log_semaphore->incr(); // increase specially for customized storage
-        sendRemoteLogRequest(SundialRequest::LOG_IF_NE_DATA,
-                             PREPARED, num_local_write * g_log_sz * 8);
         redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+        #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
+        azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+        #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
+        redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+        rpc_log_sempahore->wait();
+        rpc_log_semaphore->incr();
+        sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8);
         #endif
 	#elif COMMIT_ALG == COORDINATOR_LOG
         for (auto it = _remote_nodes_involved.begin();
@@ -126,10 +125,9 @@ TxnManager::process_2pc_phase1()
         #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
         azure_blob_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
-        rpc_log_semaphore->incr(); // increase specially for customized storage
-        sendRemoteLogRequest(SundialRequest::LOG_ASYNC_DATA, PREPARED,
-                             num_local_write * g_log_sz * 8);
         redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
+        rpc_log_semaphore->incr(); // increase specially for customized storage
+        sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8);
         #endif
     #endif // COMMIT_ALG == ONE_PC
     }
@@ -489,16 +487,13 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
     return rc;
 }
 
-void TxnManager::sendRemoteLogRequest(SundialRequest::LogType log_type, State
-state, uint64_t log_data_size) {
+void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
 #if !COLOCATE
-    replied_acceptors[g_node_id] = 0;
     // send log request to leader of paxos, which is the storage node
     // with the same id as current compute node id
     // need to make sure # storage >= # compute
     _worker_thread->thd_requests_[g_node_id].set_request_type
         (SundialRequest::PAXOS_LOG);
-    _worker_thread->thd_requests_[g_node_id].set_log_type(log_type);
     _worker_thread->thd_requests_[g_node_id].set_txn_id(get_txn_id());
     _worker_thread->thd_requests_[g_node_id].set_log_data_size(log_data_size);
     _worker_thread->thd_requests_[g_node_id].set_txn_state(state);

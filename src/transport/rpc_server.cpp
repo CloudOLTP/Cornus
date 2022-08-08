@@ -225,6 +225,8 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             response->set_txn_id(txn_id);
             break;
+        case sundial_rpc::SundialRequest_RequestType_PAXOS_LOG:
+
         case SundialRequest::MDCC_Propose:
             // from coordinator to participant in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);

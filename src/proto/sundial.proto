@@ -32,14 +32,6 @@ message SundialRequest {
         PAXOS_REPLICATE = 22;
         NUM_REQ_TYPES = 23;
     }
-    enum LogType {
-        LOG_SYNC = 0;
-        LOG_ASYNC = 1;
-        LOG_IF_NE = 2;
-        LOG_IF_NE_DATA = 3;
-        LOG_SYNC_DATA = 4;
-        LOG_ASYNC_DATA = 5;
-    }
     message ReadRequest {
         uint64 key = 1;
         uint64 index_id = 2;
@@ -73,15 +65,14 @@ message SundialRequest {
     repeated ReadRequest    read_requests = 3;
     repeated TupleData      tuple_data    = 4;
     uint64                  log_data_size = 5;
-    LogType                 log_type      = 6;
-    uint64                  node_id       = 7;
-    repeated NodeData       nodes         = 8;
-    uint64                  request_time  = 9;
-    uint64                  thread_id     = 10;
-    repeated MdccData       mdcc_data     = 11;
+    uint64                  node_id       = 6;
+    repeated NodeData       nodes         = 7;
+    uint64                  request_time  = 8;
+    uint64                  thread_id     = 9;
+    repeated MdccData       mdcc_data     = 10;
     NodeType                node_type     = 12;
-    uint64                  coord_id      = 13;
-    int32                   txn_state     = 14;
+    uint64                  coord_id      = 12;
+    int32                   txn_state     = 13;
 }
 
 message SundialResponse {
