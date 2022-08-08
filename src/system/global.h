@@ -202,6 +202,7 @@ using global_key_t = std::pair<uint32_t, uint64_t>;
 extern uint32_t         g_num_nodes;
 extern uint32_t         g_num_storage_nodes;
 extern uint32_t         g_node_id;
+extern size_t           g_quorum;
 
 extern uint32_t         g_num_input_threads;
 extern uint32_t         g_num_output_threads;

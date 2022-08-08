@@ -77,6 +77,11 @@ uint32_t        g_total_num_threads     = 0;
 
 uint32_t        g_num_nodes             = NUM_NODES;
 uint32_t        g_num_storage_nodes     = NUM_STORAGE_NODES;
+#if COLOCATE
+size_t          g_quorum = (int) floor(g_num_storage_nodes / 2) + 1;
+#else
+size_t          g_quorum = (int) floor(g_num_storage_nodes / 2);
+#endif
 
 uint32_t        g_node_id;
 

@@ -50,26 +50,6 @@ TxnManager::process_commit_phase_singlepart(RC rc)
 #endif
     // if logging didn't happen, process commit phase
     if (!is_read_only()) {
-#if NUM_STORAGE_NODES > 0 && COLOCATE
-        // log to quorum
-        int num_acceptors = (int) g_num_storage_nodes + 1;
-        int quorum = (int) floor(num_acceptors / 2) + 1;
-        replied_acceptors[g_node_id] = 0;
-        // send log request
-// TODO(zhihan): change to log to # quorum to avoid complexity.
-        for (size_t i = 0; i < g_num_storage_nodes; i++) {
-            _worker_thread->thd_requests_[i].set_request_type
-            (SundialRequest::LOG_YES_REQ);
-            _worker_thread->thd_requests_[i].set_log_data_size
-            (num_local_write * g_log_sz * 8);
-            _worker_thread->thd_requests_[i].set_txn_id(get_txn_id());
-            rpc_client->sendRequestAsync(this,
-                                         i,
-                                         _worker_thread->thd_requests_[i],
-                                         _worker_thread->thd_responses_[i],
-                                         true);
-        }
-#endif
     #if LOG_DEVICE == LOG_DVC_REDIS
        if (redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
            data) == FAIL)
@@ -79,17 +59,16 @@ TxnManager::process_commit_phase_singlepart(RC rc)
            data) == FAIL)
            return FAIL;
     #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
-        rpc_log_semaphore->incr();
-        // log locally
         sendRemoteLogRequest(SundialRequest::LOG_SYNC_DATA, rc_to_state(rc),
                              num_local_write *  g_log_sz * 8);
+        // log locally
         redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
-        rpc_log_semaphore->wait();
+    #if COLOCATE
+        while (get_replied_acceptors(g_node_id) < g_quorum) {}
+    #else
+        rpc_log_semaphore->wait(); // wait for both if not colocate
     #endif
-#if NUM_STORAGE_NODES > 0 && COLOCATE
-        increment_replied_acceptors(g_node_id);
-        while (get_replied_acceptors(g_node_id) < quorum) {}
-#endif
+    #endif
     }
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
@@ -512,6 +491,8 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
 
 void TxnManager::sendRemoteLogRequest(SundialRequest::LogType log_type, State
 state, uint64_t log_data_size) {
+#if !COLOCATE
+    replied_acceptors[g_node_id] = 0;
     // send log request to leader of paxos, which is the storage node
     // with the same id as current compute node id
     // need to make sure # storage >= # compute
@@ -526,6 +507,25 @@ state, uint64_t log_data_size) {
                                  _worker_thread->thd_requests_[g_node_id],
                                  _worker_thread->thd_responses_[g_node_id],
                                  true);
+#else
+    // handle quorum by itself
+    replied_acceptors[g_node_id] = 0;
+    // send log request
+    // TODO(zhihan): change to log to # quorum to avoid complexity.
+    for (size_t i = 0; i < g_num_storage_nodes; i++) {
+      _worker_thread->thd_requests_[i].set_request_type
+          (SundialRequest::PAXOS_LOG_COLOCATE);
+      _worker_thread->thd_requests_[i].set_log_type(log_type);
+      _worker_thread->thd_requests_[i].set_txn_id(get_txn_id());
+      _worker_thread->thd_requests_[i].set_log_data_size(log_data_size);
+      _worker_thread->thd_requests_[i].set_txn_state(state);
+      rpc_client->sendRequestAsync(this,
+                                   i,
+                                   _worker_thread->thd_requests_[i],
+                                   _worker_thread->thd_responses_[i],
+                                   true);
+    }
+#endif
 
 }
 

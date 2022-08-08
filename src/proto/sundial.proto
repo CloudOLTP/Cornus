@@ -28,8 +28,9 @@ message SundialRequest {
         MDCC_SINGLEPART_COMMIT = 18;
         MDCC_SINGLEPART_ABORT = 19;
         PAXOS_LOG = 20;
-        PAXOS_REPLICATE = 21;
-        NUM_REQ_TYPES = 22;
+        PAXOS_LOG_COLOCATE = 21;
+        PAXOS_REPLICATE = 22;
+        NUM_REQ_TYPES = 23;
     }
     enum LogType {
         LOG_SYNC = 0;
