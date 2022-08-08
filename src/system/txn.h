@@ -61,8 +61,6 @@ public:
     SemaphoreSync *   dependency_semaphore;
     SemaphoreSync *   rpc_semaphore;
     SemaphoreSync *   rpc_log_semaphore;
-    SemaphoreSync *   phase1_log_semaphore;
-    SemaphoreSync *   phase2_log_semaphore;
     pthread_mutex_t   _latch;
 
 
@@ -182,6 +180,7 @@ private:
             (std::memory_order_relaxed);}
     void increment_replied_acceptors(size_t i) { replied_acceptors[i]++; }
     void increment_replied_acceptors2() { replied_acceptors2++; }
+    void sendReplicateRequest(State state, uint64_t log_data_size);
 
     // txn level requests
 #if NODE_TYPE == STORAGE_NODE

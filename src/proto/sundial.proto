@@ -28,9 +28,9 @@ message SundialRequest {
         MDCC_SINGLEPART_COMMIT = 18;
         MDCC_SINGLEPART_ABORT = 19;
         PAXOS_LOG = 20;
-        PAXOS_LOG_COLOCATE = 21;
-        PAXOS_REPLICATE = 22;
-        NUM_REQ_TYPES = 23;
+        PAXOS_LOG_COLOCATE = 22;
+        PAXOS_REPLICATE = 23;
+        NUM_REQ_TYPES = 24;
     }
     message ReadRequest {
         uint64 key = 1;
@@ -73,6 +73,7 @@ message SundialRequest {
     NodeType                node_type     = 12;
     uint64                  coord_id      = 12;
     int32                   txn_state     = 13;
+    uint64                  semaphore     = 14;
 }
 
 message SundialResponse {
@@ -91,8 +92,7 @@ message SundialResponse {
         MDCC_Visibility = 12;
         MDCC_DummyReply = 13;
         PAXOS_LOG_ACK = 14;
-        PAXOS_REPLICATE_ACK = 15;
-        NUM_REQ_TYPES = 16;
+        NUM_REQ_TYPES = 15;
     }
     enum ResponseType {
         RESP_OK = 0;

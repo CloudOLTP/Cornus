@@ -234,6 +234,8 @@ response)
                 txn->handle_prepare_resp(response);
                 txn->rpc_semaphore->decr();
                 break;
+            case sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK:
+                ((SemaphoreSync *) request->semaphore())->decr();
             case SundialResponse::LOG_YES_REQ :
                 txn = txn_table->get_txn(txn_id, false);
                 if (txn == nullptr)

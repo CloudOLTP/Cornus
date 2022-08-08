@@ -86,62 +86,31 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 
     // log vote if the entire txn is read-write
     if (request->nodes_size() != 0 && COMMIT_ALG != COORDINATOR_LOG) {
+        string data = "[LSN] placehold:" + string(num_tuples * g_log_sz * 8, 'd');
+        rpc_log_semaphore->incr();
         #if LOG_DEVICE == LOG_DVC_REDIS
-            string data = "[LSN] placehold:" + string(num_tuples *
-            g_log_sz * 8, 'd');
-            rpc_log_semaphore->incr();
             #if COMMIT_ALG == ONE_PC
-            if (redis_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
-            FAIL) {
-                return FAIL;
-            }
+            redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
             #else
-            if (redis_client->log_async_data(g_node_id, get_txn_id(),
-                PREPARED, data) == FAIL) {
-                return FAIL;
-            }
+            redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
             #endif  // ONE_PC
         #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-            string data = "[LSN] placehold:" + string(num_tuples *
-            g_log_sz * 8, 'd');
-            rpc_log_semaphore->incr();
             #if COMMIT_ALG == ONE_PC
-                if (azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data) ==
-                FAIL) {
-                    return FAIL;
-                }
+            azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data);
             #else
-                if (azure_blob_client->log_async_data(g_node_id, get_txn_id(),
-                PREPARED, data) == FAIL) {
-                    return FAIL;
-                }
+            azure_blob_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
             #endif  // ONE_PC
+        #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
+            #if COMMIT_ALG == ONE_PC
+            redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
+            #else
+            redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
+            #endif
+            rpc_log_semaphore->wait();
+            rpc_log_semaphore->incr();
+            sendRemoteLogRequest(PREPARED, num_tuples * g_log_sz * 8);
         #endif  // LOG_DEVICE
-#if NUM_STORAGE_NODES > 0
-        // log to quorum
-        int num_acceptors = (int) g_num_storage_nodes + 1;
-        int quorum = (int) floor(num_acceptors / 2) + 1;
-        replied_acceptors[g_node_id] = 0;
-        // send log request
-        // XXX(zhihan): we only send to number of quorum nodes
-        // otherwise, we need to storage txn requests elsewhere to avoid null
-        // ptr
-        for (size_t i = 0; (int) i < quorum - 1; i++) {
-            txn_requests_[i].set_request_type(SundialRequest::LOG_YES_REQ);
-            txn_requests_[i].set_log_data_size(num_tuples * g_log_sz * 8);
-            txn_requests_[i].set_txn_id(get_txn_id());
-            rpc_client->sendRequestAsync(this,
-                                         i,
-                                         txn_requests_[i],
-                                         txn_responses_[i],
-                                         true);
-        }
-#endif
         rpc_log_semaphore->wait();
-#if NUM_STORAGE_NODES > 0
-        increment_replied_acceptors(g_node_id);
-        while (get_replied_acceptors(g_node_id) < quorum) {}
-#endif
     }
 
     // log msg no matter it is readonly or not
@@ -235,45 +204,20 @@ TxnManager::process_decision_request(const SundialRequest* request,
         return FAIL;
     }
 
+    State status = (rc == COMMIT)? COMMITTED : ABORTED;
+    rpc_log_semaphore->incr();
     #if LOG_DEVICE == LOG_DVC_REDIS
-    State status = (rc == COMMIT)? COMMITTED : ABORTED;
-    rpc_log_semaphore->incr();
-    if (redis_client->log_async(g_node_id, get_txn_id(), status) == FAIL) {
-        pthread_mutex_unlock(&_latch);
-        return FAIL;
-    }
+    redis_client->log_async(g_node_id, get_txn_id(), status);
     #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-    State status = (rc == COMMIT)? COMMITTED : ABORTED;
-    rpc_log_semaphore->incr();
-    if (azure_blob_client->log_async(g_node_id, get_txn_id(), status) == FAIL) {
-        pthread_mutex_unlock(&_latch);
-        return FAIL;
-    }
-    #endif
-#if NUM_STORAGE_NODES > 0
-    // log to quorum
-    replied_acceptors2 = 0;
-    int num_acceptors = (int) g_num_storage_nodes + 1;
-    int quorum = (int) floor(num_acceptors / 2) + 1;
-    // send log request
-    // XXX(zhihan): we only send to number of quorum nodes
-    // otherwise, we need to store txn requests elsewhere to avoid null
-    // ptr
-    for (size_t i = 0; (int) i < quorum - 1; i++) {
-        txn_requests2_[i].set_request_type(SundialRequest::LOG_COMMIT_REQ);
-        txn_requests2_[i].set_txn_id(get_txn_id());
-        rpc_client->sendRequestAsync(this,
-                                     i,
-                                     txn_requests2_[i],
-                                     txn_responses2_[i],
-                                     true);
-    }
-#endif
+    azure_blob_client->log_async(g_node_id, get_txn_id(), status);
+    #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
+    redis_client->log_async(g_node_id, get_txn_id(), status);
     rpc_log_semaphore->wait();
-#if NUM_STORAGE_NODES > 0
-    increment_replied_acceptors2();
-    while (get_replied_acceptors2() < quorum) {}
-#endif
+    rpc_log_semaphore->incr();
+    sendRemoteLogRequest(rc_to_state(rc), 1);
+    #endif
+
+    rpc_log_semaphore->wait();
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();

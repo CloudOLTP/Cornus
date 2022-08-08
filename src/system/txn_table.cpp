@@ -29,18 +29,9 @@ TxnTable::add_txn(TxnManager * txn)
       while ( !ATOM_CAS(_buckets[bucket_id]->latch, false, true) )
         PAUSE
     COMPILER_BARRIER
-    bool exist = false;
-    if (_buckets[bucket_id]->first) {
-        // skip if txn already inserted
-        if (_buckets[bucket_id]->first->txn == txn) {
-            exist = true;
-        }
-    }
-    if (!exist) {
-        // insert to front
-        node->next = _buckets[bucket_id]->first;
-        _buckets[bucket_id]->first = node;
-    }
+    // insert to front
+    node->next = _buckets[bucket_id]->first;
+    _buckets[bucket_id]->first = node;
     COMPILER_BARRIER
     _buckets[bucket_id]->latch = false;
 }
@@ -93,7 +84,6 @@ TxnTable::return_txn(TxnManager * txn)
     }
     COMPILER_BARRIER
     _buckets[bucket_id]->latch = false;
-
 }
 
 void

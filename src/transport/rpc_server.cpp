@@ -121,17 +121,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 
     switch (request->request_type()) {
         case SundialRequest::SYS_REQ:
-#if DEBUG_PRINT
-            printf("[node-%u] receive system request\n",
-                 g_node_id);
-#endif
             glob_manager->receive_sync_request();
             return;
         case SundialRequest::READ_REQ:
-#if DEBUG_PRINT
-          printf("[node-%u, txn-%lu] receive remote read request\n",
-                 g_node_id, txn_id);
-#endif
             txn = txn_table->get_txn(txn_id);
             if (txn  == nullptr) {
                 txn = new TxnManager();
@@ -158,7 +150,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
         case SundialRequest::TERMINATE_REQ:
 #if NODE_TYPE == COMPUTE_NODE
             txn = txn_table->get_txn(txn_id, false, true);
-            if (txn == NULL) {
+            if (txn == nullptr) {
                 return;
             }
             txn->lock();
@@ -226,7 +218,20 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             response->set_txn_id(txn_id);
             break;
         case sundial_rpc::SundialRequest_RequestType_PAXOS_LOG:
-
+            // create the txn to use its semaphore
+            txn = new TxnManager();
+            txn->set_txn_id(txn_id);
+            txn->sendReplicateRequest(static_cast<TxnManager::State>(request->txn_state()),
+                                      request->log_data_size());
+            delete txn;
+            // once logged, reply to participant or coordinator
+            response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
+            break;
+        case SundialRequest::PAXOS_REPLICATE:
+            string data = "[LSN] placehold:" + string(request->log_data_size(), 'd');
+            redis_client->log_sync_data(g_node_id, request->txn_id(), request->txn_state(), data);
+            // once logged, reply to participant or coordinator
+            response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
         case SundialRequest::MDCC_Propose:
             // from coordinator to participant in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);
