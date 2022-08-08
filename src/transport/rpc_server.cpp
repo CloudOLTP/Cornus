@@ -228,10 +228,17 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
             break;
         case SundialRequest::PAXOS_REPLICATE:
-            string data = "[LSN] placehold:" + string(request->log_data_size(), 'd');
+            data = "[LSN] placehold:" + string(request->log_data_size(), 'd');
             redis_client->log_sync_data(g_node_id, request->txn_id(), request->txn_state(), data);
             // once logged, reply to participant or coordinator
             response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
+            break;
+        case sundial_rpc::SundialRequest_RequestType_PAXOS_LOG_COLOCATE:
+            data = "[LSN] placehold:" + string(request->log_data_size(), 'd');
+            redis_client->log_sync_data(g_node_id, request->txn_id(), request->txn_state(), data);
+            // once logged, reply to participant or coordinator
+            response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
+            break;
         case SundialRequest::MDCC_Propose:
             // from coordinator to participant in phase 1, classic
             txn = txn_table->get_txn(txn_id, true);

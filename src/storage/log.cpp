@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#if LOG_LOCAL
 LogManager::LogManager()
 {
 
@@ -185,3 +186,4 @@ void LogManager::flush(bool force) {
         // you need to wait for LOG_TIMEOUT or other operations to implicitly trigger the flush operations
     }
 }
+#endif

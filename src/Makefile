@@ -1,3 +1,4 @@
+#TODO: use clang++ for arm64
 CC=g++
 PROTOC=protoc
 CPPF = `pkg-config --cflags protobuf grpc`

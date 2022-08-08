@@ -5,12 +5,13 @@
 #ifndef SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
 #define SUNDIAL_TRANSPORT_REDIS_CLIENT_H_
 
-#if LOG_DEVICE == LOG_DVC_REDIS
-
 #include <cpp_redis/cpp_redis>
 #include <string>
 
 #include "helper.h"
+#include "config.h"
+
+#if LOG_DEVICE == LOG_DVC_REDIS || LOG_DEVICE == LOG_DVC_CUSTOMIZED
 
 class RedisClient {
   public:

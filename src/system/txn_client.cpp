@@ -61,12 +61,8 @@ TxnManager::process_commit_phase_singlepart(RC rc)
         redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
         rpc_log_semaphore->incr();
         sendRemoteLogRequest(rc_to_state(rc), num_local_write *  g_log_sz * 8);
-    #if COLOCATE
-        while (get_replied_acceptors(g_node_id) < g_quorum) {}
-    #else
         // wait for (1) remote log request sent to paxos leader (2) redis
         rpc_log_semaphore->wait(); // wait for redis
-    #endif
     #endif
     }
     _cc_manager->cleanup(rc);
@@ -98,7 +94,7 @@ TxnManager::process_2pc_phase1()
         azure_blob_client->log_if_ne_data(g_node_id, get_txn_id(), data);
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
-        rpc_log_sempahore->wait();
+        rpc_log_semaphore->wait();
         rpc_log_semaphore->incr();
         sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8);
         #endif
@@ -109,7 +105,7 @@ TxnManager::process_2pc_phase1()
         azure_blob_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
-        rpc_log_sempahore->wait();
+        rpc_log_semaphore->wait();
         rpc_log_semaphore->incr();
         sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8);
         #endif
@@ -265,7 +261,7 @@ TxnManager::process_2pc_phase2(RC rc)
         azure_blob_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
-        rpc_log_sempahore->wait();
+        rpc_log_semaphore->wait();
         rpc_log_semaphore->incr();
         sendRemoteLogRequest(rc_to_state(rc), 1);
         #endif
@@ -438,36 +434,44 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
 
 void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
 #if !COLOCATE
+    if (g_num_storage_nodes == 0)  {
+        rpc_log_semaphore->decr();
+        return;
+    }
     // send log request to leader of paxos, which is the storage node
     // with the same id as current compute node id
     // need to make sure # storage >= # compute
-    _worker_thread->thd_requests_[g_node_id].set_request_type
+    txn_requests_[g_node_id].set_request_type
         (SundialRequest::PAXOS_LOG);
-    _worker_thread->thd_requests_[g_node_id].set_txn_id(get_txn_id());
-    _worker_thread->thd_requests_[g_node_id].set_log_data_size(log_data_size);
-    _worker_thread->thd_requests_[g_node_id].set_txn_state(state);
-    _worker_thread->thd_requests_[g_node_id].set_semaphore(rpc_log_semaphore);
+    txn_requests_[g_node_id].set_txn_id(get_txn_id());
+    txn_requests_[g_node_id].set_log_data_size(log_data_size);
+    txn_requests_[g_node_id].set_txn_state(state);
+    txn_requests_[g_node_id].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
     rpc_client->sendRequestAsync(this,
                                  g_node_id,
-                                 _worker_thread->thd_requests_[g_node_id],
-                                 _worker_thread->thd_responses_[g_node_id],
+                                 txn_requests_[g_node_id],
+                                 txn_responses_[g_node_id],
                                  true);
 #else
-    // handle quorum by itself
-    replied_acceptors[g_node_id] = 0;
     // send log request
     // TODO(zhihan): change to log to # quorum to avoid complexity.
+    size_t sent = 0;
     for (size_t i = 0; i < g_num_storage_nodes; i++) {
-      _worker_thread->thd_requests_[i].set_request_type
+        // XXX(zhihan): only send to # quorum of nodes to avoid null ref error
+        if (sent == g_quorum)
+            break;
+        rpc_log_semaphore->incr();
+        txn_requests_[i].set_request_type
           (SundialRequest::PAXOS_LOG_COLOCATE);
-      _worker_thread->thd_requests_[i].set_txn_id(get_txn_id());
-      _worker_thread->thd_requests_[i].set_log_data_size(log_data_size);
-      _worker_thread->thd_requests_[i].set_txn_state(state);
-      rpc_client->sendRequestAsync(this,
+        txn_requests_[i].set_txn_id(get_txn_id());
+        txn_requests_[i].set_log_data_size(log_data_size);
+        txn_requests_[i].set_txn_state(state);
+        rpc_client->sendRequestAsync(this,
                                    i,
-                                   _worker_thread->thd_requests_[i],
-                                   _worker_thread->thd_responses_[i],
+                                   txn_requests_[i],
+                                   txn_responses_[i],
                                    true);
+        sent++;
     }
 #endif
 
@@ -491,7 +495,7 @@ TxnManager::sendReplicateRequest(State state, uint64_t log_data_size) {
         txn_requests_[i].set_txn_id(get_txn_id());
         txn_requests_[i].set_log_data_size(log_data_size);
         txn_requests_[i].set_txn_state(state);
-        txn_requests_[i].set_semaphore(rpc_log_semaphore);
+        txn_requests_[i].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
         rpc_client->sendRequestAsync(this,
                                      i,
                                      txn_requests_[i],
