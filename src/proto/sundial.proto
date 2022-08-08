@@ -71,9 +71,9 @@ message SundialRequest {
     uint64                  thread_id     = 9;
     repeated MdccData       mdcc_data     = 10;
     NodeType                node_type     = 12;
-    uint64                  coord_id      = 12;
-    int32                   txn_state     = 13;
-    uint64                  semaphore     = 14;
+    uint64                  coord_id      = 13;
+    int32                   txn_state     = 14;
+    uint64                  semaphore     = 15;
 }
 
 message SundialResponse {
