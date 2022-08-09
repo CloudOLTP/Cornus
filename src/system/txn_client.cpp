@@ -435,8 +435,8 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
     // with the same id as current compute node id
     // need to make sure # storage >= # compute
     size_t node_id = g_node_id;
-    if (node_id >= num_storage_nodes) {
-        node_id = node_id % num_storage_nodes;
+    if (node_id >= g_num_storage_nodes) {
+        node_id = node_id % g_num_storage_nodes;
     }
     txn_requests_[node_id].set_request_type
         (SundialRequest::PAXOS_LOG);
@@ -446,7 +446,7 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
     txn_requests_[node_id].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
     rpc_log_semaphore->incr();
     rpc_client->sendRequestAsync(this,
-                                 g_node_id,
+                                 node_id,
                                  txn_requests_[node_id],
                                  txn_responses_[node_id],
                                  true);
