@@ -12,12 +12,16 @@ import time
 
 ifconfig = "src/ifconfig.txt"
 
+
 def run_process(conn, cmd, exit_on_err=False, print_stdout=True):
     print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd, flush=True)
     time.sleep(5)
     if conn[1] is None:
         return exec(cmd)
-    return os.system("ssh {} \"{}\"".format(conn[1], cmd))
+    ret = os.system("ssh {} \"{}\"".format(conn[1], cmd))
+    if ret != 0 and exit_on_err:
+        exit(1)
+    return ret
 
 
 def load_environment(fname="info.txt"):
@@ -61,7 +65,10 @@ def remote_exec(conn, cmd, exit_on_err=False, print_stdout=True,
     if conn[1] is None:
         return exec(cmd, exit_on_err=exit_on_err)
     print("[run_exp.py] executing remotely on {}: ".format(conn[1]) + cmd)
-    return os.system("ssh {} \"{}\"".format(conn[1], cmd))
+    ret = os.system("ssh {} \"{}\"".format(conn[1], cmd))
+    if ret != 0 and exit_on_err:
+        exit(1)
+    return ret
 
 
 # job loading methods
@@ -123,6 +130,7 @@ def load_ipaddr(curr_node, env):
     start_storage_nodes = False
     myip = socket.gethostbyname(socket.gethostname())
     print("[run_exp.py] local ip is {}".format(myip))
+    exec("cd {}; python3 install.py config_local 0".format(env["repo"]))
     storage_nodes = {}
     nodes = {}
     f = open(ifconfig)
@@ -139,6 +147,9 @@ def load_ipaddr(curr_node, env):
                 itr += 1
                 continue
             print("[run_exp.py] try to connect to: node {} at {}".format(itr, addr.split(":")[0]))
+            remote_exec((itr, addr.split(":")[0]),
+                        "cd {}; python3 install.py config_local 0".format(
+                            env["repo"]))
             nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
             itr += 1
             continue
@@ -155,6 +166,9 @@ def load_ipaddr(curr_node, env):
         else:
             print(
                 "[run_exp.py] try to connect to: storage node {} at {}".format(itr, addr.split(":")[0]))
+            remote_exec((itr, addr.split(":")[0]),
+                        "cd {}; python3 install.py config_local 0".format(
+                            env["repo"]))
             storage_nodes[itr] = (addr.split(":")[0], (itr, addr.split(":")[0]))
         itr += 1
     f.close()

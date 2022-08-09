@@ -166,8 +166,8 @@ class myThread(threading.Thread):
             if (not self.is_storage) and self.node_id == curr_node_id:
                 return
             self.exec(
-                "rsync -av --exclude 'outputs' --delete {} {}@{}:{}".format(
-                    self.homedir, self.usr, self.ipaddr, self.homedir))
+                "rsync -av --exclude 'outputs' --exclude 'src/proto' "
+                "--delete {} {}@{}:{}".format(self.homedir, self.usr, self.ipaddr, self.homedir))
         elif self.cmd == "kill":
             if self.node_id == curr_node_id:
                 return
