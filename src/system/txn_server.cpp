@@ -102,7 +102,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
             redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
             #endif
             rpc_log_semaphore->wait();
-            rpc_log_semaphore->incr();
             sendRemoteLogRequest(PREPARED, num_tuples * g_log_sz * 8);
         #endif  // LOG_DEVICE
         rpc_log_semaphore->wait();
@@ -208,7 +207,6 @@ TxnManager::process_decision_request(const SundialRequest* request,
     #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
     redis_client->log_async(g_node_id, get_txn_id(), status);
     rpc_log_semaphore->wait();
-    rpc_log_semaphore->incr();
     sendRemoteLogRequest(rc_to_state(rc), 1);
     #endif
 

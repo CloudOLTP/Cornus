@@ -59,7 +59,6 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         // log locally
         redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
-        rpc_log_semaphore->incr();
         sendRemoteLogRequest(rc_to_state(rc), num_local_write *  g_log_sz * 8);
         // wait for (1) remote log request sent to paxos leader (2) redis
         rpc_log_semaphore->wait(); // wait for redis
@@ -95,7 +94,6 @@ TxnManager::process_2pc_phase1()
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
         rpc_log_semaphore->wait();
-        rpc_log_semaphore->incr();
         sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8);
         #endif
     #else
@@ -106,7 +104,6 @@ TxnManager::process_2pc_phase1()
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
         rpc_log_semaphore->wait();
-        rpc_log_semaphore->incr();
         sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8);
         #endif
     #endif // COMMIT_ALG == ONE_PC
@@ -244,8 +241,7 @@ TxnManager::process_2pc_phase2(RC rc)
         azure_blob_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
-        rpc_log_sempahore->wait();
-        rpc_log_semaphore->incr();
+        rpc_log_semaphore->wait();
         sendRemoteLogRequest(rc_to_state(rc), 1);
         #endif
         // finish after log is stable.
@@ -262,7 +258,6 @@ TxnManager::process_2pc_phase2(RC rc)
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
         rpc_log_semaphore->wait();
-        rpc_log_semaphore->incr();
         sendRemoteLogRequest(rc_to_state(rc), 1);
         #endif
     #elif COMMIT_ALG == COORDINATOR_LOG
@@ -282,7 +277,6 @@ TxnManager::process_2pc_phase2(RC rc)
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
         rpc_log_semaphore->wait();
-        rpc_log_semaphore->incr();
         sendRemoteLogRequest(rc_to_state(rc), data.length());
         #endif
         // finish after log is stable.
@@ -435,7 +429,6 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
 void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
 #if !COLOCATE
     if (g_num_storage_nodes == 0)  {
-        rpc_log_semaphore->decr();
         return;
     }
     // send log request to leader of paxos, which is the storage node
@@ -447,6 +440,7 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
     txn_requests_[g_node_id].set_log_data_size(log_data_size);
     txn_requests_[g_node_id].set_txn_state(state);
     txn_requests_[g_node_id].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
+    rpc_log_semaphore->incr();
     rpc_client->sendRequestAsync(this,
                                  g_node_id,
                                  txn_requests_[g_node_id],
@@ -454,7 +448,6 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
                                  true);
 #else
     // send log request
-    // TODO(zhihan): change to log to # quorum to avoid complexity.
     size_t sent = 0;
     for (size_t i = 0; i < g_num_storage_nodes; i++) {
         // XXX(zhihan): only send to # quorum of nodes to avoid null ref error
@@ -466,6 +459,8 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
         txn_requests_[i].set_txn_id(get_txn_id());
         txn_requests_[i].set_log_data_size(log_data_size);
         txn_requests_[i].set_txn_state(state);
+        txn_requests_[i].set_semaphore(reinterpret_cast<uint64_t>
+        (rpc_log_semaphore));
         rpc_client->sendRequestAsync(this,
                                    i,
                                    txn_requests_[i],

@@ -107,6 +107,7 @@ int main(int argc, char* argv[])
     cout << "[Sundial] Synchronization done" << endl;
 #endif
 #if NUM_STORAGE_NODES > 0
+    sleep(g_num_storage_nodes * 3);
     cout << "[Sundial] Synchronize with Storage Nodes" << endl;
     SundialRequest new_request;
     SundialResponse new_response;
