@@ -434,17 +434,21 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
     // send log request to leader of paxos, which is the storage node
     // with the same id as current compute node id
     // need to make sure # storage >= # compute
-    txn_requests_[g_node_id].set_request_type
+    size_t node_id = g_node_id;
+    if (node_id >= num_storage_nodes) {
+        node_id = node_id % num_storage_nodes;
+    }
+    txn_requests_[node_id].set_request_type
         (SundialRequest::PAXOS_LOG);
-    txn_requests_[g_node_id].set_txn_id(get_txn_id());
-    txn_requests_[g_node_id].set_log_data_size(log_data_size);
-    txn_requests_[g_node_id].set_txn_state(state);
-    txn_requests_[g_node_id].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
+    txn_requests_[node_id].set_txn_id(get_txn_id());
+    txn_requests_[node_id].set_log_data_size(log_data_size);
+    txn_requests_[node_id].set_txn_state(state);
+    txn_requests_[node_id].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
     rpc_log_semaphore->incr();
     rpc_client->sendRequestAsync(this,
                                  g_node_id,
-                                 txn_requests_[g_node_id],
-                                 txn_responses_[g_node_id],
+                                 txn_requests_[node_id],
+                                 txn_responses_[node_id],
                                  true);
 #else
     // send log request
