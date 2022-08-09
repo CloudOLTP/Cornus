@@ -218,6 +218,10 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             response->set_txn_id(txn_id);
             break;
         case sundial_rpc::SundialRequest_RequestType_PAXOS_LOG:
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive remote paxos log request\n",
+                 g_node_id, txn_id);
+#endif
             // create the txn to use its semaphore
             txn = new TxnManager();
             txn->set_txn_id(txn_id);
@@ -228,6 +232,10 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
             break;
         case SundialRequest::PAXOS_REPLICATE:
+#if DEBUG_PRINT
+            printf("[node-%u txn-%lu] receive remote paxos replicate\n",
+                 g_node_id, txn_id);
+#endif
             data = "[LSN] placehold:" + string(request->log_data_size(), 'd');
             redis_client->log_sync_data(g_node_id, request->txn_id(), request->txn_state(), data);
             // once logged, reply to participant or coordinator

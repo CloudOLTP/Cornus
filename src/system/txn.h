@@ -183,14 +183,10 @@ private:
     void sendReplicateRequest(State state, uint64_t log_data_size);
 
     // txn level requests
-#if NODE_TYPE == STORAGE_NODE
-    SundialRequest txn_requests_[NUM_NODES];
-    SundialResponse txn_responses_[NUM_NODES];
-#else
     // request in phase 1, as leader of paxos
     SundialRequest txn_requests_[NUM_STORAGE_NODES];
     SundialResponse txn_responses_[NUM_STORAGE_NODES];
-#endif
+
     // request in phase 2, as leader of paxos
     SundialRequest txn_requests2_[NUM_STORAGE_NODES];
     SundialResponse txn_responses2_[NUM_STORAGE_NODES];

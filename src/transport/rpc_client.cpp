@@ -235,6 +235,11 @@ response)
                 txn->rpc_semaphore->decr();
                 break;
             case sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK:
+#if DEBUG_PRINT
+                printf("client: [node-%u txn-%lu] receive remote paxos log "
+                       "reply\n",
+                 g_node_id, txn_id);
+#endif
                 ((SemaphoreSync *) request->semaphore())->decr();
                 break;
             case SundialResponse::LOG_YES_REQ :
