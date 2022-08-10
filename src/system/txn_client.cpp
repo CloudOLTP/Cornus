@@ -59,7 +59,8 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         // log locally
         redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
-        sendRemoteLogRequest(rc_to_state(rc), num_local_write *  g_log_sz * 8);
+        sendRemoteLogRequest(rc_to_state(rc), num_local_write *  g_log_sz *
+        8, g_node_id);
         // wait for (1) remote log request sent to paxos leader (2) redis
         rpc_log_semaphore->wait(); // wait for redis
     #endif
@@ -94,7 +95,8 @@ TxnManager::process_2pc_phase1()
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
         rpc_log_semaphore->wait();
-        sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8);
+        sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8,
+                             g_node_id);
         #endif
     #else
         #if LOG_DEVICE == LOG_DVC_REDIS
@@ -104,7 +106,8 @@ TxnManager::process_2pc_phase1()
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
         rpc_log_semaphore->wait();
-        sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8);
+        sendRemoteLogRequest(PREPARED, num_local_write * g_log_sz * 8,
+                             g_node_id);
         #endif
     #endif // COMMIT_ALG == ONE_PC
     }
@@ -122,6 +125,7 @@ TxnManager::process_2pc_phase1()
         request.set_txn_id( get_txn_id() );
         request.set_request_type( SundialRequest::PREPARE_REQ);
         request.set_node_id( it->first );
+        request.set_coord_id(g_node_id);
         // attach coordinator
         participant = request.add_nodes();
         participant->set_nid(g_node_id);
@@ -184,28 +188,32 @@ TxnManager::process_2pc_phase1()
 }
 
 void
-TxnManager::handle_prepare_resp(SundialResponse* response) {
-    switch (response->response_type()) {
+TxnManager::handle_prepare_resp(SundialResponse::ResponseType response,
+                                uint32_t node_id) {
+    switch (response) {
         case SundialResponse::PREPARED_OK:
-            _remote_nodes_involved[response->node_id()]->state =
+            _remote_nodes_involved[node_id]->state =
                 PREPARED;
             break;
         case SundialResponse::PREPARED_OK_RO:
-            _remote_nodes_involved[response->node_id()]->state =
+            _remote_nodes_involved[node_id]->state =
                 COMMITTED;
-            assert(_remote_nodes_involved[response->node_id()]->is_readonly);
+            assert(_remote_nodes_involved[node_id]->is_readonly);
             break;
         case SundialResponse::PREPARED_ABORT:
-            _remote_nodes_involved[response->node_id()]->state =
+            _remote_nodes_involved[node_id]->state =
                 ABORTED;
             _decision = ABORT;
             break;
         case SundialResponse::RESP_FAIL:
             // remote node is down, run termination protocol
-            _remote_nodes_involved[response->node_id()]->state =
+            _remote_nodes_involved[node_id]->state =
                 FAILED;
             // should not overwrite abort decision
             ATOM_CAS(_decision, COMMIT, FAIL);
+            break;
+        case SundialResponse::ACK:
+            // from leader/acceptor to coordinator in commit phase
             break;
         default:
             assert(false);
@@ -242,7 +250,7 @@ TxnManager::process_2pc_phase2(RC rc)
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
         rpc_log_semaphore->wait();
-        sendRemoteLogRequest(rc_to_state(rc), 1);
+        sendRemoteLogRequest(rc_to_state(rc), 1, g_node_id);
         #endif
         // finish after log is stable.
         rpc_log_semaphore->wait();
@@ -258,7 +266,7 @@ TxnManager::process_2pc_phase2(RC rc)
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
         rpc_log_semaphore->wait();
-        sendRemoteLogRequest(rc_to_state(rc), 1);
+        sendRemoteLogRequest(rc_to_state(rc), 1, g_node_id);
         #endif
     #elif COMMIT_ALG == COORDINATOR_LOG
         // log all at once
@@ -277,7 +285,7 @@ TxnManager::process_2pc_phase2(RC rc)
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
         rpc_log_semaphore->wait();
-        sendRemoteLogRequest(rc_to_state(rc), data.length());
+        sendRemoteLogRequest(rc_to_state(rc), data.length(), g_node_id);
         #endif
         // finish after log is stable.
         rpc_log_semaphore->wait();
@@ -426,8 +434,11 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
     return rc;
 }
 
-void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
-#if !COLOCATE
+void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size,
+                                      uint32_t coord_id,
+                                      SundialRequest::ResponseType
+                                      forward_resp) {
+#if COMMIT_VAR == NO_VARIANT || COMMIT_VAR == CORNUS_OPT
     if (g_num_storage_nodes == 0)  {
         return;
     }
@@ -441,9 +452,12 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
     txn_requests_[node_id].set_request_type
         (SundialRequest::PAXOS_LOG);
     txn_requests_[node_id].set_txn_id(get_txn_id());
+    txn_requests_[node_id].set_coord_id(coord_id);
     txn_requests_[node_id].set_log_data_size(log_data_size);
     txn_requests_[node_id].set_txn_state(state);
     txn_requests_[node_id].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
+    txn_requests_[node_id].set_forward_msg(forward_resp);
+    txn_requests_[node_id].set_node_id(g_node_id);
     rpc_log_semaphore->incr();
     rpc_client->sendRequestAsync(this,
                                  node_id,
@@ -465,8 +479,11 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
         txn_requests_[i].set_txn_state(state);
         txn_requests_[i].set_semaphore(reinterpret_cast<uint64_t>
         (rpc_log_semaphore));
+        txn_requests_[i].set_coord_id(coord_id);
+        txn_requests_[i].set_forward_msg(forward_resp);
+        txn_requests_[i].set_node_id(g_node_id);
         // used for processing log delay
-        txn_requests_[i].set_node_id(i);
+        txn_requests_[i].set_receiver_id(i);
         rpc_client->sendRequestAsync(this,
                                    i,
                                    txn_requests_[i],
@@ -497,6 +514,7 @@ TxnManager::sendReplicateRequest(State state, uint64_t log_data_size) {
         txn_requests_[i].set_log_data_size(log_data_size);
         txn_requests_[i].set_txn_state(state);
         txn_requests_[i].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
+        // TODO(zhihan): set node id, request->node_id()
         rpc_client->sendRequestAsync(this,
                                      i,
                                      txn_requests_[i],

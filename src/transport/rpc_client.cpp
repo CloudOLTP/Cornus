@@ -230,90 +230,28 @@ response)
         TxnManager * txn;
         switch (response->request_type()) {
             case SundialResponse::PREPARE_REQ :
-                txn = txn_table->get_txn(txn_id, false);
-                txn->handle_prepare_resp(response);
+                txn = txn_table->get_txn(txn_id);
+                txn->handle_prepare_resp(response->response_type(),
+                                         response->node_id());
                 txn->rpc_semaphore->decr();
                 break;
-            case sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK:
-#if DEBUG_PRINT
-                printf("client: [node-%u txn-%lu] receive remote paxos log "
-                       "reply\n",
-                 g_node_id, txn_id);
-#endif
+            case SundialResponse::PAXOS_LOG_ACK:
                 ((SemaphoreSync *) request->semaphore())->decr();
                 break;
-            case SundialResponse::LOG_YES_REQ :
-                txn = txn_table->get_txn(txn_id, false);
-                if (txn == nullptr)
-                    return;
-                txn->increment_replied_acceptors(g_node_id);
-                break;
-            case SundialResponse::LOG_COMMIT_REQ :
-                txn = txn_table->get_txn(txn_id, false);
-                if (txn == nullptr)
-                    return;
-                txn->increment_replied_acceptors2();
-                break;
-            case SundialResponse::MDCC_Phase2bClassic:
-                txn = txn_table->get_txn(txn_id, true);
-                // txn may not exist if using mdcc since a txn can commit/abort based
-                // on qurom and without waiting for all responses.
-                if (txn == nullptr) {
-                    return;
-                }
-                if (response->node_type() == SundialResponse::PARTICIPANT) {
-#if DEBUG_PRINT
-                    printf("[node-%u, txn-%lu] receive phase2aClassic from "
-                           "participant\n", g_node_id, txn_id);
-#endif
-                    // TODO: what if txn is aborted? need to check version
-                    //  number; ignore now since replied cnt reset everytime
-                    //  before preparing.
-                    // case 1: sent from participant to coordinator as reply
-                    // update remote_node stats as well
-                    txn->handle_prepare_resp(response);
-                    txn->increment_replied_acceptors(response->node_id());
-                } else if (response->node_type() == SundialResponse::STORAGE) {
-#if DEBUG_PRINT
-                    printf("[node-%u, txn-%lu] receive phase2aClassic from "
-                           "storage\n", g_node_id, txn_id);
-#endif
-                    // case 2: reply from acceptors which treats coordinator
-                    // as leader. has to be prepared ok.
-                    txn->increment_replied_acceptors(response->node_id());
-                }
-                txn_table->return_txn(txn);
-                break;
-            case SundialResponse::MDCC_Phase2bFast :
-                txn = txn_table->get_txn(txn_id, true);
-                // txn may not exist if using mdcc since a txn can commit/abort based
-                // on qurom and without waiting for all responses.
-                if (txn == nullptr)
-                    return;
-                // sent from participant/acceptors to coordinator
-                // update remote_node stats as well
-                txn->handle_prepare_resp(response);
-                txn->increment_replied_acceptors(response->node_id());
-                txn_table->return_txn(txn);
-                break; // no need to update rpc semaphore
-            case SundialResponse::MDCC_Visibility :
-                txn = txn_table->get_txn(txn_id, true);
-                // txn may not exist if using mdcc since a txn can commit/abort based
-                // on qurom and without waiting for all responses.
-                if (txn == nullptr)
-                    return;
-                if (response->node_type() == SundialResponse::PARTICIPANT) {
-                    txn->rpc_semaphore->decr();
-                } else {
-                    txn->increment_replied_acceptors2();
-                }
-                txn_table->return_txn(txn);
-                break;
-            case SundialResponse::MDCC_DummyReply: break;
-            case SundialResponse::TERMINATE_REQ: break;
-            default:
-                txn = txn_table->get_txn(txn_id, false);
+            case SundialResponse::COMMIT_REQ:
+                txn = txn_table->get_txn(txn_id);
                 txn->rpc_semaphore->decr();
+            case SundialResponse::ABORT_REQ:
+                txn = txn_table->get_txn(txn_id);
+                txn->rpc_semaphore->decr();
+            case SundialResponse::SYS_REQ:
+                txn = txn_table->get_txn(txn_id);
+                txn->rpc_semaphore->decr();
+            case SundialResponse::TERMINATE_REQ:
+                break;
+            case SundialResponse::DummyReply:
+                break;
+            default:
                 break;
         }
 }

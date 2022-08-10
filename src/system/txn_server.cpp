@@ -102,12 +102,17 @@ TxnManager::process_prepare_request(const SundialRequest* request,
             redis_client->log_async_data(g_node_id, get_txn_id(), PREPARED, data);
             #endif
             rpc_log_semaphore->wait();
-            sendRemoteLogRequest(PREPARED, num_tuples * g_log_sz * 8);
+            sendRemoteLogRequest(PREPARED, num_tuples * g_log_sz * 8,
+                                 request->coord_id(),
+                                 num_tuples == 0?
+                                 SundialRequest::PREPARED_OK_RO :
+                                 SundialRequest::PREPARED_OK);
         #endif  // LOG_DEVICE
         rpc_log_semaphore->wait();
     }
 
     // log msg no matter it is readonly or not
+    SundialResponse::ResponseType response_type = SundialResponse::PREPARED_OK;
     if (num_tuples != 0) {
         // read-write
         _txn_state = PREPARED;
@@ -116,10 +121,14 @@ TxnManager::process_prepare_request(const SundialRequest* request,
         _txn_state = COMMITTED;
         // release lock (for pessimistic) and delete accesses
         _cc_manager->cleanup(COMMIT);
-        response->set_response_type( SundialResponse::PREPARED_OK_RO );
-        return rc;
+        response_type = SundialResponse::PREPARED_OK_RO;
     }
-    response->set_response_type( SundialResponse::PREPARED_OK );
+    response->set_response_type( response_type);
+#if !(COMMIT_VAR == NO_VARIANT || COMMIT_VAR == COLOCATE)
+    if (request->nodes_size() == 0 && COMMIT_ALG != COORDINATOR_LOG) {
+        response->set_request_type(SundialResponse::DummyReply);
+    }
+#endif
     return rc;
 }
 
@@ -207,7 +216,7 @@ TxnManager::process_decision_request(const SundialRequest* request,
     #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
     redis_client->log_async(g_node_id, get_txn_id(), status);
     rpc_log_semaphore->wait();
-    sendRemoteLogRequest(rc_to_state(rc), 1);
+    sendRemoteLogRequest(rc_to_state(rc), 1, g_node_id, SundialRequest::ACK);
     #endif
 
     rpc_log_semaphore->wait();
@@ -229,6 +238,9 @@ TxnManager::process_decision_request(const SundialRequest* request,
     // No need to wait for this log since it is optional (shared log
     // optimization)
     response->set_response_type( SundialResponse::ACK );
+#if !(COMMIT_VAR == NO_VARIANT || COMMIT_VAR == COLOCATE)
+    response->set_request_type(SundialResponse::DummyReply);
+#endif
     return rc;
 }
 

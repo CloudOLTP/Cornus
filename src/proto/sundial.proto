@@ -7,30 +7,19 @@ service SundialRPC {
 
 message SundialRequest {
     enum RequestType {
-        READ_REQ = 0;
-        PREPARE_REQ = 1;
-        COMMIT_REQ = 2;
-        ABORT_REQ = 3;
-        SYS_REQ = 4;
-        LOG_YES_REQ = 5;
-        LOG_ABORT_REQ = 6;
-        LOG_COMMIT_REQ = 7;
-        TERMINATE_REQ = 8;
-        MDCC_Phase1a = 9;
-        MDCC_Phase2a = 10;
-        MDCC_Phase2aAbort = 11;
-        MDCC_Phase2bReply = 12;
-        MDCC_Phase2bReplyAbort = 13;
-        MDCC_Propose = 14;
-        MDCC_ProposeFast = 15;
-        MDCC_COMMIT_REQ = 16;
-        MDCC_ABORT_REQ = 17;
-        MDCC_SINGLEPART_COMMIT = 18;
-        MDCC_SINGLEPART_ABORT = 19;
-        PAXOS_LOG = 20;
-        PAXOS_LOG_COLOCATE = 22;
-        PAXOS_REPLICATE = 23;
-        NUM_REQ_TYPES = 24;
+        DummyReply = 0;
+        READ_REQ = 1;
+        PREPARE_REQ = 2;
+        COMMIT_REQ = 3;
+        ABORT_REQ = 4;
+        SYS_REQ = 5;
+        TERMINATE_REQ = 6;
+        PAXOS_LOG = 7;
+        PAXOS_LOG_FORWARD = 8;
+        PAXOS_LOG_COLOCATE = 9;
+        PAXOS_LOG_COLOCATE_FORWARD = 10;
+        PAXOS_REPLICATE = 11;
+        NUM_REQ_TYPES = 12;
     }
     message ReadRequest {
         uint64 key = 1;
@@ -50,14 +39,22 @@ message SundialRequest {
         uint64 nid = 1;
     }
 
-    message MdccData {
-        uint64 ballot = 1;
-    }
-
     enum NodeType {
         COORDINATOR = 0;
         PARTICIPANT = 1;
         STORAGE = 2;
+    }
+
+    enum ResponseType {
+        RESP_OK = 0;
+        RESP_ABORT = 1;
+        RESP_FAIL = 2;
+        PREPARED_OK = 3;
+        PREPARED_OK_RO = 4;
+        PREPARED_ABORT = 5;
+        ACK = 6;
+        SYS_RESP = 7;
+        NUM_RESP_TYPES = 8;
     }
 
     uint64                  txn_id        = 1;
@@ -69,30 +66,26 @@ message SundialRequest {
     repeated NodeData       nodes         = 7;
     uint64                  request_time  = 8;
     uint64                  thread_id     = 9;
-    repeated MdccData       mdcc_data     = 10;
-    NodeType                node_type     = 12;
-    uint64                  coord_id      = 13;
-    int32                   txn_state     = 14;
-    uint64                  semaphore     = 15;
+    NodeType                node_type     = 10;
+    uint64                  coord_id      = 11;
+    int32                   txn_state     = 12;
+    uint64                  semaphore     = 13;
+    uint32                  thd_id        = 14;
+    ResponseType            forward_msg   = 15;
+    uint64                  receiver_id   = 16;
 }
 
 message SundialResponse {
     enum RequestType {
-        READ_REQ = 0;
-        PREPARE_REQ = 1;
-        COMMIT_REQ = 2;
-        ABORT_REQ = 3;
-        SYS_REQ = 4;
-        LOG_YES_REQ = 5;
-        LOG_ABORT_REQ = 6;
-        LOG_COMMIT_REQ = 7;
-        TERMINATE_REQ = 8;
-        MDCC_Phase2bClassic = 10;
-        MDCC_Phase2bFast = 11;
-        MDCC_Visibility = 12;
-        MDCC_DummyReply = 13;
-        PAXOS_LOG_ACK = 14;
-        NUM_REQ_TYPES = 15;
+        DummyReply = 0;
+        READ_REQ = 1;
+        PREPARE_REQ = 2;
+        COMMIT_REQ = 3;
+        ABORT_REQ = 4;
+        SYS_REQ = 5;
+        TERMINATE_REQ = 6;
+        PAXOS_LOG_ACK = 7;
+        NUM_REQ_TYPES = 8;
     }
     enum ResponseType {
         RESP_OK = 0;
@@ -103,10 +96,7 @@ message SundialResponse {
         PREPARED_ABORT = 5;
         ACK = 6;
         SYS_RESP = 7;
-        RESP_LOG_YES = 8;
-        RESP_LOG_ABORT = 9;
-        RESP_LOG_COMMIT = 10;
-        NUM_RESP_TYPES = 11;
+        NUM_RESP_TYPES = 8;
     }
 
     enum NodeType {
@@ -125,16 +115,12 @@ message SundialResponse {
         uint64 index_id = 7;
     }
 
-    message MdccData {
-        uint64 ballot = 1;
-    }
-
     uint64                  txn_id        = 1;
     ResponseType            response_type = 2;
     repeated TupleData      tuple_data    = 3;
     uint64                  node_id       = 4;
     RequestType             request_type  = 5;
-    repeated MdccData       mdcc_data     = 6;
+    uint32                  thd_id        = 6;
     NodeType                node_type     = 7;
 }
 

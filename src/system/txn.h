@@ -84,7 +84,8 @@ public:
     RC process_terminate_request(const SundialRequest* request, SundialResponse*
     response);
     RC termination_protocol();
-    void handle_prepare_resp(SundialResponse* response);
+    void handle_prepare_resp(SundialResponse::ResponseType response, uint32_t
+    node_id);
 
 
     void set_sub_txn(bool is_sub_txn)     { _is_sub_txn = is_sub_txn; }
@@ -163,17 +164,6 @@ private:
     // =================================
   public:
     // client
-    RC process_mdcc_singlepart(RC rc);
-    RC process_mdcc_phase1();
-    RC process_mdcc_phase2(RC rc);
-    // server
-    RC process_mdcc_2aclassic(const SundialRequest* request, SundialResponse* response);
-    void process_mdcc_2bclassic(const SundialRequest* request, SundialResponse*
-    response);
-    void process_mdcc_2bclassic_abort(const SundialRequest* request, SundialResponse* response);
-    RC process_mdcc_2bfast(const SundialRequest* request, SundialResponse* response);
-    RC process_mdcc_visibility(const SundialRequest* request, SundialResponse*
-    response, RC rc);
     int get_replied_acceptors(size_t i) {return replied_acceptors[i].load
             (std::memory_order_relaxed);}
     int get_replied_acceptors2() {return replied_acceptors2.load
@@ -192,8 +182,10 @@ private:
     SundialResponse txn_responses2_[NUM_STORAGE_NODES];
 
   private:
-    void process_mdcc_local_phase1(RC rc, uint64_t g_node_id, bool is_singlepart=false);
-    void sendRemoteLogRequest(State state, uint64_t log_data_size);
+    void sendRemoteLogRequest(State state, uint64_t log_data_size,
+                              uint32_t coord_id=0,
+                              SundialRequest::ResponseType
+                              forward_resp=SundialRequest::PREPARED_OK);
     // used to track # of replies from each node and the stats will be used for
     // calculating quorum
     // each count should not exceed g_num_storage_nodes + 1

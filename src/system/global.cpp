@@ -77,10 +77,10 @@ uint32_t        g_total_num_threads     = 0;
 
 uint32_t        g_num_nodes             = NUM_NODES;
 uint32_t        g_num_storage_nodes     = NUM_STORAGE_NODES;
-#if COLOCATE
-size_t          g_quorum = (int) floor(g_num_storage_nodes / 2) + 1;
-#else
+#if COMMIT_VAR == NO_VARIANT || COMMIT_VAR == CORNUS_OPT
 size_t          g_quorum = (int) floor(g_num_storage_nodes / 2);
+#else
+size_t          g_quorum = (int) floor(g_num_storage_nodes / 2) + 1;
 #endif
 
 uint32_t        g_node_id;

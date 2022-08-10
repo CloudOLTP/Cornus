@@ -6,7 +6,6 @@
 #define NUM_NODES                       1
 #define NUM_STORAGE_NODES               0
 #define NODE_TYPE                       COMPUTE_NODE
-#define COLOCATE                        false
 
 // number of server threads on each node
 #define NUM_WORKER_THREADS              4096 //2048 //1024
@@ -183,7 +182,7 @@
 #define SEND_BUFFER_SIZE                32768
 #define MAX_CLOCK_SKEW                  0 // in us
 #define COMMIT_ALG                      ONE_PC
-#define BALLOT_TYPE                     BALLOT_CLASSIC
+#define COMMIT_VAR                      NO_VARIANT
 #define DEBUG_LOG                       false
 #define WORKER_SERVER_SAME              false
 
@@ -217,9 +216,14 @@
 // Commit Algorithm
 #define ONE_PC                          1
 #define TWO_PC                          2
-#define MDCC                            3
-#define CORNUS_CUSTOMIZED               4
-#define COORDINATOR_LOG                 5
+#define COORDINATOR_LOG                 3
+// Commit Algorithm Variant
+#define NO_VARIANT                      1
+#define COLOCATE                        2
+#define CORNUS_OPT                      3
+#define PAXOS_COMMIT                    4
+#define MDCC_CLASSIC                    5
+#define MDCC_FAST                       6
 
 // Log Device
 #define LOG_DVC_REDIS                   1
@@ -228,9 +232,6 @@
 // Isolation Level
 #define SERIALIZABLE                    1
 #define READ_COMMITTED                  2
-// MDCC Ballot Type
-#define BALLOT_FAST                     1
-#define BALLOT_CLASSIC                  2
 // Node Type
 #define COMPUTE_NODE                    1
 #define STORAGE_NODE                    2

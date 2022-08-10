@@ -195,21 +195,8 @@ TxnManager::start()
     // Handle single-partition transactions, skip if self failed
     if (is_single_partition()) {
         _commit_start_time = get_sys_clock();
-#if COMMIT_ALG == MDCC
-        rc = process_mdcc_singlepart(rc);
-#else
         rc = process_commit_phase_singlepart(rc);
-#endif
     } else {
-#if COMMIT_ALG == MDCC
-        assert(ISOLATION_LEVEL == READ_COMMITTED);
-        if (rc == COMMIT) {
-            _prepare_start_time = get_sys_clock();
-            rc = process_mdcc_phase1();
-        }
-        _commit_start_time = get_sys_clock();
-        rc = process_mdcc_phase2(rc);
-#else
         if (rc == COMMIT) {
             _prepare_start_time = get_sys_clock();
             rc = process_2pc_phase1();
@@ -218,7 +205,6 @@ TxnManager::start()
             _commit_start_time = get_sys_clock();
             rc = process_2pc_phase2(rc);
         }
-#endif
     }
     if (rc != FAIL) {
         update_stats();

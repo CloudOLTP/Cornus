@@ -4,7 +4,6 @@
 #include <queue>
 #include <stack>
 #include "thread.h"
-#include "rpc_client.h"
 
 class workload;
 class QueryBase;
@@ -34,17 +33,4 @@ private:
     pthread_mutex_t *       _mutex;
 	uint64_t                _init_time;
 
-  public:
-    // for customized storage nodes
-#if NODE_TYPE == STORAGE_NODE
-    SundialRequest thd_requests_[NUM_NODES];
-    SundialResponse thd_responses_[NUM_NODES];
-#else
-    // request in phase 1, as leader of paxos
-    SundialRequest thd_requests_[NUM_STORAGE_NODES];
-    SundialResponse thd_responses_[NUM_STORAGE_NODES];
-#endif
-    // request in phase 2, as leader of paxos
-    SundialRequest thd_requests2_[NUM_STORAGE_NODES];
-    SundialResponse thd_responses2_[NUM_STORAGE_NODES];
 };

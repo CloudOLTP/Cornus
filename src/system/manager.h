@@ -2,6 +2,7 @@
 
 #include "helper.h"
 #include "global.h"
+#include "rpc_client.h"
 #include <stack>
 
 class row_t;
@@ -74,6 +75,11 @@ public:
 
     // For OCC timestamp
     volatile uint64_t       _max_node_cts;
+
+    // For rpc use
+    // for customized storage nodes
+    SundialRequest thd_requests_[NUM_RPC_SERVER_THREADS];
+    SundialResponse thd_responses_[NUM_RPC_SERVER_THREADS];
 
 private:
     pthread_mutex_t         ts_mutex;

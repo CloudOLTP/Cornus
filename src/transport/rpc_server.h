@@ -22,8 +22,7 @@ using sundial_rpc::SundialRPC;
 class SundialRPCServerImpl final : public SundialRPC::Service {
 public:
     void run();
-    static void HandleRpcs(SundialRPCServerImpl * s);
-    //void Export(net_http::HTTPServerInterface* http_server);
+    static void HandleRpcs(SundialRPCServerImpl * s, uint32_t thd_id);
     Status contactRemote(ServerContext * context, const SundialRequest* request,
                      SundialResponse* response) override;
     static void processContactRemote(ServerContext* context, const SundialRequest* request,
@@ -54,8 +53,9 @@ private:
      */
     class CallData {
     public:
-        CallData(SundialRPC::AsyncService* service, ServerCompletionQueue* cq);
-        void Proceed();
+        CallData(SundialRPC::AsyncService* service, ServerCompletionQueue* cq,
+                 uint32_t thd_id);
+        void Proceed(uint32_t thd_id);
     private:
         enum CallStatus { CREATE, PROCESS, FINISH };
         SundialRPC::AsyncService* service_;
