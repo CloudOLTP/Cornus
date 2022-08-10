@@ -465,6 +465,8 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size) {
         txn_requests_[i].set_txn_state(state);
         txn_requests_[i].set_semaphore(reinterpret_cast<uint64_t>
         (rpc_log_semaphore));
+        // used for processing log delay
+        txn_requests_[i].set_node_id(i);
         rpc_client->sendRequestAsync(this,
                                    i,
                                    txn_requests_[i],
