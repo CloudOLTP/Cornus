@@ -141,12 +141,19 @@ TxnManager::process_2pc_phase1()
             }
         }
         ((CC_MAN *)_cc_manager)->build_prepare_req( it->first, request );
-        if (rpc_client->sendRequestAsync(this, it->first, request, response)
-        == FAIL) {
-            return FAIL; // self is down, no msg can be sent out
+#if COMMIT_VAR == MDCC_CLASSIC
+        if (request.nodes_size() != 0) {
+            for (size_t qid = 0; qid < g_quorum; qid++) {
+                rpc_semaphore->incr();
+            }
+        } else {
+            rpc_semaphore->incr();
         }
-        message_sent++;
+#else
         rpc_semaphore->incr();
+#endif
+        rpc_client->sendRequestAsync(this, it->first, request, response);
+        message_sent++;
         // check if current node should crash
 #if FAILURE_ENABLE
         if (message_sent != 1)
@@ -503,7 +510,10 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size,
         txn_requests_[i].set_coord_id(coord_id);
         txn_requests_[i].set_forward_msg(forward_resp);
         txn_requests_[i].set_node_id(g_node_id);
-        txn_requests_[i].set_thd_id(get_txn_id() % g_num_worker_threads);
+        if (forward_resp == SundialRequest::RESP_OK)
+            txn_requests_[i].set_thd_id(_worker_thread->get_thd_id());
+        else
+            txn_requests_[i].set_thd_id(thd_id);
         // used for processing log delay
         txn_requests_[i].set_receiver_id(i);
         rpc_client->sendRequestAsync(this,

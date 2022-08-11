@@ -124,7 +124,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             return;
         case SundialRequest::READ_REQ:
 #if LOG_DELAY > 0
-            usleep(LOG_DELAY);
+            usleep(LOG_DELAY / 2);
 #endif
             txn = txn_table->get_txn(txn_id);
             if (txn  == nullptr) {
@@ -142,6 +142,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 delete txn;
             }
             response->set_txn_id(txn_id);
+#if LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
+#endif
             break;
         case SundialRequest::TERMINATE_REQ:
 #if NODE_TYPE == COMPUTE_NODE
@@ -167,7 +170,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
 #endif
         case SundialRequest::PREPARE_REQ:
 #if LOG_DELAY > 0
-            usleep(LOG_DELAY);
+            usleep(LOG_DELAY / 2);
 #endif
 #if DEBUG_PRINT
           printf("[node-%u, txn-%lu] receive remote prepare request\n",
@@ -185,10 +188,13 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                 delete txn;
             }
             response->set_txn_id(txn_id);
+#if LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
+#endif
             break;
         case SundialRequest::COMMIT_REQ:
 #if LOG_DELAY > 0
-            usleep(LOG_DELAY);
+            usleep(LOG_DELAY / 2);
 #endif
 #if DEBUG_PRINT
           printf("[node-%u, txn-%lu] receive remote commit request\n",
@@ -203,10 +209,13 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn_table->remove_txn(txn);
             delete txn;
             response->set_txn_id(txn_id);
+#if LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
+#endif
             break;
         case SundialRequest::ABORT_REQ:
 #if LOG_DELAY > 0
-            usleep(LOG_DELAY);
+            usleep(LOG_DELAY / 2);
 #endif
 #if DEBUG_PRINT
           printf("[node-%u txn-%lu] receive remote abort request\n",
@@ -221,6 +230,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn_table->remove_txn(txn);
             delete txn;
             response->set_txn_id(txn_id);
+#if LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
+#endif
             break;
         case  SundialRequest::PAXOS_LOG:
 #if DEBUG_PRINT
@@ -263,7 +275,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             break;
         case SundialRequest::PAXOS_LOG_FORWARD:
 #if LOG_DELAY > 0
-            usleep(LOG_DELAY);
+            usleep(LOG_DELAY / 2);
 #endif
             assert(request->forward_msg() != SundialRequest::RESP_OK);
             // response->set_request_type(SundialResponse::DummyReply);
@@ -279,6 +291,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                    "node-%lu and "
                    "decr txn semaphore\n", txn_id,
                    request->forward_msg(), request->node_id());
+#endif
+#if LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
 #endif
             break;
         case SundialRequest::PAXOS_REPLICATE:
@@ -300,27 +315,56 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             redis_client->log_sync_data(request->node_id(), request->txn_id(), request->txn_state(), data);
 #if LOG_DELAY > 0
             if (request->receiver_id() != g_node_id)
-                usleep(LOG_DELAY);
+                usleep(LOG_DELAY / 2);
 #endif
             // once logged, reply to participant or coordinator
             response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
-#if COMMIT_VAR == CORNUS_OPT
-            if (request->node_id() != request->coord_id()) {
+#if COMMIT_VAR == MDCC_CLASSIC
+            if (request->node_id() != request->coord_id() &&
+                request->forward_msg() != SundialRequest::ACK) {
+                idx = request->thd_id() * g_num_nodes + request->node_id();
                 txn = txn_table->get_txn(txn_id, true);
-                glob_manager->thd_requests_[response->thd_id()].set_request_type
+                glob_manager->thd_requests_[idx].set_request_type
                     (SundialRequest::PAXOS_LOG_COLOCATE_FORWARD);
-                glob_manager->thd_requests_[response->thd_id()].set_forward_msg(
+                glob_manager->thd_requests_[idx].set_forward_msg(
                     request->forward_msg());
-                glob_manager->thd_requests_[response->thd_id()].set_txn_id(
+                glob_manager->thd_requests_[idx].set_txn_id(
                     txn_id);
-                glob_manager->thd_requests_[response->thd_id()].set_node_id
+                glob_manager->thd_requests_[idx].set_node_id
                     (request->node_id());
                 rpc_client->sendRequestAsync(txn,
                                              request->coord_id(),
-                                             glob_manager->thd_requests_[response->thd_id()],
-                                             glob_manager->thd_responses_[response->thd_id()],
+                                             glob_manager->thd_requests_[idx],
+                                             glob_manager->thd_responses_[idx],
                                              false);
             }
+#endif
+#if LOG_DELAY > 0
+            if (request->receiver_id() != g_node_id)
+                usleep(LOG_DELAY / 2);
+#endif
+            break;
+       case SundialRequest::PAXOS_LOG_COLOCATE_FORWARD:
+#if LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
+#endif
+            assert(request->forward_msg() != SundialRequest::RESP_OK);
+            // response->set_request_type(SundialResponse::DummyReply);
+            response->set_request_type(SundialResponse::PAXOS_FORWARD_ACK);
+            txn = txn_table->get_txn(txn_id, true);
+            assert(txn);
+            // handle reply, abort if not prepared ok
+            txn->handle_prepare_resp((SundialResponse::ResponseType) ((int)
+                request->forward_msg()), request->node_id());
+            txn->rpc_semaphore->decr();
+#if DEBUG_PRINT
+            printf("[txn-%lu] receive paxos log forward request-%d from "
+                   "node-%lu and "
+                   "decr txn semaphore\n", txn_id,
+                   request->forward_msg(), request->node_id());
+#endif
+#if LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
 #endif
             break;
         default:
