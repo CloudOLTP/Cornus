@@ -228,7 +228,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             response->set_txn_id(txn_id);
             break;
-        case sundial_rpc::SundialRequest_RequestType_PAXOS_LOG:
+        case  SundialRequest::PAXOS_LOG:
 #if DEBUG_PRINT
             printf("[node-%u txn-%lu] receive remote paxos log request\n",
                  g_node_id, txn_id);
@@ -241,15 +241,21 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             // forward request
 #if COMMIT_VAR == CORNUS_OPT
             if (request->node_id() != request->coord_id()) {
-                    glob_manager->thd_requests_[response->thd_id()].set_request_type
-                        (SundialRequest::PAXOS_LOG_FORWARD);
-                    glob_manager->thd_requests_[response->thd_id()].set_forward_msg(
-                        request->forward_msg());
-                    glob_manager->thd_requests_[response->thd_id()].set_txn_id(
-                        txn_id);
-                    glob_manager->thd_requests_[response->thd_id()].set_node_id
-                        (request->node_id());
-                    rpc_client->sendRequestAsync(txn,
+#if DEBUG_PRINT
+                printf("[txn-%lu] send paxos log forward request-%d from "
+                   "node-%lu\n", txn_id,
+                   request->forward_msg(), request->node_id());
+#endif
+                glob_manager->thd_requests_[response->thd_id()].set_request_type
+                    (SundialRequest::PAXOS_LOG_FORWARD);
+                glob_manager->thd_requests_[response->thd_id()].set_forward_msg(
+                    request->forward_msg());
+                glob_manager->thd_requests_[response->thd_id()].set_txn_id(
+                    txn_id);
+                glob_manager->thd_requests_[response->thd_id()].set_node_id
+                    (request->node_id());
+                rpc_client->sendRequestAsync(txn,
+                //rpc_client->sendRequest(
                                                  request->coord_id(),
                                                  glob_manager->thd_requests_[response->thd_id()],
                                                  glob_manager->thd_responses_[response->thd_id()],
@@ -261,6 +267,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
             break;
         case SundialRequest::PAXOS_LOG_FORWARD:
+            assert(request->forward_msg() != SundialRequest::RESP_OK);
             response->set_request_type(SundialResponse::DummyReply);
             txn = txn_table->get_txn(txn_id, true);
             assert(txn);
@@ -268,6 +275,12 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             txn->handle_prepare_resp((SundialResponse::ResponseType) ((int)
             request->forward_msg()), request->node_id());
             txn->rpc_semaphore->decr();
+#if DEBUG_PRINT
+            printf("[txn-%lu] receive paxos log forward request-%d from "
+                   "node-%lu and "
+                   "decr txn semaphore\n", txn_id,
+                   request->forward_msg(), request->node_id());
+#endif
             break;
         case SundialRequest::PAXOS_REPLICATE:
 #if LOG_DELAY > 0

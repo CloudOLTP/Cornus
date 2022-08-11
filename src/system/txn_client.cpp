@@ -250,7 +250,7 @@ TxnManager::process_2pc_phase2(RC rc)
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
         rpc_log_semaphore->wait();
-        sendRemoteLogRequest(rc_to_state(rc), 1, g_node_id);
+        sendRemoteLogRequest(rc_to_state(rc), 1, g_node_id, SundialRequest::RESP_OK);
         #endif
         // finish after log is stable.
         rpc_log_semaphore->wait();
@@ -266,7 +266,8 @@ TxnManager::process_2pc_phase2(RC rc)
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async(g_node_id, get_txn_id(), rc_to_state(rc));
         rpc_log_semaphore->wait();
-        sendRemoteLogRequest(rc_to_state(rc), 1, g_node_id);
+        sendRemoteLogRequest(rc_to_state(rc), 1, g_node_id,
+                             SundialRequest::RESP_OK);
         #endif
     #elif COMMIT_ALG == COORDINATOR_LOG
         // log all at once
@@ -285,7 +286,7 @@ TxnManager::process_2pc_phase2(RC rc)
         #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         redis_client->log_async_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
         rpc_log_semaphore->wait();
-        sendRemoteLogRequest(rc_to_state(rc), data.length(), g_node_id);
+        sendRemoteLogRequest(rc_to_state(rc), data.length(), g_node_id, SundialRequest::RESP_OK);
         #endif
         // finish after log is stable.
         rpc_log_semaphore->wait();
@@ -305,6 +306,7 @@ TxnManager::process_2pc_phase2(RC rc)
         response.Clear();
         request.set_txn_id( get_txn_id() );
         request.set_node_id( it->first );
+        request.set_coord_id(g_node_id);
         SundialRequest::RequestType type = (rc == COMMIT)?
             SundialRequest::COMMIT_REQ : SundialRequest::ABORT_REQ;
         request.set_request_type( type );
@@ -514,7 +516,6 @@ TxnManager::sendReplicateRequest(State state, uint64_t log_data_size) {
         txn_requests_[i].set_log_data_size(log_data_size);
         txn_requests_[i].set_txn_state(state);
         txn_requests_[i].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
-        // TODO(zhihan): set node id, request->node_id()
         rpc_client->sendRequestAsync(this,
                                      i,
                                      txn_requests_[i],

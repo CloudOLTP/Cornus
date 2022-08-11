@@ -21,6 +21,7 @@ SemaphoreSync::incr()
 {
     pthread_mutex_lock(_mutex);
     uint32_t sem = ++_semaphore;
+    // printf("semaphore-%p increase to %u\n", this, sem);
     pthread_mutex_unlock(_mutex);
     return sem;
 }
@@ -30,6 +31,7 @@ SemaphoreSync::decr() {
     pthread_mutex_lock(_mutex);
     assert(_semaphore != 0);
     uint32_t sem = --_semaphore;
+    // printf("semaphore-%p decrease to %u\n", this, sem);
     pthread_mutex_unlock(_mutex);
     if (sem == 0)
         pthread_cond_signal(_cond);

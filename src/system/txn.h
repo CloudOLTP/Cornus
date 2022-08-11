@@ -185,7 +185,7 @@ private:
     void sendRemoteLogRequest(State state, uint64_t log_data_size,
                               uint32_t coord_id=0,
                               SundialRequest::ResponseType
-                              forward_resp=SundialRequest::PREPARED_OK);
+                              forward_resp=SundialRequest::RESP_OK);
     // used to track # of replies from each node and the stats will be used for
     // calculating quorum
     // each count should not exceed g_num_storage_nodes + 1

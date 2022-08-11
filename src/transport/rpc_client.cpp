@@ -229,6 +229,10 @@ response)
 #endif
         TxnManager * txn;
         switch (response->request_type()) {
+            case SundialResponse::READ_REQ:
+                txn = txn_table->get_txn(txn_id);
+                txn->rpc_semaphore->decr();
+                break;
             case SundialResponse::PREPARE_REQ :
                 txn = txn_table->get_txn(txn_id);
                 txn->handle_prepare_resp(response->response_type(),
@@ -241,12 +245,15 @@ response)
             case SundialResponse::COMMIT_REQ:
                 txn = txn_table->get_txn(txn_id);
                 txn->rpc_semaphore->decr();
+                break;
             case SundialResponse::ABORT_REQ:
                 txn = txn_table->get_txn(txn_id);
                 txn->rpc_semaphore->decr();
+                break;
             case SundialResponse::SYS_REQ:
                 txn = txn_table->get_txn(txn_id);
                 txn->rpc_semaphore->decr();
+                break;
             case SundialResponse::TERMINATE_REQ:
                 break;
             case SundialResponse::DummyReply:

@@ -125,7 +125,8 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     }
     response->set_response_type( response_type);
 #if !(COMMIT_VAR == NO_VARIANT || COMMIT_VAR == COLOCATE)
-    if (request->nodes_size() == 0 && COMMIT_ALG != COORDINATOR_LOG) {
+    if (request->nodes_size() != 0 && COMMIT_ALG != COORDINATOR_LOG &&
+    g_num_storage_nodes > 0) {
         response->set_request_type(SundialResponse::DummyReply);
     }
 #endif
@@ -216,7 +217,8 @@ TxnManager::process_decision_request(const SundialRequest* request,
     #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
     redis_client->log_async(g_node_id, get_txn_id(), status);
     rpc_log_semaphore->wait();
-    sendRemoteLogRequest(rc_to_state(rc), 1, g_node_id, SundialRequest::ACK);
+    sendRemoteLogRequest(rc_to_state(rc), 1, request->coord_id(),
+                         SundialRequest::ACK);
     #endif
 
     rpc_log_semaphore->wait();
@@ -239,7 +241,8 @@ TxnManager::process_decision_request(const SundialRequest* request,
     // optimization)
     response->set_response_type( SundialResponse::ACK );
 #if !(COMMIT_VAR == NO_VARIANT || COMMIT_VAR == COLOCATE)
-    response->set_request_type(SundialResponse::DummyReply);
+    if (g_num_storage_nodes > 0)
+        response->set_request_type(SundialResponse::DummyReply);
 #endif
     return rc;
 }
