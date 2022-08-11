@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     start_thread((void *)(worker_threads[g_num_worker_threads - 1]));
     for (uint32_t i = 0; i < g_num_worker_threads - 1; i++)
         pthread_join(*pthreads_worker[i], nullptr);
-    assert( glob_manager->are_all_worker_threads_done() );
+    assert(glob_manager->are_all_worker_threads_done());
 
 #if DISTRIBUTED
     cout << "[Sundial] End synchronization starts" << endl;
@@ -137,6 +137,11 @@ int main(int argc, char* argv[])
       if (i == g_node_id) continue;
         starttime = get_sys_clock();
         rpc_client->sendRequest(i, request, response);
+//        SemaphoreSync * sem = new SemaphoreSync();
+//        sem->incr();
+//        request.set_semaphore(reinterpret_cast<uint64_t>(sem));
+//        rpc_client->sendRequestAsync(nullptr, i, request, response);
+//        sem->wait();
         endtime = get_sys_clock() - starttime;
         INC_FLOAT_STATS(time_rpc, endtime);
         cout << "[Sundial] network roundtrip to node " << i << ": " <<
@@ -146,6 +151,11 @@ int main(int argc, char* argv[])
       usleep(1);
     cout << "[Sundial] End synchronization ends" << endl;
 #endif
+    endtime = get_server_clock();
+    cout << "Complete." << endl;
+    if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
+        glob_stats->print();
+    glob_manager->active = false;
 #if NUM_STORAGE_NODES > 0
     // only the first node has right to terminate
     if (g_node_id == 0) {
@@ -156,11 +166,6 @@ int main(int argc, char* argv[])
       }
     }
 #endif
-    endtime = get_server_clock();
-    cout << "Complete." << endl;
-    glob_manager->active = false;
-    if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
-        glob_stats->print();
     for (uint32_t i = 0; i < g_num_worker_threads; i ++) {
         delete pthreads_worker[i];
         delete worker_threads[i];

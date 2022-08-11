@@ -187,7 +187,8 @@ enum SundialResponse_RequestType : int {
   SundialResponse_RequestType_SYS_REQ = 5,
   SundialResponse_RequestType_TERMINATE_REQ = 6,
   SundialResponse_RequestType_PAXOS_LOG_ACK = 7,
-  SundialResponse_RequestType_NUM_REQ_TYPES = 8,
+  SundialResponse_RequestType_PAXOS_FORWARD_ACK = 8,
+  SundialResponse_RequestType_NUM_REQ_TYPES = 9,
   SundialResponse_RequestType_SundialResponse_RequestType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   SundialResponse_RequestType_SundialResponse_RequestType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
 };
@@ -1626,6 +1627,8 @@ class SundialResponse final :
     SundialResponse_RequestType_TERMINATE_REQ;
   static constexpr RequestType PAXOS_LOG_ACK =
     SundialResponse_RequestType_PAXOS_LOG_ACK;
+  static constexpr RequestType PAXOS_FORWARD_ACK =
+    SundialResponse_RequestType_PAXOS_FORWARD_ACK;
   static constexpr RequestType NUM_REQ_TYPES =
     SundialResponse_RequestType_NUM_REQ_TYPES;
   static inline bool RequestType_IsValid(int value) {

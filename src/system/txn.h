@@ -194,4 +194,5 @@ private:
     // the txn_mdcc will read the stats
     std::atomic<int> replied_acceptors[NUM_NODES];
     std::atomic<int> replied_acceptors2;
+    uint64_t thd_id;
 };

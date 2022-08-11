@@ -87,7 +87,8 @@ node_id) {
         if (!call->status.ok()) {
             printf("[REQ] client rec response fail: (%d) %s\n",
                    call->status.error_code(), call->status.error_message().c_str());
-            assert(false);
+            // assert(false);
+            continue;
         }
         // handle return value for non-system response
         assert(call->reply->response_type() != SundialResponse::SYS_RESP);
@@ -111,7 +112,8 @@ node_id) {
         if (!call->status.ok()) {
             printf("[REQ] client rec response fail: (%d) %s\n",
                    call->status.error_code(), call->status.error_message().c_str());
-            assert(false);
+            // assert(false);
+            continue;
         }
         // handle return value for non-system response
         assert(call->reply->response_type() != SundialResponse::SYS_RESP);
@@ -172,8 +174,9 @@ SundialRPCClient::sendRequestAsync(TxnManager * txn, uint64_t node_id,
     SundialRequest::TERMINATE_REQ))
         return FAIL;
 #if DEBUG_PRINT
-    printf("[node-%u, txn-%lu] send async request-%d\n", g_node_id, request
-        .txn_id(), request.request_type());
+    if (txn)
+        printf("[node-%u, txn-%lu] send async request-%d\n", g_node_id, request
+            .txn_id(), request.request_type());
 #endif
     if ((is_storage && NODE_TYPE == STORAGE_NODE) || (!is_storage &&
     NODE_TYPE == COMPUTE_NODE))
@@ -251,10 +254,11 @@ response)
                 txn->rpc_semaphore->decr();
                 break;
             case SundialResponse::SYS_REQ:
-                txn = txn_table->get_txn(txn_id);
-                txn->rpc_semaphore->decr();
+                ((SemaphoreSync *) request->semaphore())->decr();
                 break;
             case SundialResponse::TERMINATE_REQ:
+                break;
+            case SundialResponse::PAXOS_FORWARD_ACK:
                 break;
             case SundialResponse::DummyReply:
                 break;

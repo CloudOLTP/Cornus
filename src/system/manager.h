@@ -78,8 +78,8 @@ public:
 
     // For rpc use
     // for customized storage nodes
-    SundialRequest thd_requests_[NUM_RPC_SERVER_THREADS];
-    SundialResponse thd_responses_[NUM_RPC_SERVER_THREADS];
+    SundialRequest thd_requests_[NUM_WORKER_THREADS * NUM_NODES];
+    SundialResponse thd_responses_[NUM_WORKER_THREADS * NUM_NODES];
 
 private:
     pthread_mutex_t         ts_mutex;

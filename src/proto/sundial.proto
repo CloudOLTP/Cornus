@@ -85,7 +85,8 @@ message SundialResponse {
         SYS_REQ = 5;
         TERMINATE_REQ = 6;
         PAXOS_LOG_ACK = 7;
-        NUM_REQ_TYPES = 8;
+        PAXOS_FORWARD_ACK = 8;
+        NUM_REQ_TYPES = 9;
     }
     enum ResponseType {
         RESP_OK = 0;

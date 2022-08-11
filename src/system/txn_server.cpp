@@ -83,6 +83,7 @@ TxnManager::process_prepare_request(const SundialRequest* request,
     if (request->nodes_size() != 0 && COMMIT_ALG != COORDINATOR_LOG) {
         string data = "[LSN] placehold:" + string(num_tuples * g_log_sz * 8, 'd');
         rpc_log_semaphore->incr();
+        thd_id = request->thd_id();
         #if LOG_DEVICE == LOG_DVC_REDIS
             #if COMMIT_ALG == ONE_PC
             redis_client->log_if_ne_data(g_node_id, get_txn_id(), data);
@@ -210,6 +211,7 @@ TxnManager::process_decision_request(const SundialRequest* request,
 
     State status = (rc == COMMIT)? COMMITTED : ABORTED;
     rpc_log_semaphore->incr();
+    thd_id = request->thd_id();
     #if LOG_DEVICE == LOG_DVC_REDIS
     redis_client->log_async(g_node_id, get_txn_id(), status);
     #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
@@ -240,10 +242,10 @@ TxnManager::process_decision_request(const SundialRequest* request,
     // No need to wait for this log since it is optional (shared log
     // optimization)
     response->set_response_type( SundialResponse::ACK );
-#if !(COMMIT_VAR == NO_VARIANT || COMMIT_VAR == COLOCATE)
-    if (g_num_storage_nodes > 0)
-        response->set_request_type(SundialResponse::DummyReply);
-#endif
+//#if !(COMMIT_VAR == NO_VARIANT || COMMIT_VAR == COLOCATE)
+//    if (g_num_storage_nodes > 0)
+//        response->set_request_type(SundialResponse::DummyReply);
+//#endif
     return rc;
 }
 

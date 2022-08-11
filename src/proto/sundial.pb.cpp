@@ -265,7 +265,7 @@ const char descriptor_table_protodef_sundial_2eproto[] PROTOBUF_SECTION_VARIABLE
   "_OK\020\000\022\016\n\nRESP_ABORT\020\001\022\r\n\tRESP_FAIL\020\002\022\017\n\013"
   "PREPARED_OK\020\003\022\022\n\016PREPARED_OK_RO\020\004\022\022\n\016PRE"
   "PARED_ABORT\020\005\022\007\n\003ACK\020\006\022\014\n\010SYS_RESP\020\007\022\022\n\016"
-  "NUM_RESP_TYPES\020\010\"\272\006\n\017SundialResponse\022\016\n\006"
+  "NUM_RESP_TYPES\020\010\"\321\006\n\017SundialResponse\022\016\n\006"
   "txn_id\030\001 \001(\004\022@\n\rresponse_type\030\002 \001(\0162).su"
   "ndial_rpc.SundialResponse.ResponseType\022:"
   "\n\ntuple_data\030\003 \003(\0132&.sundial_rpc.Sundial"
@@ -276,23 +276,24 @@ const char descriptor_table_protodef_sundial_2eproto[] PROTOBUF_SECTION_VARIABLE
   "onse.NodeType\032~\n\tTupleData\022\013\n\003key\030\001 \001(\004\022"
   "\020\n\010table_id\030\002 \001(\004\022\014\n\004size\030\003 \001(\004\022\014\n\004data\030"
   "\004 \001(\014\022\023\n\013access_type\030\005 \001(\004\022\017\n\007version\030\006 "
-  "\001(\004\022\020\n\010index_id\030\007 \001(\004\"\241\001\n\013RequestType\022\016\n"
+  "\001(\004\022\020\n\010index_id\030\007 \001(\004\"\270\001\n\013RequestType\022\016\n"
   "\nDummyReply\020\000\022\014\n\010READ_REQ\020\001\022\017\n\013PREPARE_R"
   "EQ\020\002\022\016\n\nCOMMIT_REQ\020\003\022\r\n\tABORT_REQ\020\004\022\013\n\007S"
   "YS_REQ\020\005\022\021\n\rTERMINATE_REQ\020\006\022\021\n\rPAXOS_LOG"
-  "_ACK\020\007\022\021\n\rNUM_REQ_TYPES\020\010\"\236\001\n\014ResponseTy"
-  "pe\022\013\n\007RESP_OK\020\000\022\016\n\nRESP_ABORT\020\001\022\r\n\tRESP_"
-  "FAIL\020\002\022\017\n\013PREPARED_OK\020\003\022\022\n\016PREPARED_OK_R"
-  "O\020\004\022\022\n\016PREPARED_ABORT\020\005\022\007\n\003ACK\020\006\022\014\n\010SYS_"
-  "RESP\020\007\022\022\n\016NUM_RESP_TYPES\020\010\"9\n\010NodeType\022\017"
-  "\n\013COORDINATOR\020\000\022\017\n\013PARTICIPANT\020\001\022\013\n\007STOR"
-  "AGE\020\0022Z\n\nSundialRPC\022L\n\rcontactRemote\022\033.s"
-  "undial_rpc.SundialRequest\032\034.sundial_rpc."
-  "SundialResponse\"\000b\006proto3"
+  "_ACK\020\007\022\025\n\021PAXOS_FORWARD_ACK\020\010\022\021\n\rNUM_REQ"
+  "_TYPES\020\t\"\236\001\n\014ResponseType\022\013\n\007RESP_OK\020\000\022\016"
+  "\n\nRESP_ABORT\020\001\022\r\n\tRESP_FAIL\020\002\022\017\n\013PREPARE"
+  "D_OK\020\003\022\022\n\016PREPARED_OK_RO\020\004\022\022\n\016PREPARED_A"
+  "BORT\020\005\022\007\n\003ACK\020\006\022\014\n\010SYS_RESP\020\007\022\022\n\016NUM_RES"
+  "P_TYPES\020\010\"9\n\010NodeType\022\017\n\013COORDINATOR\020\000\022\017"
+  "\n\013PARTICIPANT\020\001\022\013\n\007STORAGE\020\0022Z\n\nSundialR"
+  "PC\022L\n\rcontactRemote\022\033.sundial_rpc.Sundia"
+  "lRequest\032\034.sundial_rpc.SundialResponse\"\000"
+  "b\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_sundial_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_sundial_2eproto = {
-  false, false, 2225, descriptor_table_protodef_sundial_2eproto, "sundial.proto", 
+  false, false, 2248, descriptor_table_protodef_sundial_2eproto, "sundial.proto", 
   &descriptor_table_sundial_2eproto_once, nullptr, 0, 6,
   schemas, file_default_instances, TableStruct_sundial_2eproto::offsets,
   file_level_metadata_sundial_2eproto, file_level_enum_descriptors_sundial_2eproto, file_level_service_descriptors_sundial_2eproto,
@@ -420,6 +421,7 @@ bool SundialResponse_RequestType_IsValid(int value) {
     case 6:
     case 7:
     case 8:
+    case 9:
       return true;
     default:
       return false;
@@ -435,6 +437,7 @@ constexpr SundialResponse_RequestType SundialResponse::ABORT_REQ;
 constexpr SundialResponse_RequestType SundialResponse::SYS_REQ;
 constexpr SundialResponse_RequestType SundialResponse::TERMINATE_REQ;
 constexpr SundialResponse_RequestType SundialResponse::PAXOS_LOG_ACK;
+constexpr SundialResponse_RequestType SundialResponse::PAXOS_FORWARD_ACK;
 constexpr SundialResponse_RequestType SundialResponse::NUM_REQ_TYPES;
 constexpr SundialResponse_RequestType SundialResponse::RequestType_MIN;
 constexpr SundialResponse_RequestType SundialResponse::RequestType_MAX;

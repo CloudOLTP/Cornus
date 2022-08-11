@@ -126,6 +126,7 @@ TxnManager::process_2pc_phase1()
         request.set_request_type( SundialRequest::PREPARE_REQ);
         request.set_node_id( it->first );
         request.set_coord_id(g_node_id);
+        request.set_thd_id(_worker_thread->get_thd_id());
         // attach coordinator
         participant = request.add_nodes();
         participant->set_nid(g_node_id);
@@ -307,6 +308,7 @@ TxnManager::process_2pc_phase2(RC rc)
         request.set_txn_id( get_txn_id() );
         request.set_node_id( it->first );
         request.set_coord_id(g_node_id);
+        request.set_thd_id(_worker_thread->get_thd_id());
         SundialRequest::RequestType type = (rc == COMMIT)?
             SundialRequest::COMMIT_REQ : SundialRequest::ABORT_REQ;
         request.set_request_type( type );
@@ -451,21 +453,38 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size,
     if (node_id >= g_num_storage_nodes) {
         node_id = node_id % g_num_storage_nodes;
     }
-    txn_requests_[node_id].set_request_type
-        (SundialRequest::PAXOS_LOG);
-    txn_requests_[node_id].set_txn_id(get_txn_id());
-    txn_requests_[node_id].set_coord_id(coord_id);
-    txn_requests_[node_id].set_log_data_size(log_data_size);
-    txn_requests_[node_id].set_txn_state(state);
-    txn_requests_[node_id].set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
-    txn_requests_[node_id].set_forward_msg(forward_resp);
-    txn_requests_[node_id].set_node_id(g_node_id);
-    rpc_log_semaphore->incr();
-    rpc_client->sendRequestAsync(this,
-                                 node_id,
-                                 txn_requests_[node_id],
-                                 txn_responses_[node_id],
-                                 true);
+    if (forward_resp == SundialRequest::RESP_OK) {
+        size_t idx = (_worker_thread->get_thd_id()) * g_num_nodes +
+            g_node_id;
+        SundialRequest &request = glob_manager->thd_requests_[idx];
+        SundialResponse &response = glob_manager->thd_responses_[idx];
+        request.set_request_type(SundialRequest::PAXOS_LOG);
+        request.set_txn_id(get_txn_id());
+        request.set_coord_id(coord_id);
+        request.set_log_data_size(log_data_size);
+        request.set_txn_state(state);
+        request.set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
+        request.set_forward_msg(forward_resp);
+        request.set_node_id(g_node_id);
+        request.set_thd_id(_worker_thread->get_thd_id());
+        rpc_log_semaphore->incr();
+        rpc_client->sendRequestAsync(this, node_id, request, response, true);
+    } else {
+        SundialRequest &request = txn_requests_[node_id];
+        SundialResponse &response = txn_responses_[node_id];
+        request.set_request_type(SundialRequest::PAXOS_LOG);
+        request.set_txn_id(get_txn_id());
+        request.set_coord_id(coord_id);
+        request.set_log_data_size(log_data_size);
+        request.set_txn_state(state);
+        request.set_semaphore(reinterpret_cast<uint64_t>(rpc_log_semaphore));
+        request.set_forward_msg(forward_resp);
+        request.set_node_id(g_node_id);
+        request.set_thd_id(thd_id);
+        rpc_log_semaphore->incr();
+        rpc_client->sendRequestAsync(this, node_id, request, response, true);
+    }
+
 #else
     // send log request
     size_t sent = 0;
@@ -484,6 +503,7 @@ void TxnManager::sendRemoteLogRequest(State state, uint64_t log_data_size,
         txn_requests_[i].set_coord_id(coord_id);
         txn_requests_[i].set_forward_msg(forward_resp);
         txn_requests_[i].set_node_id(g_node_id);
+        txn_requests_[i].set_thd_id(get_txn_id() % g_num_worker_threads);
         // used for processing log delay
         txn_requests_[i].set_receiver_id(i);
         rpc_client->sendRequestAsync(this,

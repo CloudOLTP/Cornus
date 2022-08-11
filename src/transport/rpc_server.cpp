@@ -96,9 +96,6 @@ SundialRPCServerImpl::contactRemote(ServerContext* context, const SundialRequest
     // Calls done_callback->Run() when it goes out of scope.
     // AutoClosureRunner done_runner(done_callback);
     processContactRemote(context, request, response);
-#if DEBUG_PRINT
-    printf("finish processing contact remote\n");
-#endif
     return Status::OK;
 }
 
@@ -117,6 +114,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     RC rc = RCOK;
     TxnManager * txn;
     string data;
+    SundialRequest * forward_req;
+    SundialResponse * forward_resp;
+    size_t idx;
 
     switch (request->request_type()) {
         case SundialRequest::SYS_REQ:
@@ -136,13 +136,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             // only read and terminate need latch since
             // (1) read can only be concurrent with read and terminate
             // (2) read does not remove txn from txn table when getting txn
-#if FAILURE_ENABLE
-            txn->lock();
             rc = txn->process_read_request(request, response);
-            txn->unlock();
-#else
-            rc = txn->process_read_request(request, response);
-#endif
             if (rc == ABORT) {
                 txn_table->remove_txn(txn);
                 delete txn;
@@ -240,26 +234,36 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                                       request->log_data_size());
             // forward request
 #if COMMIT_VAR == CORNUS_OPT
-            if (request->node_id() != request->coord_id()) {
+            if (request->node_id() != request->coord_id() &&
+            request->forward_msg() != SundialRequest::ACK) {
 #if DEBUG_PRINT
                 printf("[txn-%lu] send paxos log forward request-%d from "
                    "node-%lu\n", txn_id,
                    request->forward_msg(), request->node_id());
 #endif
-                glob_manager->thd_requests_[response->thd_id()].set_request_type
+//                forward_req = new SundialRequest;
+//                forward_resp = new SundialResponse;
+//                forward_req->set_request_type(SundialRequest::PAXOS_LOG_FORWARD);
+//                forward_req->set_forward_msg(request->forward_msg());
+//                forward_req->set_txn_id(txn_id);
+//                forward_req->set_node_id(request->node_id());
+//                rpc_client->sendRequestAsync(txn, request->coord_id(),
+//                                             forward_req,forward_resp,
+//                                             false);
+                idx = request->thd_id() * g_num_nodes + request->node_id();
+                glob_manager->thd_requests_[idx].set_request_type
                     (SundialRequest::PAXOS_LOG_FORWARD);
-                glob_manager->thd_requests_[response->thd_id()].set_forward_msg(
+                glob_manager->thd_requests_[idx].set_forward_msg(
                     request->forward_msg());
-                glob_manager->thd_requests_[response->thd_id()].set_txn_id(
+                glob_manager->thd_requests_[idx].set_txn_id(
                     txn_id);
-                glob_manager->thd_requests_[response->thd_id()].set_node_id
+                glob_manager->thd_requests_[idx].set_node_id
                     (request->node_id());
                 rpc_client->sendRequestAsync(txn,
-                //rpc_client->sendRequest(
-                                                 request->coord_id(),
-                                                 glob_manager->thd_requests_[response->thd_id()],
-                                                 glob_manager->thd_responses_[response->thd_id()],
-                                                 false);
+                                         request->coord_id(),
+                                         glob_manager->thd_requests_[idx],
+                                         glob_manager->thd_responses_[idx],
+                                         false);
             }
 #endif
             delete txn;
@@ -267,8 +271,12 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
             break;
         case SundialRequest::PAXOS_LOG_FORWARD:
+#if LOG_DELAY > 0
+            usleep(LOG_DELAY);
+#endif
             assert(request->forward_msg() != SundialRequest::RESP_OK);
-            response->set_request_type(SundialResponse::DummyReply);
+            // response->set_request_type(SundialResponse::DummyReply);
+            response->set_request_type(SundialResponse::PAXOS_FORWARD_ACK);
             txn = txn_table->get_txn(txn_id, true);
             assert(txn);
             // handle reply, abort if not prepared ok
