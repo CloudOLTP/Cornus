@@ -241,15 +241,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
                    "node-%lu\n", txn_id,
                    request->forward_msg(), request->node_id());
 #endif
-//                forward_req = new SundialRequest;
-//                forward_resp = new SundialResponse;
-//                forward_req->set_request_type(SundialRequest::PAXOS_LOG_FORWARD);
-//                forward_req->set_forward_msg(request->forward_msg());
-//                forward_req->set_txn_id(txn_id);
-//                forward_req->set_node_id(request->node_id());
-//                rpc_client->sendRequestAsync(txn, request->coord_id(),
-//                                             forward_req,forward_resp,
-//                                             false);
                 idx = request->thd_id() * g_num_nodes + request->node_id();
                 glob_manager->thd_requests_[idx].set_request_type
                     (SundialRequest::PAXOS_LOG_FORWARD);
