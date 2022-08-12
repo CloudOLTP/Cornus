@@ -107,6 +107,7 @@
 #define LOG_TIMEOUT                     1000  // in us
 #define LOG_DEVICE                      LOG_DVC_REDIS
 #define LOG_DELAY                       0
+#define UNIFORM_DELAY                   true
 #define LOG_SIZE_PER_WRITE              32 // in bytes
 #define LOG_TLS_REDIS                   false // if redis needs tls tunnel
 #define AZURE_ISOLATION_ENABLE          true

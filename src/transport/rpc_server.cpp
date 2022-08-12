@@ -114,8 +114,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
     RC rc = RCOK;
     TxnManager * txn;
     string data;
-    SundialRequest * forward_req;
-    SundialResponse * forward_resp;
     size_t idx;
 
     switch (request->request_type()) {
@@ -239,6 +237,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             printf("[node-%u txn-%lu] receive remote paxos log request\n",
                  g_node_id, txn_id);
 #endif
+#if UNIFORM_DELAY && LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
+#endif
             // create the txn to use its semaphore
             txn = new TxnManager();
             txn->set_txn_id(txn_id);
@@ -272,6 +273,9 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             // once logged, reply to participant or coordinator
             response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
+#if UNIFORM_DELAY && LOG_DELAY > 0
+            usleep(LOG_DELAY / 2);
+#endif
             break;
         case SundialRequest::PAXOS_LOG_FORWARD:
 #if LOG_DELAY > 0
@@ -314,7 +318,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             data = "[LSN] placehold:" + string(request->log_data_size(), 'd');
             redis_client->log_sync_data(request->node_id(), request->txn_id(), request->txn_state(), data);
 #if LOG_DELAY > 0
-            if (request->receiver_id() != g_node_id)
+            if (request->receiver_id() != g_node_id || UNIFORM_DELAY)
                 usleep(LOG_DELAY / 2);
 #endif
             // once logged, reply to participant or coordinator
@@ -340,7 +344,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
 #endif
 #if LOG_DELAY > 0
-            if (request->receiver_id() != g_node_id)
+            if (request->receiver_id() != g_node_id || UNIFORM_DELAY)
                 usleep(LOG_DELAY / 2);
 #endif
             break;
