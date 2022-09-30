@@ -110,8 +110,6 @@ extern double           g_perc_new_order;
 extern double           g_perc_order_status;
 extern double           g_perc_delivery;
 
-
-extern char *           output_file;
 extern char             ifconfig_file[];
 
 enum RC {RCOK, COMMIT, ABORT, WAIT, LOCAL_MISS, SPECULATE, ERROR, FINISH, FAIL};

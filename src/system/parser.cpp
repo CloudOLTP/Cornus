@@ -14,9 +14,7 @@ void print_usage() {
     printf("\t-GTFLOAT    ; RUN_TIME\n");
     printf("\t-GbINT      ; TS_BATCH_ALLOC\n");
     printf("\t-GuINT      ; TS_BATCH_NUM\n");
-    printf("\t-GsINT      ; MAX_CLOCK_SKEW\n");
     printf("\t-Gn         ; node id\n");
-    printf("\t-o STRING   ; output file\n\n");
     printf("Benchmarks\n");
     printf("[YCSB]:\n");
     printf("\t-rFLOAT     ; READ_PERC\n");
@@ -78,8 +76,6 @@ void parser(int argc, char * argv[]) {
                 g_ts_batch_alloc = atoi( &argv[i][3] );
             else if (argv[i][2] == 'u')
                 g_ts_batch_num = atoi( &argv[i][3] );
-            else if (argv[i][2] == 's')
-                g_max_clock_skew = atoi( &argv[i][3] );
             else if (argv[i][2] == 'T')
                 g_run_time = atof( &argv[i][3] );
             else if (argv[i][2] == 'n') {
@@ -121,9 +117,6 @@ void parser(int argc, char * argv[]) {
                 g_local_cache_size = atoi( &argv[i][3] );
             else
               exit(0);
-        } else if (argv[i][1] == 'o') {
-            i++;
-            output_file = argv[i];
         } else if (argv[i][1] == 'h') {
             print_usage();
             exit(0);

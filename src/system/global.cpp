@@ -58,8 +58,6 @@ uint32_t        g_max_items             = 100000;
 uint32_t        g_cust_per_dist         = 3000;
 #endif
 
-
-char *          output_file             = NULL;
 char            ifconfig_file[80]       = "ifconfig.txt";
 
 // TICTOC
