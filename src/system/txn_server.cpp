@@ -28,7 +28,6 @@
 #if CC_ALG == NO_WAIT || CC_ALG == WAIT_DIE
 #include "row_lock.h"
 #endif
-#include "log.h"
 #include "redis_client.h"
 #include "azure_blob_client.h"
 
@@ -39,10 +38,6 @@
 RC
 TxnManager::process_prepare_request(const SundialRequest* request,
     SundialResponse* response) {
-    if (!glob_manager->active) {
-        _txn_state = ABORTED;
-        return FAIL;
-    }
     assert(_txn_state == RUNNING);
     RC rc = RCOK;
     uint32_t num_tuples = request->tuple_data_size();
@@ -137,18 +132,6 @@ TxnManager::process_prepare_request(const SundialRequest* request,
 RC
 TxnManager::process_read_request(const SundialRequest* request,
                                     SundialResponse* response) {
-    if (!glob_manager->active) {
-        return FAIL;
-    }
-
-#if FAILURE_ENABLE
-    // is already aborted by terminate request
-    if (_txn_state != RUNNING) {
-        response->set_response_type(SundialResponse::RESP_ABORT);
-        return ABORT;
-    }
-#endif
-
     RC rc = RCOK;
     uint32_t num_tuples = request->tuple_data_size();
     num_tuples = request->read_requests_size();
@@ -178,24 +161,10 @@ TxnManager::process_read_request(const SundialRequest* request,
     }
 
     if (rc == ABORT) {
-#if FAILURE_ENABLE
-        if(_txn_state != ABORTED) {
-            _cc_manager->cleanup(ABORT);
-            _txn_state = ABORTED;
-        }
-#else
-	_cc_manager->cleanup(ABORT);
-#if DEBUG_PRINT
-        printf("[remote txn-%lu] abort and cleaned up\n", _txn_id);
-#endif
+	    _cc_manager->cleanup(ABORT);
          _txn_state = ABORTED;
-#endif
         response->set_response_type( SundialResponse::RESP_ABORT );
     } else {
-#if DEBUG_PRINT
-        printf("[remote txn-%lu] read completed, do not release lock yet\n",
-               _txn_id);
-#endif
         response->set_response_type(SundialResponse::RESP_OK);
     }
     return rc;
@@ -204,11 +173,6 @@ TxnManager::process_read_request(const SundialRequest* request,
 RC
 TxnManager::process_decision_request(const SundialRequest* request,
                                  SundialResponse* response, RC rc) {
-
-    if (!glob_manager->active) {
-        return FAIL;
-    }
-
     State status = (rc == COMMIT)? COMMITTED : ABORTED;
     rpc_log_semaphore->incr();
     thd_id = request->thd_id();
@@ -227,35 +191,19 @@ TxnManager::process_decision_request(const SundialRequest* request,
     _txn_state = (rc == COMMIT)? COMMITTED : ABORTED;
     _cc_manager->cleanup(rc);
     _finish_time = get_sys_clock();
-#if FAILURE_ENABLE
-    // termination protocol is called when timeout (i.e. receiving terminate
-    // request)
-    if (_terminate_time != 0) {
-        INC_FLOAT_STATS(terminate_time, _finish_time - _terminate_time);
-        INC_INT_STATS(num_affected_txn, 1);
-        vector<double> &all =
-                    glob_stats->_stats[GET_THD_ID]->term_latency;
-        all.push_back(_finish_time - _terminate_time);
-    }
-#endif
+
     // OPTIMIZATION: release locks as early as possible.
     // No need to wait for this log since it is optional (shared log
     // optimization)
     response->set_response_type( SundialResponse::ACK );
-//#if !(COMMIT_VAR == NO_VARIANT || COMMIT_VAR == COLOCATE)
-//    if (g_num_storage_nodes > 0)
-//        response->set_request_type(SundialResponse::DummyReply);
-//#endif
     return rc;
 }
 
 RC
 TxnManager::process_terminate_request(const SundialRequest* request,
                                      SundialResponse* response) {
-#if DEBUG_PRINT
-    printf("[node-%u, txn-%lu] terminate request\n", g_node_id,
-                _txn_id);
-#endif
+    // only for failure case enabled, but now failure setup is cleaned up
+    assert(false);
     RC rc = RCOK;
     switch (_txn_state) {
         case RUNNING:

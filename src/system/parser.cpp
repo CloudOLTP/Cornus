@@ -38,21 +38,12 @@ void print_usage() {
     printf("\t-CwINT      ; MAX_NUM_WAITS\n");
     printf("\t-CrINT      ; READ_INTENSITY_THRESH\n");
     printf("[Distributed DBMS]:\n");
-    printf("\t-DxINT      ; MAX_NUM_ACTIVE_TXNS\n");
-    printf("\t-DiINT      ; NUM_INPUT_THREADS (NUM_OUTPUT_THREADS)\n");
     printf("\t-Df STRING  ; ifconfig file\n");
     printf("\t-DcINT      ; LOCAL_CACHE_SIZE\n");
     printf("\n");
 }
 
 void parser(int argc, char * argv[]) {
-    #if CONTROLLED_LOCK_VIOLATION
-    static_assert(LOG_LOCAL);
-    #endif
-    #if (ENABLE_ADMISSION_CONTROL) 
-    static_assert( LOG_LOCAL );
-    #endif
-    //if (DISTRIBUTED) assert(NUM_NODES > 1);
     M_ASSERT(INDEX_STRUCT != IDX_BTREE, "btree is not supported yet\n");
     // The current admission control is designed for logging
     for (int i = 1; i < argc; i++) {
@@ -124,12 +115,7 @@ void parser(int argc, char * argv[]) {
                 g_read_intensity_thresh = atof( &argv[i][3] );
             else assert(false);
         } else if (argv[i][1] == 'D') {
-            if (argv[i][2] == 'x')
-                g_max_num_active_txns = atoi( &argv[i][3] );
-            else if (argv[i][2] == 'i') {
-                g_num_input_threads = atoi( &argv[i][3] );
-                g_num_output_threads = g_num_input_threads;
-            } else if (argv[i][2] == 'f')
+            if (argv[i][2] == 'f')
                 strcpy( ifconfig_file, argv[++i]);
             else if (argv[i][2] == 'c')
                 g_local_cache_size = atoi( &argv[i][3] );
@@ -147,6 +133,4 @@ void parser(int argc, char * argv[]) {
     }
     if (g_num_worker_threads < g_init_parallelism)
         g_init_parallelism = g_num_worker_threads;
-    if (ENABLE_ADMISSION_CONTROL)
-        assert( g_max_num_active_txns <= g_num_worker_threads );
 }

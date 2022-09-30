@@ -16,23 +16,18 @@
 // COLLECT_LATENCY: when set to true, will collect transaction latency information
 #define COLLECT_LATENCY                 true
 #define STATS_ENABLE                    true
-#define TIME_ENABLE                     true
 #define STATS_CP_INTERVAL               1000 // in ms
-#define DEBUG_PRINT                     false
-#define DEBUG_FAILURE                   false
-#define DEBUG_ELR                       false
-#define SYNCHRONIZE_TIME                15
 
 // Execution Model
 // ==========
-// only a limited number of active threads are allowed. This configuration is
-// effective only when LOG_ENABLE == true.
-#define ENABLE_ADMISSION_CONTROL        false
-#define MAX_NUM_ACTIVE_TXNS             16
-#define NETWORK_DELAY                   0 // in us
 
 // WORKLOAD can be YCSB or TPCC
 #define WORKLOAD                        TPCC
+#define RUN_TIME                        10 // in second
+
+// debugging
+#define DEBUG_PRINT                     false
+#define DEBUG_ELR                       false
 
 // Concurrency Control
 // ===================
@@ -101,26 +96,15 @@
 
 // Logging
 // =======
-#define LOG_LOCAL                       false
-#define CONTROLLED_LOCK_VIOLATION       false
-#define LOG_REMOTE                      true
-#define LOG_TIMEOUT                     1000  // in us
 #define LOG_DEVICE                      LOG_DVC_REDIS
 #define LOG_DELAY                       0
-#define UNIFORM_DELAY                   true
 #define LOG_SIZE_PER_WRITE              32 // in bytes
 #define LOG_TLS_REDIS                   false // if redis needs tls tunnel
 #define AZURE_ISOLATION_ENABLE          true
 
-// Failure Setup
-#define FAILURE_ENABLE                  false
-#define FAILURE_TIMEPOINT               10 // in seconds
-#define FAILURE_NODE                    0
-
 // Benchmark
 // =========
 // max number of rows touched per transaction
-#define RUN_TIME                       10 // in second
 #define MAX_TUPLE_SIZE                  1024 // in bytes
 #define INIT_PARALLELISM                8
 
@@ -137,7 +121,6 @@
 #define SOCIAL_NETWORK                  false
 // KEY_ORDER: when set to true, each transaction accesses tuples in the primary key order.
 #define SORT_KEY_ORDER                  false
-
 
 // [TPCC]
 // For large warehouse count, the tables do not fit in memory
@@ -161,31 +144,11 @@
 #define LASTNAME_LEN                    16
 #define DIST_PER_WARE                   10
 
-// TODO centralized CC management
-// ==============================
-#define MAX_LOCK_CNT                    (20 * THREAD_CNT)
-#define TSTAB_SIZE                      50 * THREAD_CNT
-#define TSTAB_FREE                      TSTAB_SIZE
-#define TSREQ_FREE                      4 * TSTAB_FREE
-#define MVHIS_FREE                      4 * TSTAB_FREE
-#define SPIN                            false
-
 // Distributed DBMS
 // ================
-#define ASYNC_RPC                       true
-#define START_PORT                      35777
-#define INOUT_QUEUE_SIZE                1024
-#define NUM_INPUT_THREADS               1
-#define NUM_OUTPUT_THREADS              1
-#define ENABLE_MSG_BUFFER               false
-#define MAX_MESSAGE_SIZE                16384
-#define RECV_BUFFER_SIZE                32768
-#define SEND_BUFFER_SIZE                32768
-#define MAX_CLOCK_SKEW                  0 // in us
 #define COMMIT_ALG                      ONE_PC
 #define COMMIT_VAR                      NO_VARIANT
 #define DEBUG_LOG                       false
-#define WORKER_SERVER_SAME              false
 
 // Constant
 // ========

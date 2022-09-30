@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 #endif
     endtime = get_server_clock();
     cout << "Complete." << endl;
-    if (STATS_ENABLE && (!FAILURE_ENABLE || (FAILURE_NODE != g_node_id)))
+    if (STATS_ENABLE)
         glob_stats->print();
     glob_manager->active = false;
 #if NUM_STORAGE_NODES > 0
@@ -188,11 +188,11 @@ int main(int argc, char* argv[])
 
 void * start_thread(void * thread) {
     ((BaseThread *)thread)->run();
-    return NULL;
+    return nullptr;
 }
 
 void * start_rpc_server(void * input) {
     rpc_server->run();
-    return NULL;
+    return nullptr;
 }
 

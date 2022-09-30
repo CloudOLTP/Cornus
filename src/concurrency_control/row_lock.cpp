@@ -313,24 +313,6 @@ Row_lock::lock_release(TxnManager * txn, RC rc) {
             _locking_set.erase(it);
             break;
         }
-
-    #if CONTROLLED_LOCK_VIOLATION
-    //if (_row && txn->get_txn_id() <= 5)
-    //    printf("entry.txn=%lx, type=%d\n", (uint64_t)entry.txn, entry.type);
-    if (rc == COMMIT) {
-        assert(entry.txn);
-        if (!_weak_locking_queue.empty())
-            assert(_weak_locking_queue.front().type == LOCK_EX);
-        if (!_weak_locking_queue.empty() || entry.type == LOCK_EX) {
-            _weak_locking_queue.push_back( LockEntry {entry.type, txn} );
-            // mark that the txn has one more unsolved dependency
-            LockManager * lock_manager = (LockManager *) txn->get_cc_manager();
-            lock_manager->increment_dependency();
-            //if (_row)
-            //    printf("txn %ld retires to weak queue. tuple=%ld\n", txn->get_txn_id(), _row->get_primary_key());
-        }
-    }
-    #endif
     // remove from waiting set
     for (std::set<LockEntry>::iterator it = _waiting_set.begin();
          it != _waiting_set.end(); it ++)

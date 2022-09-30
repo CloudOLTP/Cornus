@@ -78,9 +78,7 @@ extern uint32_t         g_ts_alloc;
 extern bool             g_sort_key_order;
 extern bool             g_ts_batch_alloc;
 extern uint32_t         g_ts_batch_num;
-extern uint32_t         g_max_num_active_txns;
 extern double           g_run_time;
-extern uint64_t         g_max_clock_skew;
 
 // TICTOC
 // ------
@@ -204,9 +202,6 @@ extern uint32_t         g_num_storage_nodes;
 extern uint32_t         g_node_id;
 extern size_t           g_quorum;
 
-extern uint32_t         g_num_input_threads;
-extern uint32_t         g_num_output_threads;
-
 extern  uint32_t        g_log_sz;
 
 extern SundialRPCClient * rpc_client;
@@ -219,9 +214,6 @@ extern AzureBlobClient *      azure_blob_client;
 #endif
 
 extern Transport *      transport;
-//typedef boost::lockfree::queue<uint64_t, boost::lockfree::capacity<INOUT_QUEUE_SIZE>> InOutQueue;
-//extern InOutQueue **    input_queues;
-//extern InOutQueue **    output_queues;
 extern WorkerThread **  worker_threads;
 extern uint32_t         g_txn_table_size;
 extern TxnTable *       txn_table;

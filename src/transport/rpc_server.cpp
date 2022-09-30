@@ -3,10 +3,8 @@
 #include "txn.h"
 #include "txn_table.h"
 #include "manager.h"
-#include "log.h"
 #include "redis_client.h"
 #include "azure_blob_client.h"
-
 
 /*
 SundialRPCServerImpl::~SundialRPCServerImpl(){
@@ -50,7 +48,6 @@ SundialRPCServerImpl::run() {
       }
     }
 #endif
-
     ServerBuilder builder;
     builder.AddListeningPort(line, grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
@@ -59,11 +56,7 @@ SundialRPCServerImpl::run() {
     // set up multiple server threads to start accepting requests
     // XXX(zhihan): only use one cq as it is thread safe. can switch to more cqs if does not scale 
     //_thread_pool = new pthread_t * [NUM_RPC_SERVER_THREADS];
-    #if !WORKER_SERVER_SAME
     uint32_t num_thds = NUM_RPC_SERVER_THREADS;
-    #else
-    uint32_t num_thds = NUM_WORKER_THREADS;
-    #endif
     _thread_pool = new std::thread * [num_thds];
     for (uint32_t i = 0; i < num_thds; i++) {
         _thread_pool[i] = new std::thread(HandleRpcs, this, i + 1);
@@ -237,7 +230,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             printf("[node-%u txn-%lu] receive remote paxos log request\n",
                  g_node_id, txn_id);
 #endif
-#if UNIFORM_DELAY && LOG_DELAY > 0
+#if LOG_DELAY > 0
             usleep(LOG_DELAY / 2);
 #endif
             // create the txn to use its semaphore
@@ -273,7 +266,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             delete txn;
             // once logged, reply to participant or coordinator
             response->set_request_type(sundial_rpc::SundialResponse_RequestType_PAXOS_LOG_ACK);
-#if UNIFORM_DELAY && LOG_DELAY > 0
+#if LOG_DELAY > 0
             usleep(LOG_DELAY / 2);
 #endif
             break;
@@ -344,7 +337,7 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             }
 #endif
 #if LOG_DELAY > 0
-            if (request->receiver_id() != g_node_id || UNIFORM_DELAY)
+            if (request->receiver_id() != g_node_id)
                 usleep(LOG_DELAY / 2);
 #endif
             break;
@@ -375,15 +368,6 @@ SundialRPCServerImpl::processContactRemote(ServerContext* context, const Sundial
             assert(false);
     }
     // the transaction handles the RPC call
-#if FAILURE_ENABLE
-    if (rc == FAIL || (!glob_manager->active)) {
-#if DEBUG_PRINT
-        printf("[node-%u, txn-%lu] reply failure response\n", g_node_id,
-            txn_id);
-#endif
-        response->set_response_type(SundialResponse::RESP_FAIL);
-    }
-#endif
 }
 
 
