@@ -3,11 +3,11 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
-  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+  <component name="CMakeRunConfigurationManager">
     <generated>
-      <config projectName="config-std.h" targetName="all" />
-      <config projectName="config-std.h" targetName="rundb" />
-      <config projectName="config-std.h" targetName="Makefile" />
+      <config projectName="Sundial-Private" targetName="rundb" />
+      <config projectName="Sundial-Private" targetName="Makefile" />
+      <config projectName="Sundial-Private" targetName="runstorage" />
     </generated>
   </component>
   <component name="CMakeSettings">
@@ -17,26 +17,82 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="963a16de-0926-4f99-88c8-98a9f80fa508" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/system/txn_mdcc.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cornus_storage/system/global.h" beforeDir="false" afterPath="$PROJECT_DIR$/cornus_storage/system/global.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/concurrency_control/occ_manager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/occ_manager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/dist.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/single.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/test.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/threads.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/tpcc_log_delay.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/tpcc_network_delay.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/tpcc_test.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/tpcc_thd.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/tpcc_wh.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_debug2.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_log_delay.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_log_delay_single.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_network_delay.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_perc_remote.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_read_ratio.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_read_ratio_sparse.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_server_thd.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_storage_server.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_test_2.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_thd.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_ws_ratio.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2021_vldb/ycsb_zipf.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/debug/ycsb_zipf_debug_0826.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/failure_num_nodes_blob.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/failure_num_nodes_blob_iso.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/failure_num_nodes_blob_repeated.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/failure_num_nodes_redis.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/failure_num_nodes_redis_repeated.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/num_nodes_blob.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/num_nodes_blob_iso.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/num_nodes_redis.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/vldb_ycsb_perc_remote_0725.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_debug_0727.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_perc_remote.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_read_perc_0726.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_read_perc_0728.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_read_perc_0812.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_read_perc_0813.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_read_perc_0822.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_read_perc_repli_redis_test_0818.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_zipf_0812.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/old/ycsb_zipf_repli_redis_test_0818.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/read_perc_blob.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/read_perc_blob_iso.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/read_perc_redis.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/read_perc_redis_repeated.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/zipf_blob.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/zipf_blob_iso.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/zipf_redis.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp_profiles/2022_vldb/zipf_redis_repeated.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/concurrency_control/row_lock.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/config-std.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/config-std.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ifconfig.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/ifconfig.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/storage/log.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/storage/log.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/storage/log.h.backup" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/system/global.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/global.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/system/global.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/global.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/logging_thread.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/logging_thread.h" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/system/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/system/parser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/parser.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/system/txn.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/system/txn.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/system/txn_client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_client.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/system/txn_server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/system/txn_server.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/transport/rpc_client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/transport/rpc_client.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/transport/rpc_client.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/transport/rpc_client.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/transport/rpc_server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/transport/rpc_server.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/helper.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/helper.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
   </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
@@ -70,7 +126,7 @@
         <entry>
           <key>
             <ExternalProjectPojo>
-              <option name="name" value="config-std.h" />
+              <option name="name" value="Sundial-Private" />
               <option name="path" value="$PROJECT_DIR$/src" />
             </ExternalProjectPojo>
           </key>
@@ -85,68 +141,73 @@
         </entry>
       </map>
     </option>
+    <option name="projectSyncType">
+      <map>
+        <entry key="$PROJECT_DIR$/src" value="RE_IMPORT" />
+      </map>
+    </option>
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
+  <component name="OCResolveContextSettings">
+    <option name="configuration" value="$PROJECT_DIR$/src/benchmarks/tpcc_query.cpp" />
+  </component>
   <component name="ProjectId" id="1qjnhbtPn93hB8Y6k5AhI4yf4BV" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="cf.advertisement.text.overridden" value="true" />
-    <property name="cf.first.check.clang-format" value="false" />
-    <property name="cidr.known.project.marker" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/concurrency_control" />
-    <property name="node.js.detected.package.eslint" value="true" />
-    <property name="node.js.detected.package.tslint" value="true" />
-    <property name="node.js.path.for.package.eslint" value="project" />
-    <property name="node.js.path.for.package.tslint" value="project" />
-    <property name="node.js.selected.package.eslint" value="(autodetect)" />
-    <property name="node.js.selected.package.tslint" value="(autodetect)" />
-    <property name="nodejs_package_manager_path" value="npm" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.C/C++" />
-  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "WebServerToolWindowFactoryState": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "last_opened_file_path": "/Users/scarlet/Downloads/GitHub/Sundial-Private/exp_profiles",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "web.server"
+  }
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/src/concurrency_control" />
       <recent name="$PROJECT_DIR$/exp_profiles" />
+      <recent name="$PROJECT_DIR$/exp_profiles/vldb2022_revision" />
+      <recent name="$PROJECT_DIR$/src/concurrency_control" />
       <recent name="$PROJECT_DIR$" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/exp_profiles" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/tools" />
       <recent name="$PROJECT_DIR$/outputs/vldb2023" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle./Users/scarlet/Documents/GitHub/Sundial-Private">
+  <component name="RunManager" selected="Makefile Application.Makefile">
+    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="CLION.EXTERNAL.BUILD" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Makefile" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="config-std.h" TARGET_NAME="Makefile" CONFIG_NAME="Makefile" version="1">
+    <configuration name="Makefile" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="Makefile" CONFIG_NAME="Makefile" version="1">
       <method v="2">
         <option name="CLION.COMPOUND.BUILD" enabled="true" />
       </method>
     </configuration>
-    <configuration name="all" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="config-std.h" TARGET_NAME="all" CONFIG_NAME="all" version="1">
+    <configuration name="rundb" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="rundb" CONFIG_NAME="rundb" version="1">
       <method v="2">
         <option name="CLION.COMPOUND.BUILD" enabled="true" />
       </method>
     </configuration>
-    <configuration name="rundb" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="config-std.h" TARGET_NAME="rundb" CONFIG_NAME="rundb" version="1">
+    <configuration name="runstorage" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Sundial-Private" TARGET_NAME="runstorage" CONFIG_NAME="runstorage" version="1">
       <method v="2">
         <option name="CLION.COMPOUND.BUILD" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <configuration name="/Users/scarlet/Documents/GitHub/Sundial-Private" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
@@ -169,16 +230,10 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Gradle./Users/scarlet/Documents/GitHub/Sundial-Private" />
-      <item itemvalue="Makefile Application.all" />
       <item itemvalue="Makefile Application.Makefile" />
       <item itemvalue="Makefile Application.rundb" />
+      <item itemvalue="Makefile Application.runstorage" />
     </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Gradle./Users/scarlet/Documents/GitHub/Sundial-Private" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
@@ -211,6 +266,14 @@
       <workItem from="1657486578654" duration="1364000" />
       <workItem from="1657488454002" duration="254000" />
       <workItem from="1657489886333" duration="6457000" />
+      <workItem from="1659855735167" duration="9889000" />
+      <workItem from="1659920479327" duration="4795000" />
+      <workItem from="1659979740849" duration="41448000" />
+      <workItem from="1660111510445" duration="8610000" />
+      <workItem from="1660161085927" duration="26674000" />
+      <workItem from="1660193465592" duration="25417000" />
+      <workItem from="1660284875082" duration="3931000" />
+      <workItem from="1664570780671" duration="4587000" />
     </task>
     <servers />
   </component>
@@ -227,7 +290,6 @@
         </entry>
       </map>
     </option>
-    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

@@ -2,7 +2,6 @@
 #include "manager.h"
 #include "query.h"
 #include "txn_table.h"
-#include "log.h"
 #include "rpc_client.h"
 #include "rpc_server.h"
 #include "redis_client.h"
@@ -28,9 +27,7 @@ uint32_t g_ts_alloc           = TS_ALLOC;
 bool g_sort_key_order         = SORT_KEY_ORDER;
 bool g_ts_batch_alloc         = TS_BATCH_ALLOC;
 uint32_t g_ts_batch_num       = TS_BATCH_NUM;
-uint32_t g_max_num_active_txns = MAX_NUM_ACTIVE_TXNS;
 double g_run_time             = RUN_TIME;
-uint64_t g_max_clock_skew     = MAX_CLOCK_SKEW;
 
 // YCSB
 // ====
@@ -84,9 +81,6 @@ size_t          g_quorum = (int) floor(g_num_storage_nodes / 2) + 1;
 #endif
 
 uint32_t        g_node_id;
-
-uint32_t        g_num_input_threads     = NUM_INPUT_THREADS;
-uint32_t        g_num_output_threads    = NUM_OUTPUT_THREADS;
 
 uint32_t        g_log_sz                = LOG_SIZE_PER_WRITE;
 

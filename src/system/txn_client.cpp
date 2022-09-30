@@ -29,7 +29,6 @@
 #if CC_ALG == NO_WAIT || CC_ALG == WAIT_DIE
 #include "row_lock.h"
 #endif
-#include "log.h"
 #include "redis_client.h"
 #include "azure_blob_client.h"
 
@@ -53,9 +52,8 @@ TxnManager::process_commit_phase_singlepart(RC rc)
     #if LOG_DEVICE == LOG_DVC_REDIS
        redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
     #elif LOG_DEVICE == LOG_DVC_AZURE_BLOB
-       if (azure_blob_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
-           data) == FAIL)
-           return FAIL;
+       azure_blob_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc),
+           data);
     #elif LOG_DEVICE == LOG_DVC_CUSTOMIZED
         // log locally
         redis_client->log_sync_data(g_node_id, get_txn_id(), rc_to_state(rc), data);
@@ -154,22 +152,6 @@ TxnManager::process_2pc_phase1()
 #endif
         rpc_client->sendRequestAsync(this, it->first, request, response);
         message_sent++;
-        // check if current node should crash
-#if FAILURE_ENABLE
-        if (message_sent != 1)
-            continue;
-        uint64_t ts = _worker_thread->get_execution_time();
-        if (ts > g_failure_pt && (g_node_id == FAILURE_NODE)) {
-            if (ATOM_CAS(glob_manager->active, true, false)) {
-                #if DEBUG_PRINT || DEBUG_FAILURE
-                printf("[node-%u, txn-%lu] node crashes (execution time = %.2f sec)\n",
-                    g_node_id, _txn_id, ts / 1000000000.0);
-                #endif
-                glob_manager->failure_protocol();
-            }
-            return FAIL;
-        }
-#endif
     }
 
     // profile: # prepare phase
@@ -182,15 +164,6 @@ TxnManager::process_2pc_phase1()
 
     // wait for vote
     rpc_semaphore->wait();
-#if FAILURE_ENABLE
-    // if all active vote yes but has failed node, run termination protocol
-    if (_decision == FAIL) {
-        // new decision is updated in termination protocol
-		_decision = termination_protocol();
-        if (_decision == FAIL)
-            return FAIL; // self is down
-    }
-#endif
     _txn_state = PREPARED;
     return _decision;
 }
@@ -212,13 +185,6 @@ TxnManager::handle_prepare_resp(SundialResponse::ResponseType response,
             _remote_nodes_involved[node_id]->state =
                 ABORTED;
             _decision = ABORT;
-            break;
-        case SundialResponse::RESP_FAIL:
-            // remote node is down, run termination protocol
-            _remote_nodes_involved[node_id]->state =
-                FAILED;
-            // should not overwrite abort decision
-            ATOM_CAS(_decision, COMMIT, FAIL);
             break;
         case SundialResponse::ACK:
             // from leader/acceptor to coordinator in commit phase
@@ -305,8 +271,7 @@ TxnManager::process_2pc_phase2(RC rc)
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
         // No need to run this phase if the remote sub-txn has already committed
         // or aborted.
-        if (it->second->state == ABORTED || it->second->state == COMMITTED ||
-        it->second->state == FAILED)
+        if (it->second->state == ABORTED || it->second->state == COMMITTED)
             continue;
         SundialRequest &request = it->second->request;
         SundialResponse &response = it->second->response;
@@ -320,10 +285,7 @@ TxnManager::process_2pc_phase2(RC rc)
             SundialRequest::COMMIT_REQ : SundialRequest::ABORT_REQ;
         request.set_request_type( type );
         rpc_semaphore->incr();
-        if (rpc_client->sendRequestAsync(this, it->first, request, response)
-        == FAIL) {
-            return FAIL;
-        }
+        rpc_client->sendRequestAsync(this, it->first, request, response);
     }
 
     // OPTIMIZATION: release locks as early as possible.
@@ -364,8 +326,7 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
     read_request->set_index_id(index_id);
     read_request->set_access_type(access_type);
     request.set_node_id(node_id);
-    if (rpc_client->sendRequest(node_id, request, response) == FAIL)
-        return FAIL;
+    rpc_client->sendRequest(node_id, request, response);
 
     if (access_type != RD) {
         _remote_nodes_involved[node_id]->is_readonly = false;
@@ -382,10 +343,7 @@ TxnManager::send_remote_read_request(uint64_t node_id, uint64_t key, uint64_t in
         _is_remote_abort = true;
         return ABORT;
     } else {
-        assert(response.response_type() == SundialResponse::RESP_FAIL);
-        _remote_nodes_involved[node_id]->state = FAILED;
-        _is_remote_abort = true;
-        return ABORT;
+        assert(false);
     }
 }
 
@@ -417,13 +375,9 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
     }
 
     for (auto it = _remote_nodes_involved.begin(); it != _remote_nodes_involved.end(); it ++) {
-        if (rpc_client->sendRequestAsync(this, it->first, it->second->request,
-            it->second->response) == FAIL) {
-            // self if fail, stop working and return
-            return FAIL;
-        } else {
-            rpc_semaphore->incr();
-        }
+        rpc_client->sendRequestAsync(this, it->first, it->second->request,
+            it->second->response);
+        rpc_semaphore->incr();
     }
     rpc_semaphore->wait();
     RC rc = RCOK;
@@ -436,10 +390,7 @@ TxnManager::send_remote_package(std::map<uint64_t, vector<RemoteRequestInfo *> >
             _is_remote_abort = true;
             rc = ABORT;
         } else {
-            assert(response.response_type() == SundialResponse::RESP_FAIL);
-            _remote_nodes_involved[it->first]->state = FAILED;
-            _is_remote_abort = true;
-            rc = ABORT;
+            assert(false);
         }
     }
     return rc;

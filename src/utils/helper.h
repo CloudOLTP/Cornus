@@ -179,11 +179,7 @@ inline uint64_t get_server_clock() {
 }
 
 inline uint64_t get_sys_clock() {
-#if TIME_ENABLE
     return get_server_clock();
-#else
-    return 0;
-#endif
 }
 
 inline std::string ltrim_str(const std::string &s)

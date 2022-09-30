@@ -24,7 +24,6 @@
 #if CC_ALG == NO_WAIT || CC_ALG == WAIT_DIE
 #include "row_lock.h"
 #endif
-#include "log.h"
 #include "redis_client.h"
 #include "azure_blob_client.h"
 
@@ -83,15 +82,6 @@ TxnManager::update_stats()
     // TODO. collect stats for sub_queries.
     if (is_sub_txn())
         return;
-#if FAILURE_ENABLE
-    if (_terminate_time != 0) {
-        INC_FLOAT_STATS(terminate_time, _finish_time - _terminate_time);
-        INC_INT_STATS(num_affected_txn, 1);
-        vector<double> &all =
-            glob_stats->_stats[GET_THD_ID]->term_latency;
-        all.push_back(_finish_time - _terminate_time);
-    }
-#endif
 #if WORKLOAD == TPCC && STATS_ENABLE
     uint32_t type = ((QueryTPCC *)_store_procedure->get_query())->type;
     if (_txn_state == COMMITTED) {
@@ -106,9 +96,6 @@ TxnManager::update_stats()
         uint64_t latency;
         if (is_single_partition()) {
             INC_FLOAT_STATS(single_part_execute_phase, _commit_start_time - _txn_restart_time);
-        #if CONTROLLED_LOCK_VIOLATION
-            INC_FLOAT_STATS(single_part_precommit_phase, _precommit_finish_time - _commit_start_time);
-        #endif
             INC_FLOAT_STATS(single_part_commit_phase, _finish_time - _commit_start_time);
             INC_FLOAT_STATS(single_part_abort, _txn_restart_time - _txn_start_time);
 
@@ -116,9 +103,6 @@ TxnManager::update_stats()
             latency = _finish_time - _txn_start_time;
         } else {
             INC_FLOAT_STATS(multi_part_execute_phase, _prepare_start_time - _txn_restart_time);
-        #if CONTROLLED_LOCK_VIOLATION
-            INC_FLOAT_STATS(multi_part_precommit_phase, _precommit_finish_time - _prepare_start_time);
-        #endif
             INC_FLOAT_STATS(multi_part_prepare_phase, _commit_start_time - _prepare_start_time);
             INC_FLOAT_STATS(multi_part_commit_phase, _finish_time - _commit_start_time);
             INC_FLOAT_STATS(multi_part_abort, _txn_restart_time - _txn_start_time);
